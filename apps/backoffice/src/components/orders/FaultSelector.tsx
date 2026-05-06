@@ -61,7 +61,7 @@ export function FaultSelector({ selected, onChange }: Props) {
   const isActive = (key: string) => selected.has(key) && (selected.get(key)?.length ?? 0) > 0;
 
   return (
-    <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
       {FAULT_TYPES.map((ft) => (
         <FaultButton
           key={ft.key}
@@ -125,7 +125,7 @@ function FaultButton({
         type="button"
       >
         <span className="flex h-4 w-4 shrink-0 items-center justify-center">{fault.icon}</span>
-        <span className="truncate text-xs leading-tight">{fault.label}</span>
+        <span className="text-xs leading-tight">{fault.label}</span>
         {hasSubs && subCount > 0 && (
           <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
             {subCount}

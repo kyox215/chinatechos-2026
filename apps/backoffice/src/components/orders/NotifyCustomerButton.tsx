@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { STORE_NAME, STORE_ADDRESS } from "@/lib/domain/store-info";
 import { buildWhatsAppLink } from "@/lib/domain/whatsapp";
 
 type Props = {
@@ -17,8 +18,8 @@ export function NotifyCustomerButton(props: Props) {
   const [pending, setPending] = useState(false);
 
   const messageMap: Record<string, string> = {
-    repaired: `Buongiorno ${props.customerName ?? "Cliente"}, la informiamo che la riparazione del suo ${props.deviceLabel} è stata completata. Può passare a ritirarlo. Grazie, ChinaTech Roma`,
-    parts_arrived: `Buongiorno ${props.customerName ?? "Cliente"}, le comunichiamo che i ricambi per il suo ${props.deviceLabel} sono arrivati. Procederemo con la riparazione. Grazie, ChinaTech Roma`,
+    repaired: `Buongiorno ${props.customerName ?? "Cliente"}, la informiamo che la riparazione del suo ${props.deviceLabel} è stata completata. Può passare a ritirarlo presso ${STORE_ADDRESS}. Grazie, ${STORE_NAME}`,
+    parts_arrived: `Buongiorno ${props.customerName ?? "Cliente"}, le comunichiamo che i ricambi per il suo ${props.deviceLabel} sono arrivati. Procederemo con la riparazione. Grazie, ${STORE_NAME}`,
   };
 
   const message = messageMap[props.status];

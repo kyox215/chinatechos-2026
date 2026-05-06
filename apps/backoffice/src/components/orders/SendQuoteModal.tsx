@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { STORE_NAME, STORE_ADDRESS } from "@/lib/domain/store-info";
 import { buildWhatsAppLink } from "@/lib/domain/whatsapp";
 
 type FaultItem = { label: string; price: number };
@@ -34,7 +35,8 @@ export function SendQuoteModal(props: Props) {
     `Totale: €${props.total.toFixed(2)}`,
     ``,
     `Conferma se procedere con la riparazione.`,
-    `Grazie, ChinaTech Roma`,
+    `Grazie, ${STORE_NAME}`,
+    STORE_ADDRESS,
   ];
   const messageText = messageLines.join("\n");
   const waLink = buildWhatsAppLink(props.customerPhone, messageText);

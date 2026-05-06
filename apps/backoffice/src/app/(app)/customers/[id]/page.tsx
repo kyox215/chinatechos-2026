@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { CustomerInfoCard } from "@/components/customers/CustomerInfoCard";
+import { DeviceCard } from "@/components/customers/DeviceCard";
+import { CustomerActions } from "@/components/customers/CustomerActions";
 import { getCustomerDetail, getCustomerDevices, getCustomerOrders } from "@/lib/data/customer-detail";
-import { buildWhatsAppLink } from "@/lib/domain/whatsapp";
 
 export default async function CustomerDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -19,11 +21,6 @@ export default async function CustomerDetailPage(props: {
   const totalSpend = orders.reduce((sum, o) => sum + (o.quotationAmount ?? 0), 0);
   const activeOrders = orders.filter((o) =>
     !["completed", "cancelled"].includes(o.status),
-  );
-
-  const waLink = buildWhatsAppLink(
-    customer.phoneE164,
-    `Buongiorno ${customer.name ?? "Cliente"}, la contatto da ChinaTech Roma.`,
   );
 
   return (
@@ -44,22 +41,11 @@ export default async function CustomerDetailPage(props: {
             <div className="mt-0.5 text-sm text-neutral-600">{customer.phoneE164}</div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-9 rounded-xl bg-emerald-500 px-4 text-xs font-semibold text-white leading-9 hover:bg-emerald-600"
-          >
-            WhatsApp
-          </a>
-          <Link
-            href={`/orders?q=${encodeURIComponent(customer.phoneE164)}`}
-            className="h-9 rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-neutral-700 leading-9 hover:bg-muted"
-          >
-            查看全部工单
-          </Link>
-        </div>
+        <CustomerActions
+          customerId={id}
+          customerPhone={customer.phoneE164}
+          customerName={customer.name}
+        />
       </div>
 
       {/* Stats */}
@@ -73,48 +59,22 @@ export default async function CustomerDetailPage(props: {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {/* Left: Customer info + devices */}
         <div className="space-y-4">
-          {/* Basic info */}
-          <Card title="基本信息">
-            <Row label="姓名" value={customer.name ?? "-"} />
-            <Row label="电话 (E.164)" value={customer.phoneE164} />
-            <Row label="电话 (原始)" value={customer.phoneRaw ?? "-"} />
-            <Row label="通知许可" value={customer.consentRequiredNotify ? "✓ 是" : "✗ 否"} />
-            <Row label="营销许可" value={customer.consentMarketing ? "✓ 是" : "✗ 否"} />
-            {customer.notes && <Row label="备注" value={customer.notes} />}
-          </Card>
-
-          {/* Devices */}
-          <Card title={`设备 (${devices.length})`}>
-            {devices.length === 0 ? (
-              <div className="py-3 text-sm text-neutral-500">暂无设备记录</div>
-            ) : (
-              <div className="space-y-2">
-                {devices.map((d) => (
-                  <div
-                    key={d.id}
-                    className="rounded-xl border border-border bg-surface-2 p-3"
-                  >
-                    <div className="text-sm font-medium text-neutral-900">
-                      {d.brand} {d.model}
-                    </div>
-                    {d.serialOrImei && (
-                      <div className="mt-0.5 text-xs text-neutral-500">
-                        IMEI/SN: {d.serialOrImei}
-                      </div>
-                    )}
-                    <div className="mt-0.5 text-xs text-neutral-400">
-                      添加: {formatDate(d.createdAt)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <CustomerInfoCard
+            id={customer.id}
+            name={customer.name}
+            phoneE164={customer.phoneE164}
+            phoneRaw={customer.phoneRaw}
+            consentRequiredNotify={customer.consentRequiredNotify}
+            consentMarketing={customer.consentMarketing}
+            notes={customer.notes}
+          />
+          <DeviceCard customerId={id} devices={devices} />
         </div>
 
         {/* Right: Orders */}
         <div className="space-y-4">
-          <Card title={`历史工单 (${orders.length})`}>
+          <section className="rounded-2xl border border-border bg-surface p-4">
+            <h2 className="mb-3 text-sm font-semibold text-neutral-900">历史工单 ({orders.length})</h2>
             {orders.length === 0 ? (
               <div className="py-3 text-sm text-neutral-500">暂无工单记录</div>
             ) : (
@@ -126,9 +86,7 @@ export default async function CustomerDetailPage(props: {
                     className="block rounded-xl border border-border bg-surface-2 p-3 transition-colors hover:bg-muted"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium text-neutral-900">
-                        {o.publicNo}
-                      </div>
+                      <div className="text-sm font-medium text-neutral-900">{o.publicNo}</div>
                       <OrderStatusBadge status={o.status} />
                     </div>
                     <div className="mt-1 text-xs text-neutral-600">
@@ -145,27 +103,9 @@ export default async function CustomerDetailPage(props: {
                 ))}
               </div>
             )}
-          </Card>
+          </section>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Card(props: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border border-border bg-surface p-4">
-      <h2 className="mb-3 text-sm font-semibold text-neutral-900">{props.title}</h2>
-      {props.children}
-    </section>
-  );
-}
-
-function Row(props: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between py-1.5 text-sm">
-      <span className="text-neutral-500">{props.label}</span>
-      <span className="text-neutral-900">{props.value}</span>
     </div>
   );
 }

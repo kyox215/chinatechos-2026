@@ -9,7 +9,7 @@ import {
 } from "@/components/icons";
 import { BarcodeScanner } from "@/components/orders/BarcodeScanner";
 import { FaultSelector } from "@/components/orders/FaultSelector";
-import { buildIssueFromFaults } from "@/lib/domain/fault-types";
+import { FAULT_TYPES, buildIssueFromFaults } from "@/lib/domain/fault-types";
 
 const BRANDS = ["Apple", "Samsung", "Huawei", "Xiaomi", "OnePlus", "OPPO", "vivo", "Google", "其他"];
 
@@ -22,13 +22,13 @@ const ACCESSORY_OPTIONS: { key: string; label: string; icon: ReactNode }[] = [
   { key: "earphone", label: "耳机", icon: <IconHeadphones /> },
 ];
 
-type Props = { open: boolean; onClose: () => void };
+type Props = { open: boolean; onClose: () => void; initialPhone?: string; initialName?: string };
 
-export function CreateOrderModal({ open, onClose }: Props) {
+export function CreateOrderModal({ open, onClose, initialPhone, initialName }: Props) {
   const router = useRouter();
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState(initialName ?? "");
+  const [customerPhone, setCustomerPhone] = useState(initialPhone ?? "");
   const [customerSuggestions, setCustomerSuggestions] = useState<{ id: string; name: string | null; phoneE164: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [brand, setBrand] = useState("");
@@ -37,7 +37,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
   const [serialOrImei, setSerialOrImei] = useState("");
   const [selectedFaults, setSelectedFaults] = useState<Map<string, string[]>>(new Map());
   const [faultNote, setFaultNote] = useState("");
-  const [quotation, setQuotation] = useState("");
+  const [faultPrices, setFaultPrices] = useState<Record<string, string>>({});
   const [deposit, setDeposit] = useState("");
   const [accessories, setAccessories] = useState<Set<string>>(new Set());
   const [customAccessory, setCustomAccessory] = useState("");
@@ -99,7 +99,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
           model: model.trim(),
           serialOrImei: serialOrImei.trim() || undefined,
           issueDescription: buildIssueFromFaults(selectedFaults, faultNote),
-          quotationAmount: quotation ? Number(quotation) : undefined,
+          quotationAmount: Object.values(faultPrices).reduce((s, v) => s + (Number(v) || 0), 0) || undefined,
           depositAmount: deposit ? Number(deposit) : undefined,
           technicianName: technician.trim() || undefined,
           internalTag: buildInternalTag() || undefined,
@@ -214,13 +214,47 @@ export function CreateOrderModal({ open, onClose }: Props) {
 
             {/* Col 3: Finance & Service */}
             <div className="space-y-4">
-              <SectionTitle icon={<IconMoney />} title="财务 & 服务" />
+              <SectionTitle icon={<IconMoney />} title="报价 & 服务" />
+              {selectedFaults.size > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-neutral-500">按项报价</div>
+                  {Array.from(selectedFaults.entries()).map(([key, subs]) => {
+                    const ft = FAULT_TYPES.find((f) => f.key === key);
+                    const label = ft?.label ?? key;
+                    const subLabels = subs.filter((s) => s !== "_self").map((sk) => ft?.subTypes?.find((st) => st.key === sk)?.label ?? sk);
+                    const displayLabel = subLabels.length > 0 ? `${label}(${subLabels.join(", ")})` : label;
+                    return (
+                      <div key={key} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-neutral-700">{displayLabel}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-neutral-400">&euro;</span>
+                          <input
+                            className="ui-input h-8 w-20 text-xs"
+                            onChange={(e) => setFaultPrices((p) => ({ ...p, [key]: e.target.value }))}
+                            placeholder="0"
+                            type="number"
+                            value={faultPrices[key] ?? ""}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center justify-between border-t border-border pt-2">
+                    <span className="text-xs font-semibold text-neutral-900">报价总额</span>
+                    <span className="text-sm font-semibold text-neutral-900">
+                      &euro;{Object.values(faultPrices).reduce((s, v) => s + (Number(v) || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
-                <Lbl label="总价 (€)">
-                  <input className="ui-input w-full" onChange={(e) => setQuotation(e.target.value)} placeholder="0" type="number" value={quotation} />
-                </Lbl>
                 <Lbl label="定金 (€)">
                   <input className="ui-input w-full" onChange={(e) => setDeposit(e.target.value)} placeholder="0" type="number" value={deposit} />
+                </Lbl>
+                <Lbl label="待收余额">
+                  <div className="flex h-10 items-center text-sm font-semibold text-neutral-900 md:h-9">
+                    &euro;{Math.max(0, Object.values(faultPrices).reduce((s, v) => s + (Number(v) || 0), 0) - (Number(deposit) || 0)).toFixed(2)}
+                  </div>
                 </Lbl>
               </div>
 

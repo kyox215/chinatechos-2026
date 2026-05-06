@@ -22,7 +22,8 @@ export function StatusPopover({
   const [supplierPicker, setSupplierPicker] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState("");
-  const popRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const { primary, secondary } = getNextActions(status);
 
@@ -34,16 +35,13 @@ export function StatusPopover({
       .catch(() => {});
   }, [supplierPicker]);
 
-  useEffect(() => {
-    if (!open) return;
-    function handleOutside(e: MouseEvent) {
-      if (popRef.current && !popRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+  function openPopover() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
     }
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, [open]);
+    setOpen(true);
+  }
 
   async function handleTransition(toStatus: string, confirmText: string, supplierId?: string) {
     if (!confirm(confirmText)) return;
@@ -84,11 +82,12 @@ export function StatusPopover({
   }
 
   return (
-    <div className="relative" ref={popRef}>
+    <div className="relative">
       <button
+        ref={btnRef}
         className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-neutral-100"
         disabled={pending}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? setOpen(false) : openPopover())}
         type="button"
       >
         {pending ? (
@@ -99,44 +98,50 @@ export function StatusPopover({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-xl border border-border bg-surface p-1 shadow-lg">
-          {primary.length > 0 && (
-            <div className="mb-1">
-              {primary.map((action) => (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-44 rounded-xl border border-border bg-surface p-1 shadow-lg"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {primary.length > 0 && (
+              <div className="mb-1">
+                {primary.map((action) => (
+                  <button
+                    key={action.toStatus}
+                    className="flex w-full items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-left text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                    onClick={() => handleClick(action.toStatus, action.confirmText)}
+                    type="button"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {secondary.length > 0 && primary.length > 0 && (
+              <div className="my-1 border-t border-border" />
+            )}
+
+            <div className="max-h-48 overflow-y-auto">
+              {secondary.map((action) => (
                 <button
                   key={action.toStatus}
-                  className="flex w-full items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-left text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                  className={`block w-full rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
+                    action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
+                  }`}
                   onClick={() => handleClick(action.toStatus, action.confirmText)}
                   type="button"
                 >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
                   {action.label}
                 </button>
               ))}
             </div>
-          )}
-
-          {secondary.length > 0 && primary.length > 0 && (
-            <div className="my-1 border-t border-border" />
-          )}
-
-          <div className="max-h-48 overflow-y-auto">
-            {secondary.map((action) => (
-              <button
-                key={action.toStatus}
-                className={`block w-full rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
-                  action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
-                }`}
-                onClick={() => handleClick(action.toStatus, action.confirmText)}
-                type="button"
-              >
-                {action.label}
-              </button>
-            ))}
           </div>
-        </div>
+        </>
       )}
 
       {supplierPicker && (

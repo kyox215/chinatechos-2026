@@ -22,7 +22,7 @@ export function WhatsAppButton({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customBody: `Buongiorno, la contatto da ChinaTech Roma riguardo il suo ordine di riparazione.`,
+          customBody: `Buongiorno, la contatto da ChinaTech riguardo il suo ordine di riparazione.`,
         }),
       });
       const data = (await res.json()) as { waLink?: string; messageLogId?: string; error?: string };
