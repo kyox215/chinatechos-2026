@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { faultLineLabelItalian } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, parseFaultsFromIssue } from "@/lib/domain/fault-types";
 import { SendQuoteModal } from "@/components/orders/SendQuoteModal";
 
@@ -78,7 +79,10 @@ export function QuoteForm(props: Props) {
         customerPhone={props.customerPhone}
         customerName={props.customerName}
         deviceLabel={props.deviceLabel}
-        faultItems={faultItems.map((f) => ({ label: f.label, price: Number(prices[f.key]) || 0 }))}
+        faultItems={faultItems.map((f) => ({
+          label: faultLineLabelItalian(f.key, faultMap.get(f.key) ?? []),
+          price: Number(prices[f.key]) || 0,
+        }))}
         total={total}
       />
     </section>

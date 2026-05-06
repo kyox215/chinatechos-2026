@@ -109,6 +109,11 @@ function italianLabelForFaultKey(key: string, selected: string[]): string {
   return meta.category;
 }
 
+/** Italian fault line for customer-facing text (print, WhatsApp, etc.) */
+export function faultLineLabelItalian(key: string, selectedSubs: string[]): string {
+  return italianLabelForFaultKey(key, selectedSubs);
+}
+
 export function buildFaultPriceLinesItalian(
   faultMap: Map<string, string[]>,
   faultPrices: Record<string, string>,

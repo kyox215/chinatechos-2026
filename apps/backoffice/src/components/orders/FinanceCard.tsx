@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { faultLineLabelItalian } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, parseFaultsFromIssue } from "@/lib/domain/fault-types";
 import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
 import { SendQuoteModal } from "@/components/orders/SendQuoteModal";
@@ -197,7 +198,10 @@ export function FinanceCard(props: Props) {
           customerPhone={props.customerPhone}
           customerName={props.customerName}
           deviceLabel={props.deviceLabel}
-          faultItems={faultItems.map((f) => ({ label: f.label, price: Number(prices[f.key]) || 0 }))}
+          faultItems={faultItems.map((f) => ({
+            label: faultLineLabelItalian(f.key, faultMap.get(f.key) ?? []),
+            price: Number(prices[f.key]) || 0,
+          }))}
           total={quotation}
         />
       )}

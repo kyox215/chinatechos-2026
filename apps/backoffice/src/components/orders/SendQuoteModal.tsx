@@ -25,17 +25,23 @@ export function SendQuoteModal(props: Props) {
 
   if (!props.open) return null;
 
+  const salutation = props.customerName?.trim()
+    ? `Gentile ${props.customerName.trim()},`
+    : "Gentile Cliente,";
+
   const messageLines = [
-    `Buongiorno ${props.customerName ?? "Cliente"},`,
+    salutation,
     ``,
-    `Ecco il preventivo per la riparazione del suo ${props.deviceLabel}:`,
+    `Con la presente Le trasmettiamo il preventivo dettagliato per l'intervento sul Suo ${props.deviceLabel}:`,
     ``,
     ...props.faultItems.filter((f) => f.price > 0).map((f) => `• ${f.label}: €${f.price.toFixed(2)}`),
     ``,
-    `Totale: €${props.total.toFixed(2)}`,
+    `Importo totale: €${props.total.toFixed(2)}`,
     ``,
-    `Conferma se procedere con la riparazione.`,
-    `Grazie, ${STORE_NAME}`,
+    `La preghiamo cortesemente di comunicarci se intende procedere con la riparazione.`,
+    ``,
+    `Cordiali saluti,`,
+    STORE_NAME,
     STORE_ADDRESS,
   ];
   const messageText = messageLines.join("\n");
