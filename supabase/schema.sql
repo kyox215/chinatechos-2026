@@ -24,7 +24,9 @@ create table if not exists public.customers (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists customers_store_phone_idx on public.customers(store_id, phone_e164);
+-- One active row per store + E.164 phone (soft-deleted rows excluded).
+create unique index if not exists customers_store_phone_active_unique on public.customers(store_id, phone_e164)
+  where deleted_at is null;
 create index if not exists customers_store_name_idx on public.customers(store_id, name);
 
 create table if not exists public.devices (
