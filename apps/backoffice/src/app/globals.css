@@ -107,6 +107,51 @@ body {
   background: var(--muted);
 }
 
+/* Order detail page: subtle staggered entrance (scoped to .order-detail-page) */
+@keyframes order-detail-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.order-detail-page .order-detail-section {
+  animation: order-detail-fade-up 0.38s ease-out both;
+}
+
+.order-detail-page .order-detail-enter-d0 {
+  animation-delay: 0ms;
+}
+
+.order-detail-page .order-detail-enter-d1 {
+  animation-delay: 55ms;
+}
+
+.order-detail-page .order-detail-enter-d2 {
+  animation-delay: 110ms;
+}
+
+.order-detail-page .order-detail-enter-d3 {
+  animation-delay: 165ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-detail-page .order-detail-section {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Card depth within order detail only */
+.order-detail-page section.rounded-2xl.border.border-border.bg-surface {
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.05);
+}
+
 /* Customer order print (A5): only .order-print-sheet is visible when printing */
 @media print {
   @page {

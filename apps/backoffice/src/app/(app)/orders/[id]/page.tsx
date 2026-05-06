@@ -21,21 +21,28 @@ export default async function OrderDetailPage(props: {
 
   const isTerminal = order.status === "completed" || order.status === "cancelled";
 
+  const showCancelBanner = order.status === "cancelled" && Boolean(order.cancelReason);
+  const showPauseBanner = Boolean(order.pauseReason);
+  const hasBanner = showCancelBanner || showPauseBanner;
+
+  const gridAnim = hasBanner ? "order-detail-enter-d2" : "order-detail-enter-d1";
+  const timelineAnim = hasBanner ? "order-detail-enter-d3" : "order-detail-enter-d2";
+
   return (
-    <div className="space-y-4">
+    <div className="order-detail-page space-y-4">
       {/* Header */}
-      <div className="space-y-3">
+      <div className="order-detail-section order-detail-enter-d0 space-y-3">
         <Link
           href="/orders"
-          className="inline-flex rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-muted"
+          className="inline-flex rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-medium text-neutral-700 shadow-sm transition-colors hover:bg-muted"
         >
           ← 返回列表
         </Link>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="min-w-0 rounded-xl border border-primary/15 border-l-[3px] border-l-primary bg-primary-2/35 px-4 py-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-lg font-semibold tracking-tight">{order.publicNo}</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-neutral-900">{order.publicNo}</h1>
               <StatusPopover orderId={order.id} status={order.status} />
               <OrderDetailPrint
                 balanceAmount={order.balanceAmount}
@@ -54,27 +61,33 @@ export default async function OrderDetailPage(props: {
                 warrantyText={order.warrantyText}
               />
             </div>
-            <div className="mt-1 text-sm text-neutral-600">
-              {order.customer?.name ?? "未命名客户"} · {order.customer?.phoneE164 ?? "-"}
+            <div className="mt-2 text-sm">
+              <span className="font-medium text-neutral-800">{order.customer?.name ?? "未命名客户"}</span>
+              <span className="text-neutral-400"> · </span>
+              <span className="text-neutral-600">{order.customer?.phoneE164 ?? "-"}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Banners */}
-      {order.status === "cancelled" && order.cancelReason && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          取消原因：{order.cancelReason}
+      {hasBanner ? (
+        <div className={`order-detail-section order-detail-enter-d1 space-y-4`}>
+          {showCancelBanner ? (
+            <div className="rounded-xl border border-rose-200/90 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-sm">
+              取消原因：{order.cancelReason}
+            </div>
+          ) : null}
+          {showPauseBanner ? (
+            <div className="rounded-xl border border-amber-200/90 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+              暂停原因：{order.pauseReason}
+            </div>
+          ) : null}
         </div>
-      )}
-      {order.pauseReason && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          暂停原因：{order.pauseReason}
-        </div>
-      )}
+      ) : null}
 
       {/* Body */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className={`grid grid-cols-1 gap-4 xl:grid-cols-2 ${gridAnim} order-detail-section`}>
         {/* Left column - Order Info */}
         <OrderInfoCard
           orderId={order.id}
@@ -154,7 +167,7 @@ export default async function OrderDetailPage(props: {
       </div>
 
       {/* Timeline */}
-      <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
+      <section className={`rounded-2xl border border-border bg-surface p-3 md:p-4 ${timelineAnim} order-detail-section`}>
         <h2 className="mb-3 text-sm font-semibold text-neutral-900">操作时间线</h2>
         <OrderTimeline events={events} />
       </section>
@@ -166,7 +179,7 @@ function DateRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-1 text-sm">
       <span className="text-neutral-500">{label}</span>
-      <span className="text-neutral-900">{formatDateTime(value)}</span>
+      <span className="tabular-nums text-neutral-900">{formatDateTime(value)}</span>
     </div>
   );
 }
