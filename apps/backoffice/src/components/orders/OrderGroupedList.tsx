@@ -6,6 +6,7 @@ import { memo, useState } from "react";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
+import { SupplierPickerModal } from "@/components/orders/SupplierPickerModal";
 import type { OrderListItem } from "@/lib/data/orders";
 
 type StatusGroup = {
@@ -18,11 +19,15 @@ type StatusGroup = {
 };
 
 const DESKTOP_GRID =
-  "grid grid-cols-[32px_88px_124px_minmax(132px,1fr)_76px_104px_88px_72px_128px] gap-0";
+  "grid grid-cols-[32px_92px_118px_minmax(128px,1fr)_72px_122px_84px_72px_124px] gap-0";
 
 const NEW_STATUSES = new Set(["new"]);
 const PROCESSING_STATUSES = new Set(["diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
 const PICKUP_STATUSES = new Set(["repaired", "notified"]);
+
+function isTerminalOrderStatus(status: string) {
+  return status === "completed" || status === "cancelled";
+}
 
 function groupOrders(items: OrderListItem[]): StatusGroup[] {
   const newOrders: OrderListItem[] = [];
@@ -55,6 +60,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
+  const [supplierModalItem, setSupplierModalItem] = useState<OrderListItem | null>(null);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -109,6 +115,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
           key={group.key}
           group={group}
           selected={selected}
+          onOpenSupplierPicker={setSupplierModalItem}
           onToggleSelect={toggleSelect}
           onToggleGroup={() => toggleGroup(group.items)}
         />
@@ -150,6 +157,15 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
           </button>
         </div>
       )}
+
+      <SupplierPickerModal
+        initialSupplierId={supplierModalItem?.supplierId ?? null}
+        open={supplierModalItem != null}
+        orderId={supplierModalItem?.id ?? ""}
+        publicNo={supplierModalItem?.publicNo ?? ""}
+        onClose={() => setSupplierModalItem(null)}
+        onSaved={() => router.refresh()}
+      />
     </div>
   );
 }
@@ -159,11 +175,13 @@ const GroupSection = memo(function GroupSection({
   selected,
   onToggleSelect,
   onToggleGroup,
+  onOpenSupplierPicker,
 }: {
   group: StatusGroup;
   selected: Set<string>;
   onToggleSelect: (id: string) => void;
   onToggleGroup: () => void;
+  onOpenSupplierPicker: (item: OrderListItem) => void;
 }) {
   const [open, setOpen] = useState(group.defaultOpen);
   const allSelected = group.items.length > 0 && group.items.every((i) => selected.has(i.id));
@@ -220,20 +238,32 @@ const GroupSection = memo(function GroupSection({
                     <div className="text-sm text-neutral-900">
                       {(it.customerName ?? "未命名客户") + (it.deviceLabel ? ` · ${it.deviceLabel}` : "")}
                     </div>
-                    <div className="text-xs text-neutral-600">
-                      <span className="text-neutral-400">{it.issue || "-"}</span>
-                    </div>
+                    <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
                     <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
                       <div>电话：{it.customerPhone || "-"}</div>
                       <div>技师：{it.technicianName ?? "-"}</div>
                       <div>创建：{fmtDate(it.createdAt)}</div>
                       <div className="text-neutral-700">
-                        供应商：
-                        {it.supplierShortName ? (
-                          <SupplierBadge name={it.supplierShortName} color={it.supplierColor} size="sm" />
-                        ) : (
-                          "-"
-                        )}
+                        <button
+                          className={`inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted disabled:cursor-not-allowed disabled:opacity-60`}
+                          disabled={isTerminalOrderStatus(it.status)}
+                          title={
+                            isTerminalOrderStatus(it.status)
+                              ? "已完成或已取消的工单不可修改"
+                              : "点击选择供应商"
+                          }
+                          type="button"
+                          onClick={() => {
+                            if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it);
+                          }}
+                        >
+                          <span className="shrink-0">供应商：</span>
+                          {it.supplierShortName ? (
+                            <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
+                          ) : (
+                            <span className="text-neutral-400">-</span>
+                          )}
+                        </button>
                       </div>
                     </div>
                     <OrderListMoneyCell
@@ -258,8 +288,8 @@ const GroupSection = memo(function GroupSection({
           </div>
 
           <div className="hidden overflow-x-auto lg:block">
-            <div className="min-w-[980px]">
-              <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-1.5 text-xs font-semibold text-neutral-500`}>
+            <div className="min-w-[1000px]">
+              <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-neutral-500`}>
                 <div />
                 <div>状态</div>
                 <div>工单号</div>
@@ -271,12 +301,18 @@ const GroupSection = memo(function GroupSection({
                 <div className="text-right">操作</div>
               </div>
 
-              {group.items.map((it) => (
+              {group.items.map((it, rowIdx) => (
                 <div
                   key={it.id}
-                  className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-2 ${selected.has(it.id) ? "bg-indigo-50/50" : ""}`}
+                  className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-2.5 ${
+                    selected.has(it.id)
+                      ? "bg-indigo-50/50"
+                      : rowIdx % 2 === 1
+                        ? "bg-muted/15"
+                        : ""
+                  }`}
                 >
-                  <div className="pt-1">
+                  <div className="flex items-center pt-1">
                     <input
                       checked={selected.has(it.id)}
                       className="h-4 w-4 rounded border-neutral-300"
@@ -284,17 +320,19 @@ const GroupSection = memo(function GroupSection({
                       type="checkbox"
                     />
                   </div>
-                  <div className="pt-0.5"><StatusPopover orderId={it.id} status={it.status} /></div>
-                  <div className="pt-1 text-xs font-medium text-neutral-900">{it.publicNo}</div>
-                  <div className="min-w-0 pr-2 pt-1">
+                  <div className="flex items-start pt-1">
+                    <StatusPopover orderId={it.id} status={it.status} />
+                  </div>
+                  <div className="pt-1 text-xs font-medium leading-snug text-neutral-900">{it.publicNo}</div>
+                  <div className="min-w-0 space-y-0.5 pr-2 pt-1">
                     <div className="truncate text-sm font-medium text-neutral-900">
                       {it.customerName ?? "未命名客户"}
                       {it.deviceLabel ? <span className="font-normal text-neutral-500"> · {it.deviceLabel}</span> : null}
                     </div>
-                    <div className="truncate text-xs text-neutral-400">{it.issue || "-"}</div>
+                    <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
                   </div>
-                  <div className="pt-1 text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
-                  <div className="min-w-0 pt-0.5">
+                  <div className="whitespace-nowrap pt-1 text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
+                  <div className="min-w-0">
                     <OrderListMoneyCell
                       money={{
                         quotationAmount: it.quotationAmount,
@@ -304,16 +342,30 @@ const GroupSection = memo(function GroupSection({
                     />
                   </div>
                   <div className="flex min-w-0 items-start pt-1">
-                    {it.supplierShortName ? (
-                      <SupplierBadge name={it.supplierShortName} color={it.supplierColor} />
-                    ) : (
-                      <span className="text-xs text-neutral-400">-</span>
-                    )}
+                    <button
+                      className="inline-flex max-w-full min-h-[28px] items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isTerminalOrderStatus(it.status)}
+                      title={
+                        isTerminalOrderStatus(it.status)
+                          ? "已完成或已取消的工单不可修改"
+                          : "点击选择供应商"
+                      }
+                      type="button"
+                      onClick={() => {
+                        if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it);
+                      }}
+                    >
+                      {it.supplierShortName ? (
+                        <SupplierBadge color={it.supplierColor} name={it.supplierShortName} />
+                      ) : (
+                        <span className="text-xs text-neutral-400">-</span>
+                      )}
+                    </button>
                   </div>
                   <div className="truncate pt-1 text-xs text-neutral-500">{it.technicianName ?? "-"}</div>
-                  <div className="flex justify-end pt-1">
+                  <div className="flex items-center justify-end pt-1">
                     <Link
-                      className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium text-neutral-600 leading-7 hover:bg-muted"
+                      className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium leading-7 text-neutral-600 hover:bg-muted"
                       href={`/orders/${it.id}`}
                     >
                       详情

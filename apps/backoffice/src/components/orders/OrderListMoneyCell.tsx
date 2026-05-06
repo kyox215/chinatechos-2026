@@ -5,21 +5,23 @@ type Props = {
   money: OrderFinancialSnapshot;
 };
 
-/** Compact three-line money block for order list (matches DB field semantics). */
+function MoneyRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[1.625rem_1fr] items-baseline gap-x-2">
+      <span className="text-[10px] font-medium text-neutral-500">{label}</span>
+      <span className="text-[11px] tabular-nums text-right text-neutral-900">{value}</span>
+    </div>
+  );
+}
+
+/** Compact finance block: aligned columns + light container (matches DB semantics). */
 export function OrderListMoneyCell({ money }: Props) {
   return (
-    <div className="space-y-0.5 text-[11px] leading-tight tabular-nums text-neutral-800">
-      <div>
-        <span className="text-neutral-500">总金额 </span>
-        {formatOrderEUR(money.quotationAmount)}
-      </div>
-      <div>
-        <span className="text-neutral-500">定金 </span>
-        {formatOrderEUR(money.depositAmount)}
-      </div>
-      <div>
-        <span className="text-neutral-500">待收 </span>
-        {formatOrderEUR(money.balanceAmount)}
+    <div className="rounded-lg border border-border/60 bg-muted/35 px-2 py-1.5 dark:bg-muted/25">
+      <div className="space-y-0.5 leading-none">
+        <MoneyRow label="总" value={formatOrderEUR(money.quotationAmount)} />
+        <MoneyRow label="定" value={formatOrderEUR(money.depositAmount)} />
+        <MoneyRow label="收" value={formatOrderEUR(money.balanceAmount)} />
       </div>
     </div>
   );

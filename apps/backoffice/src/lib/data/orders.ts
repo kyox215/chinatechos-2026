@@ -18,6 +18,7 @@ export type OrderListItem = {
   isPaid: boolean;
   createdAt: string;
   technicianName: string | null;
+  supplierId: string | null;
   supplierShortName: string | null;
   supplierColor: string | null;
 };
@@ -156,6 +157,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       isPaid: row.is_paid ?? false,
       createdAt: row.created_at,
       technicianName: row.technician_name ?? null,
+      supplierId: row.supplier_id ?? null,
       supplierShortName: supplier?.short_name ?? null,
       supplierColor: supplier?.color ?? null,
     };
