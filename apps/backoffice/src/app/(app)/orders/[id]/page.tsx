@@ -25,16 +25,17 @@ export default async function OrderDetailPage(props: {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/orders"
-            className="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-muted"
-          >
-            ← 返回列表
-          </Link>
+      <div className="space-y-3">
+        <Link
+          href="/orders"
+          className="inline-flex rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-muted"
+        >
+          ← 返回列表
+        </Link>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-semibold tracking-tight">{order.publicNo}</h1>
               <OrderStatusBadge status={order.status} />
               <span className="rounded-lg border border-border bg-muted px-2 py-0.5 text-xs text-neutral-600">
@@ -45,26 +46,25 @@ export default async function OrderDetailPage(props: {
               {order.customer?.name ?? "未命名客户"} · {order.customer?.phoneE164 ?? "-"}
             </div>
           </div>
-        </div>
 
-        {/* Primary actions */}
-        {!isTerminal && actions.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {actions.map((action) => (
-              <OrderTransitionButton
-                key={action.toStatus}
-                confirmText={action.confirmText}
-                label={action.label}
-                orderId={order.id}
-                toStatus={action.toStatus}
-                variant={action.variant}
-                {...(action.toStatus === "cancelled"
-                  ? { reasonField: "cancelReason", reasonPrompt: "请输入取消原因" }
-                  : {})}
-              />
-            ))}
-          </div>
-        )}
+          {!isTerminal && actions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {actions.map((action) => (
+                <OrderTransitionButton
+                  key={action.toStatus}
+                  confirmText={action.confirmText}
+                  label={action.label}
+                  orderId={order.id}
+                  toStatus={action.toStatus}
+                  variant={action.variant}
+                  {...(action.toStatus === "cancelled"
+                    ? { reasonField: "cancelReason", reasonPrompt: "请输入取消原因" }
+                    : {})}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Banners */}
@@ -204,7 +204,7 @@ export default async function OrderDetailPage(props: {
 
 function DetailCard(props: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border bg-surface p-4">
+    <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
       <h2 className="mb-3 text-sm font-semibold text-neutral-900">{props.title}</h2>
       {props.children}
     </section>
