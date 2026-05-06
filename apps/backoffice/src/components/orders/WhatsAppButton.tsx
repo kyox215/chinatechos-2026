@@ -25,13 +25,12 @@ export function WhatsAppButton({
           customBody: `Buongiorno, la contatto da ChinaTech Roma riguardo il suo ordine di riparazione.`,
         }),
       });
-      const data = (await res.json()) as { waLink?: string; error?: string };
+      const data = (await res.json()) as { waLink?: string; messageLogId?: string; error?: string };
       if (!res.ok) throw new Error(data.error ?? "创建消息失败");
       if (data.waLink) {
         window.open(data.waLink, "_blank");
-        // Mark as opened
-        if (data.waLink) {
-          await fetch(`/api/message-logs/${(data as { messageLogId?: string }).messageLogId}/opened`, {
+        if (data.messageLogId) {
+          await fetch(`/api/message-logs/${data.messageLogId}/opened`, {
             method: "POST",
           });
         }

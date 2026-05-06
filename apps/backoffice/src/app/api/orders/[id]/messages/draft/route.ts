@@ -25,7 +25,7 @@ export async function POST(
     .from("repair_orders")
     .select(`
       id, public_no, quotation_amount,
-      customers:customer_id ( name, phone_e164 ),
+      customers:customer_id ( id, name, phone_e164 ),
       devices:device_id ( brand, model )
     `)
     .eq("id", params.id)
@@ -85,7 +85,7 @@ export async function POST(
     .insert({
       store_id: env.defaultStoreId,
       order_id: params.id,
-      customer_id: customer.phone_e164 ? undefined : null,
+      customer_id: customer.id ?? null,
       template_code: body.templateCode ?? null,
       message_body: messageBody,
       status: "draft",
