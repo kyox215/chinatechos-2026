@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,6 +27,15 @@ type Props = {
   warrantyText: string | null;
   pauseReason: string | null;
 };
+
+function InfoRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 gap-0.5 text-sm sm:grid-cols-[minmax(5.25rem,7rem)_1fr] sm:gap-x-3 sm:items-baseline">
+      <span className="shrink-0 text-neutral-500">{label}</span>
+      <div className="min-w-0 text-neutral-900">{children}</div>
+    </div>
+  );
+}
 
 const SUPPLIER_COLORS: Record<string, { bg: string; text: string }> = {
   red: { bg: "bg-red-100", text: "text-red-700" },
@@ -229,7 +239,11 @@ export function OrderInfoCard(props: Props) {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-neutral-900">工单信息</h2>
         {props.isEditable && (
-          <button className="text-xs text-indigo-600 hover:underline" onClick={() => setEditing(true)} type="button">
+          <button
+            className="ui-btn ui-btn-secondary h-8 min-h-[32px] px-3 text-xs font-medium"
+            onClick={() => setEditing(true)}
+            type="button"
+          >
             编辑
           </button>
         )}
@@ -238,51 +252,50 @@ export function OrderInfoCard(props: Props) {
       <div className="space-y-3">
         <div>
           <div className="mb-1 text-[11px] font-medium text-neutral-400">客户</div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-500">姓名</span>
-            {props.customer ? (
-              <Link href={`/customers/${props.customer.id}`} className="text-indigo-600 hover:underline">
-                {props.customer.name ?? "未命名客户"}
-              </Link>
-            ) : (
-              <span className="text-neutral-900">-</span>
-            )}
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-500">电话</span>
-            <span className="text-neutral-900">{props.customer?.phoneE164 ?? "-"}</span>
+          <div className="space-y-1.5">
+            <InfoRow label="姓名">
+              {props.customer ? (
+                <Link href={`/customers/${props.customer.id}`} className="text-indigo-600 hover:underline">
+                  {props.customer.name ?? "未命名客户"}
+                </Link>
+              ) : (
+                "-"
+              )}
+            </InfoRow>
+            <InfoRow label="电话">{props.customer?.phoneE164 ?? "-"}</InfoRow>
           </div>
         </div>
 
         <div className="border-t border-border pt-3">
           <div className="mb-1 text-[11px] font-medium text-neutral-400">设备</div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-            <div className="flex justify-between"><span className="text-neutral-500">品牌</span><span className="text-neutral-900">{props.device?.brand ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-neutral-500">型号</span><span className="text-neutral-900">{props.device?.model ?? "-"}</span></div>
-            <div className="col-span-2 flex justify-between"><span className="text-neutral-500">IMEI/SN</span><span className="text-neutral-900">{props.device?.serialOrImei ?? "-"}</span></div>
+          <div className="space-y-1.5">
+            <InfoRow label="品牌">{props.device?.brand ?? "-"}</InfoRow>
+            <InfoRow label="型号">{props.device?.model ?? "-"}</InfoRow>
+            <InfoRow label="IMEI/SN">{props.device?.serialOrImei ?? "-"}</InfoRow>
           </div>
         </div>
 
         <div className="border-t border-border pt-3">
           <div className="mb-1 text-[11px] font-medium text-neutral-400">故障 & 维修</div>
-          <div className="space-y-1 text-sm">
-            <div className="flex items-start justify-between">
-              <span className="text-neutral-500">问题描述</span>
-              <span className="max-w-[60%] text-right text-neutral-900">{props.issueDescription || "-"}</span>
+          <div className="space-y-2 text-sm">
+            <div className="space-y-1">
+              <div className="text-neutral-500">问题描述</div>
+              <p className="whitespace-pre-wrap break-words leading-relaxed text-neutral-900">{props.issueDescription || "-"}</p>
             </div>
-            <div className="flex justify-between"><span className="text-neutral-500">技师</span><span className="text-neutral-900">{props.technicianName ?? "-"}</span></div>
+            <InfoRow label="技师">{props.technicianName ?? "-"}</InfoRow>
             {props.supplier && (
-              <div className="flex items-center justify-between">
-                <span className="text-neutral-500">配件来源</span>
-                <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${supplierColor.bg} ${supplierColor.text}`}>
+              <InfoRow label="配件来源">
+                <span className={`inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ${supplierColor.bg} ${supplierColor.text}`}>
                   {props.supplier.shortName}
                 </span>
-              </div>
+              </InfoRow>
             )}
-            <div className="flex justify-between"><span className="text-neutral-500">标签/配件</span><span className="text-neutral-900">{props.internalTag ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-neutral-500">保修</span><span className="text-neutral-900">{props.warrantyText ?? "-"}</span></div>
+            <InfoRow label="标签/配件">{props.internalTag ?? "-"}</InfoRow>
+            <InfoRow label="保修">{props.warrantyText ?? "-"}</InfoRow>
             {props.pauseReason && (
-              <div className="flex justify-between"><span className="text-neutral-500">暂停原因</span><span className="font-medium text-rose-600">{props.pauseReason}</span></div>
+              <InfoRow label="暂停原因">
+                <span className="font-medium text-rose-600">{props.pauseReason}</span>
+              </InfoRow>
             )}
           </div>
         </div>

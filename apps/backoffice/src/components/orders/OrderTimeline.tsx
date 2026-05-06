@@ -20,6 +20,20 @@ const EVENT_ICONS: Record<string, ReactNode> = {
   fields_updated: <IconPencil />,
 };
 
+const EVENT_ICON_WRAP: Record<string, string> = {
+  created: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  status_changed: "border-blue-200 bg-blue-50 text-blue-700",
+  quote_sent: "border-violet-200 bg-violet-50 text-violet-700",
+  approval_marked: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  payment_updated: "border-amber-200 bg-amber-50 text-amber-800",
+  delivered: "border-teal-200 bg-teal-50 text-teal-800",
+  completed: "border-green-200 bg-green-50 text-green-800",
+  cancelled: "border-rose-200 bg-rose-50 text-rose-700",
+  message_opened: "border-slate-200 bg-slate-50 text-slate-700",
+  message_marked_sent: "border-slate-200 bg-slate-50 text-slate-700",
+  fields_updated: "border-orange-200 bg-orange-50 text-orange-800",
+};
+
 const EVENT_LABELS: Record<string, string> = {
   created: "工单创建",
   status_changed: "状态变更",
@@ -45,10 +59,14 @@ export function OrderTimeline({ events }: { events: OrderEvent[] }) {
         <div key={evt.id} className="relative flex gap-3 pb-4">
           {/* Vertical line */}
           {idx < events.length - 1 && (
-            <div className="absolute left-[11px] top-6 h-full w-px bg-border" />
+            <div className="absolute left-[15px] top-8 h-full w-px bg-border" />
           )}
           {/* Icon */}
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center text-neutral-500">
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border [&_svg]:h-3.5 [&_svg]:w-3.5 ${
+              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-2 text-neutral-600"
+            }`}
+          >
             {EVENT_ICONS[evt.eventType] ?? <span className="h-2 w-2 rounded-full bg-neutral-400" />}
           </div>
           {/* Content */}
@@ -57,7 +75,10 @@ export function OrderTimeline({ events }: { events: OrderEvent[] }) {
               <span className="text-sm font-medium text-neutral-900">
                 {EVENT_LABELS[evt.eventType] ?? evt.eventType}
               </span>
-              <span className="text-xs text-neutral-400">
+              <span
+                className="text-xs text-neutral-400"
+                title={formatAbsoluteTime(evt.createdAt)}
+              >
                 {formatRelativeTime(evt.createdAt)}
               </span>
             </div>
@@ -107,6 +128,21 @@ function formatPayload(type: string, payload: Record<string, unknown>): string {
   const entries = Object.entries(payload).filter(([, v]) => v != null);
   if (entries.length === 0) return "";
   return entries.map(([k, v]) => `${k}: ${v}`).join(", ");
+}
+
+function formatAbsoluteTime(isoStr: string): string {
+  try {
+    return new Intl.DateTimeFormat("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(new Date(isoStr));
+  } catch {
+    return isoStr;
+  }
 }
 
 function formatRelativeTime(isoStr: string): string {

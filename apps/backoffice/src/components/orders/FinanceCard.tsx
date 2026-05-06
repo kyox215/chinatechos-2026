@@ -53,6 +53,7 @@ export function FinanceCard(props: Props) {
   const quotation = itemTotal > 0 ? itemTotal : (props.quotationAmount ?? 0);
   const depositNum = Number(deposit) || 0;
   const remaining = Math.max(0, quotation - depositNum);
+  const receivableDisplay = props.balanceAmount ?? (remaining || null);
 
   async function handleSave() {
     setPending(true);
@@ -85,7 +86,7 @@ export function FinanceCard(props: Props) {
         <h2 className="text-sm font-semibold text-neutral-900">财务信息</h2>
         {props.isEditable && !editing && (
           <button
-            className="text-xs text-indigo-600 hover:underline"
+            className="ui-btn ui-btn-secondary h-8 min-h-[32px] px-3 text-xs font-medium"
             onClick={() => setEditing(true)}
             type="button"
           >
@@ -167,26 +168,54 @@ export function FinanceCard(props: Props) {
         </div>
       ) : (
         <div className="space-y-1.5">
+          {props.quotationAmount != null && (
+            <div className="mb-2 rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-xs">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4">
+                <span className="font-medium text-neutral-700">金额摘要</span>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-neutral-800">
+                  <span>
+                    合计{" "}
+                    <span className="tabular-nums font-semibold">{formatEUR(props.quotationAmount)}</span>
+                  </span>
+                  {receivableDisplay != null && Number(receivableDisplay) > 0 && !props.isPaid && (
+                    <span className="text-rose-700">
+                      待收{" "}
+                      <span className="tabular-nums font-semibold">{formatEUR(receivableDisplay)}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {faultItems.length > 0 && props.quotationAmount != null && (
             <div className="mb-2 space-y-1 border-b border-border pb-2">
               {faultItems.map((item) => (
-                <div key={item.key} className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-600">{item.label}</span>
-                  <span className="text-neutral-400">
+                <div key={item.key} className="grid grid-cols-[1fr_auto] gap-x-3 text-xs">
+                  <span className="min-w-0 text-neutral-600">{item.label}</span>
+                  <span className="shrink-0 tabular-nums text-neutral-700">
                     {prices[item.key] ? `€${Number(prices[item.key]).toFixed(2)}` : "-"}
                   </span>
                 </div>
               ))}
             </div>
           )}
-          <Row label="订单总金额" value={formatEUR(props.quotationAmount)} />
-          <Row label="定金" value={formatEUR(props.depositAmount)} />
-          <Row label="应收金额" value={formatEUR(props.balanceAmount ?? (remaining || null))} />
-          <Row
-            label="结清状态"
-            value={props.isPaid ? "已结清" : "未结清"}
-            highlight={!props.isPaid && props.quotationAmount != null}
-          />
+          <Row label="订单总金额" numeric value={formatEUR(props.quotationAmount)} />
+          <Row label="定金" numeric value={formatEUR(props.depositAmount)} />
+          <Row label="应收金额" numeric value={formatEUR(props.balanceAmount ?? (remaining || null))} />
+          <div className="grid grid-cols-1 gap-0.5 py-1 text-sm sm:grid-cols-[minmax(5.25rem,7rem)_1fr] sm:gap-x-3 sm:items-center">
+            <span className="text-neutral-500">结清状态</span>
+            <div className="flex sm:justify-end">
+              <span
+                className={
+                  props.isPaid
+                    ? "inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
+                    : "inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800"
+                }
+              >
+                {props.isPaid ? "已结清" : "未结清"}
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -209,11 +238,13 @@ export function FinanceCard(props: Props) {
   );
 }
 
-function Row(props: { label: string; value: string; highlight?: boolean }) {
+function Row(props: { label: string; value: string; numeric?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-1 text-sm">
+    <div className="grid grid-cols-1 gap-0.5 py-1 text-sm sm:grid-cols-[minmax(5.25rem,7rem)_1fr] sm:gap-x-3 sm:items-baseline">
       <span className="text-neutral-500">{props.label}</span>
-      <span className={props.highlight ? "font-medium text-rose-600" : "text-neutral-900"}>
+      <span
+        className={`min-w-0 text-neutral-900 sm:text-right ${props.numeric ? "tabular-nums" : ""}`}
+      >
         {props.value}
       </span>
     </div>
