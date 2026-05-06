@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
 import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
-import { StatusPopover } from "@/components/orders/StatusPopover";
 import { listOrders } from "@/lib/data/orders";
 
 type QueryValue = string | string[] | undefined;
@@ -55,58 +53,9 @@ export default async function OrdersPage(props: {
           technician={technician}
         />
 
-        <div className="space-y-3 lg:hidden">
-          {items.length === 0 ? (
-            <div className="rounded-xl border border-border px-3 py-8 text-sm text-neutral-500">
-              暂无工单数据（请先配置 Supabase 并写入 repair_orders）。
-            </div>
-          ) : (
-            items.map((it) => (
-              <article key={it.id} className="rounded-xl border border-border bg-surface-2 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <StatusPopover orderId={it.id} status={it.status} />
-                  <div className="text-sm font-semibold text-neutral-900">{it.publicNo}</div>
-                </div>
-                <div className="mt-2 text-sm text-neutral-900">
-                  {(it.customerName ?? "未命名客户") + (it.deviceLabel ? ` · ${it.deviceLabel}` : "")}
-                </div>
-                <div className="mt-1 text-xs text-neutral-600">{it.issue || "未填写问题描述"}</div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-neutral-600">
-                  <div>电话：{it.customerPhone || "-"}</div>
-                  <div>技师：{it.technicianName ?? "-"}</div>
-                  <div>创建：{formatDate(it.createdAt)}</div>
-                  <div className="font-semibold text-neutral-900">金额：{formatEUR(it.total)}</div>
-                </div>
-                <div className="mt-3">
-                  <Link
-                    className="inline-flex h-9 items-center rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
-                    href={`/orders/${it.id}`}
-                  >
-                    详情
-                  </Link>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-
-        <div className="hidden lg:block">
-          <OrderGroupedList items={items} />
-        </div>
+        <OrderGroupedList items={items} />
       </div>
     </div>
-  );
-}
-
-
-function formatEUR(value: number | null) {
-  if (value == null) return "-";
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("it-IT", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(
-    new Date(value),
   );
 }
 

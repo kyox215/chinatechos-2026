@@ -22,54 +22,116 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
     setScanning(false);
   }, []);
 
-
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
+      setError(null);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
         });
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         streamRef.current = stream;
-        if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
         setScanning(true);
-      } catch { if (!cancelled) setError("无法访问摄像头，请检查权限设置"); }
+      } catch {
+        if (!cancelled) setError("无法访问摄像头，请检查权限设置");
+      }
     })();
-    return () => { cancelled = true; stopCamera(); };
+    return () => {
+      cancelled = true;
+      stopCamera();
+    };
   }, [open, stopCamera]);
 
   useEffect(() => {
     if (!scanning || !videoRef.current) return;
 
-    if (!("BarcodeDetector" in window)) {
-      // Can't use BarcodeDetector - user must input manually
-      return;
+    let cancelled = false;
+    let handled = false;
+    /** Avoid NodeJS.Timeout vs DOM number clash under @types/node */
+    let intervalId: number | undefined;
+    let zxingStop: (() => void) | null = null;
+
+    const video = videoRef.current;
+
+    const complete = (raw: string) => {
+      if (cancelled || handled || !raw) return;
+      handled = true;
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+      zxingStop?.();
+      onScan(raw);
+      stopCamera();
+      onClose();
+    };
+
+    if ("BarcodeDetector" in window) {
+      const BD = (
+        window as unknown as {
+          BarcodeDetector: new (opts: { formats: string[] }) => {
+            detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
+          };
+        }
+      ).BarcodeDetector;
+      const detector = new BD({
+        formats: ["code_128", "code_39", "ean_13", "ean_8", "qr_code", "itf", "data_matrix"],
+      });
+
+      intervalId = window.setInterval(async () => {
+        if (cancelled || handled) return;
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0 && barcodes[0].rawValue) {
+            complete(barcodes[0].rawValue);
+          }
+        } catch {
+          // ignore frame decode errors
+        }
+      }, 300) as unknown as number;
+
+      return () => {
+        cancelled = true;
+        if (intervalId !== undefined) window.clearInterval(intervalId);
+      };
     }
 
-    const detector = new (window as unknown as { BarcodeDetector: new (opts: { formats: string[] }) => { detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]> } }).BarcodeDetector({
-      formats: ["code_128", "code_39", "ean_13", "ean_8", "qr_code"],
-    });
-
-    let active = true;
-    const interval = setInterval(async () => {
-      if (!active || !videoRef.current) return;
+    void (async () => {
       try {
-        const barcodes = await detector.detect(videoRef.current);
-        if (barcodes.length > 0 && barcodes[0].rawValue) {
-          active = false;
-          onScan(barcodes[0].rawValue);
-          stopCamera();
-          onClose();
-        }
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const reader = new BrowserMultiFormatReader();
+        const controls = await reader.decodeFromVideoElement(video, (result, _err, ctrl) => {
+          if (cancelled || handled || !result) return;
+          ctrl.stop();
+          complete(result.getText());
+        });
+        zxingStop = () => {
+          try {
+            controls.stop();
+          } catch {
+            // ignore
+          }
+        };
+        if (cancelled) zxingStop();
       } catch {
-        // detection frame error, ignore
+        if (!cancelled) setError("当前环境无法自动识别条码，请手动输入 IMEI");
       }
-    }, 300);
+    })();
 
-    return () => { active = false; clearInterval(interval); };
+    return () => {
+      cancelled = true;
+      zxingStop?.();
+    };
   }, [scanning, onScan, onClose, stopCamera]);
+
+  const nativeBarcode =
+    typeof window !== "undefined" && typeof (window as unknown as { BarcodeDetector?: unknown }).BarcodeDetector !== "undefined";
 
   if (!open) return null;
 
@@ -79,8 +141,11 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <span className="text-sm font-semibold text-neutral-900">扫描 IMEI / 条形码</span>
           <button
-            className="ui-btn ui-btn-secondary h-8 w-8 flex items-center justify-center text-xs"
-            onClick={() => { stopCamera(); onClose(); }}
+            className="ui-btn ui-btn-secondary flex h-8 w-8 items-center justify-center text-xs"
+            onClick={() => {
+              stopCamera();
+              onClose();
+            }}
             type="button"
           >
             ✕
@@ -88,24 +153,17 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
         </div>
 
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
-          <video
-            ref={videoRef}
-            className="h-full w-full object-cover"
-            muted
-            playsInline
-          />
+          <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
           {/* Scan overlay */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-16 w-[70%] rounded-lg border-2 border-white/70" />
           </div>
         </div>
 
-        {error && (
-          <div className="px-4 py-3 text-xs text-rose-600">{error}</div>
-        )}
+        {error && <div className="px-4 py-3 text-xs text-rose-600">{error}</div>}
 
         <div className="px-4 py-3 text-center text-xs text-neutral-500">
-          将条形码对准框内，自动识别
+          {nativeBarcode ? "将条形码对准框内，自动识别" : "兼容模式：请将条码对准取景框并保持清晰稳定"}
         </div>
       </div>
     </div>
