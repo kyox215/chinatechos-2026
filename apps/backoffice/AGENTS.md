@@ -103,6 +103,15 @@ Single Next.js 16.2.4 app at `apps/backoffice/` — serves both UI (App Router) 
 - 桌面端 (`lg:`): 表格视图 (`hidden lg:block`)，使用 `overflow-x-auto` 防溢出
 - 操作按钮在列表中精简为 1 个主操作 + "详情"链接
 
+### 图标规范
+
+**禁止使用 emoji 作为 UI 图标** (如 📱🔋⚡ 等)。所有图标使用 `src/components/icons.tsx` 中的 SVG 线条图标组件。
+
+- 图标统一为 `stroke` 风格 (outline)，`strokeWidth={1.5}`
+- 默认大小: 正文图标 `h-5 w-5`，小图标 `h-4 w-4`，时间线 `h-3.5 w-3.5`
+- 通过 `className` prop 自定义大小
+- 新增图标时必须添加到 `icons.tsx`，保持同一风格
+
 ### 组件约定
 
 1. Server Component 负责数据获取，Client Component 负责交互

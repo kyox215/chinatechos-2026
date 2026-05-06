@@ -1,17 +1,22 @@
+import type { ReactNode } from "react";
 import type { OrderEvent } from "@/lib/data/order-detail";
+import {
+  IconPlus, IconArrowPath, IconCheck, IconXMark,
+  IconPencil, IconEnvelope, IconFlag, IconTruck, IconMoney,
+} from "@/components/icons";
 
-const EVENT_ICONS: Record<string, string> = {
-  created: "🆕",
-  status_changed: "🔄",
-  quote_sent: "📤",
-  approval_marked: "✅",
-  payment_updated: "💰",
-  delivered: "📦",
-  completed: "🏁",
-  cancelled: "❌",
-  message_opened: "📬",
-  message_marked_sent: "📨",
-  fields_updated: "✏️",
+const EVENT_ICONS: Record<string, ReactNode> = {
+  created: <IconPlus />,
+  status_changed: <IconArrowPath />,
+  quote_sent: <IconEnvelope />,
+  approval_marked: <IconCheck />,
+  payment_updated: <IconMoney className="h-3.5 w-3.5" />,
+  delivered: <IconTruck />,
+  completed: <IconFlag />,
+  cancelled: <IconXMark />,
+  message_opened: <IconEnvelope />,
+  message_marked_sent: <IconEnvelope />,
+  fields_updated: <IconPencil />,
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -42,8 +47,8 @@ export function OrderTimeline({ events }: { events: OrderEvent[] }) {
             <div className="absolute left-[11px] top-6 h-full w-px bg-border" />
           )}
           {/* Icon */}
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center text-sm">
-            {EVENT_ICONS[evt.eventType] ?? "•"}
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center text-neutral-500">
+            {EVENT_ICONS[evt.eventType] ?? <span className="h-2 w-2 rounded-full bg-neutral-400" />}
           </div>
           {/* Content */}
           <div className="flex-1 min-w-0">

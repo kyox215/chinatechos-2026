@@ -1,23 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import {
+  IconScreen, IconBattery, IconCharging, IconCamera, IconWater,
+  IconMotherboard, IconSystem, IconBackcover, IconFaceId, IconSpeaker,
+  IconMic, IconButtons, IconUser, IconDevice, IconSearch, IconMoney, IconPackage,
+} from "@/components/icons";
 
 const BRANDS = ["Apple", "Samsung", "Huawei", "Xiaomi", "OnePlus", "OPPO", "vivo", "Google", "其他"];
 
-const FAULT_TYPES = [
-  { key: "screen", label: "屏幕", icon: "📱" },
-  { key: "battery", label: "电池", icon: "🔋" },
-  { key: "charging", label: "尾插", icon: "⚡" },
-  { key: "camera", label: "摄像头", icon: "📷" },
-  { key: "water", label: "进水", icon: "💧" },
-  { key: "motherboard", label: "主板", icon: "🔧" },
-  { key: "system", label: "系统", icon: "⚙️" },
-  { key: "backcover", label: "后盖", icon: "🔲" },
-  { key: "faceid", label: "面容/指纹", icon: "👤" },
-  { key: "speaker", label: "听筒/扬声器", icon: "🔊" },
-  { key: "mic", label: "麦克风", icon: "🎙️" },
-  { key: "buttons", label: "按键", icon: "⏸️" },
+const FAULT_TYPES: { key: string; label: string; icon: ReactNode }[] = [
+  { key: "screen", label: "屏幕", icon: <IconScreen /> },
+  { key: "battery", label: "电池", icon: <IconBattery /> },
+  { key: "charging", label: "尾插", icon: <IconCharging /> },
+  { key: "camera", label: "摄像头", icon: <IconCamera /> },
+  { key: "water", label: "进水", icon: <IconWater /> },
+  { key: "motherboard", label: "主板", icon: <IconMotherboard /> },
+  { key: "system", label: "系统", icon: <IconSystem /> },
+  { key: "backcover", label: "后盖", icon: <IconBackcover /> },
+  { key: "faceid", label: "面容/指纹", icon: <IconFaceId /> },
+  { key: "speaker", label: "听筒/扬声器", icon: <IconSpeaker /> },
+  { key: "mic", label: "麦克风", icon: <IconMic /> },
+  { key: "buttons", label: "按键", icon: <IconButtons /> },
 ];
 
 const ACCESSORY_OPTIONS = ["SIM卡", "手机壳", "包装盒", "充电头", "数据线", "耳机"];
@@ -131,7 +137,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {/* Col 1: Customer + Device */}
             <div className="space-y-4">
-              <SectionTitle icon="👤" title="客户信息" />
+              <SectionTitle icon={<IconUser />} title="客户信息" />
               <Lbl label="姓名" required>
                 <input className="ui-input w-full" onChange={(e) => setCustomerName(e.target.value)} placeholder="客户姓名" value={customerName} />
               </Lbl>
@@ -139,7 +145,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
                 <input className="ui-input w-full" onChange={(e) => setCustomerPhone(e.target.value)} placeholder="联系电话" value={customerPhone} />
               </Lbl>
 
-              <SectionTitle icon="📱" title="设备信息" />
+              <SectionTitle icon={<IconDevice />} title="设备信息" />
               <Lbl label="品牌" required>
                 <select className="ui-input w-full" onChange={(e) => setBrand(e.target.value)} value={brand}>
                   <option value="">选择品牌</option>
@@ -157,7 +163,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
 
             {/* Col 2: Fault diagnosis */}
             <div className="space-y-4">
-              <SectionTitle icon="🔍" title="故障诊断" />
+              <SectionTitle icon={<IconSearch />} title="故障诊断" />
               <div className="grid grid-cols-3 gap-2">
                 {FAULT_TYPES.map((f) => (
                   <button
@@ -170,7 +176,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
                     onClick={() => toggleFault(f.key)}
                     type="button"
                   >
-                    <span className="text-base">{f.icon}</span>
+                    {f.icon}
                     <span>{f.label}</span>
                   </button>
                 ))}
@@ -182,7 +188,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
 
             {/* Col 3: Finance & Service */}
             <div className="space-y-4">
-              <SectionTitle icon="💰" title="财务 & 服务" />
+              <SectionTitle icon={<IconMoney />} title="财务 & 服务" />
               <div className="grid grid-cols-2 gap-2">
                 <Lbl label="总价 (€)">
                   <input className="ui-input w-full" onChange={(e) => setQuotation(e.target.value)} placeholder="0" type="number" value={quotation} />
@@ -203,7 +209,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
                 </button>
               </div>
 
-              <SectionTitle icon="📦" title="留下的配件" />
+              <SectionTitle icon={<IconPackage />} title="留下的配件" />
               <div className="flex flex-wrap gap-2">
                 {ACCESSORY_OPTIONS.map((acc) => (
                   <button
@@ -244,8 +250,8 @@ export function CreateOrderModal({ open, onClose }: Props) {
   );
 }
 
-function SectionTitle({ icon, title }: { icon: string; title: string }) {
-  return <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900"><span>{icon}</span><span>{title}</span></div>;
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">{icon}<span>{title}</span></div>;
 }
 
 function Lbl({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {

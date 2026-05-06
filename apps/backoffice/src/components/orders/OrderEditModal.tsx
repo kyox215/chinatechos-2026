@@ -1,21 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import {
+  IconScreen, IconBattery, IconCharging, IconCamera, IconWater,
+  IconMotherboard, IconSystem, IconBackcover, IconFaceId, IconSpeaker,
+  IconMic, IconButtons, IconSearch, IconWrench, IconMoney,
+} from "@/components/icons";
 
-const FAULT_TYPES = [
-  { key: "screen", label: "屏幕", icon: "📱" },
-  { key: "battery", label: "电池", icon: "🔋" },
-  { key: "charging", label: "尾插", icon: "⚡" },
-  { key: "camera", label: "摄像头", icon: "📷" },
-  { key: "water", label: "进水", icon: "💧" },
-  { key: "motherboard", label: "主板", icon: "🔧" },
-  { key: "system", label: "系统", icon: "⚙️" },
-  { key: "backcover", label: "后盖", icon: "🔲" },
-  { key: "faceid", label: "面容/指纹", icon: "👤" },
-  { key: "speaker", label: "听筒/扬声器", icon: "🔊" },
-  { key: "mic", label: "麦克风", icon: "🎙️" },
-  { key: "buttons", label: "按键", icon: "⏸️" },
+const FAULT_TYPES: { key: string; label: string; icon: ReactNode }[] = [
+  { key: "screen", label: "屏幕", icon: <IconScreen /> },
+  { key: "battery", label: "电池", icon: <IconBattery /> },
+  { key: "charging", label: "尾插", icon: <IconCharging /> },
+  { key: "camera", label: "摄像头", icon: <IconCamera /> },
+  { key: "water", label: "进水", icon: <IconWater /> },
+  { key: "motherboard", label: "主板", icon: <IconMotherboard /> },
+  { key: "system", label: "系统", icon: <IconSystem /> },
+  { key: "backcover", label: "后盖", icon: <IconBackcover /> },
+  { key: "faceid", label: "面容/指纹", icon: <IconFaceId /> },
+  { key: "speaker", label: "听筒/扬声器", icon: <IconSpeaker /> },
+  { key: "mic", label: "麦克风", icon: <IconMic /> },
+  { key: "buttons", label: "按键", icon: <IconButtons /> },
 ];
 
 type Props = {
@@ -124,7 +130,7 @@ export function OrderEditModal(props: Props) {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {/* Col 1: Fault */}
             <div className="space-y-4">
-              <SectionTitle icon="🔍" title="故障诊断" />
+              <SectionTitle icon={<IconSearch />} title="故障诊断" />
               <div className="grid grid-cols-3 gap-2">
                 {FAULT_TYPES.map((f) => (
                   <button
@@ -137,7 +143,7 @@ export function OrderEditModal(props: Props) {
                     onClick={() => toggleFault(f.key)}
                     type="button"
                   >
-                    <span className="text-base">{f.icon}</span>
+                    {f.icon}
                     <span>{f.label}</span>
                   </button>
                 ))}
@@ -152,7 +158,7 @@ export function OrderEditModal(props: Props) {
 
             {/* Col 2: Repair */}
             <div className="space-y-4">
-              <SectionTitle icon="🔧" title="维修详情" />
+              <SectionTitle icon={<IconWrench />} title="维修详情" />
               <Lbl label="技术员"><input className="ui-input w-full" onChange={(e) => setTechnician(e.target.value)} placeholder="技师姓名" value={technician} /></Lbl>
               <Lbl label="内部标签 / 配件"><input className="ui-input w-full" onChange={(e) => setTag(e.target.value)} placeholder="如: SIM卡, 手机壳" value={tag} /></Lbl>
               <Lbl label="保修说明"><input className="ui-input w-full" onChange={(e) => setWarranty(e.target.value)} placeholder="如: 90天保修" value={warranty} /></Lbl>
@@ -161,7 +167,7 @@ export function OrderEditModal(props: Props) {
 
             {/* Col 3: Finance */}
             <div className="space-y-4">
-              <SectionTitle icon="💰" title="财务信息" />
+              <SectionTitle icon={<IconMoney />} title="财务信息" />
               <div className="grid grid-cols-2 gap-2">
                 <Lbl label="报价 (€)"><input className="ui-input w-full" onChange={(e) => setQuotation(e.target.value)} placeholder="0" type="number" value={quotation} /></Lbl>
                 <Lbl label="定金 (€)"><input className="ui-input w-full" onChange={(e) => setDeposit(e.target.value)} placeholder="0" type="number" value={deposit} /></Lbl>
@@ -185,8 +191,8 @@ export function OrderEditModal(props: Props) {
   );
 }
 
-function SectionTitle({ icon, title }: { icon: string; title: string }) {
-  return <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900"><span>{icon}</span><span>{title}</span></div>;
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">{icon}<span>{title}</span></div>;
 }
 
 function Lbl({ label, children }: { label: string; children: React.ReactNode }) {
