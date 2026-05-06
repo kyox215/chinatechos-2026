@@ -106,3 +106,31 @@ body {
 .ui-btn-secondary:hover {
   background: var(--muted);
 }
+
+/* Customer order print (A5): only .order-print-sheet is visible when printing */
+@media print {
+  @page {
+    size: A5;
+    margin: 12mm;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .order-print-sheet,
+  .order-print-sheet * {
+    visibility: visible !important;
+  }
+
+  .order-print-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

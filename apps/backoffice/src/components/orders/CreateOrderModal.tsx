@@ -9,8 +9,11 @@ import {
   OrderFormFaultSection,
   OrderFormServiceMeta,
 } from "@/components/orders/OrderFormFields";
+import { OrderPrintSheet } from "@/components/orders/OrderPrintSheet";
 import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
+import { buildIssueItalianFromFaults } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, buildIssueFromFaults } from "@/lib/domain/fault-types";
+import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 
 type Props = { open: boolean; onClose: () => void; initialPhone?: string; initialName?: string };
 
@@ -56,10 +59,50 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   const [scannerOpen, setScannerOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [printedPublicNo, setPrintedPublicNo] = useState<string | null>(null);
 
   const faultLines = useMemo(() => faultLinesFromMap(selectedFaults), [selectedFaults]);
   const orderTotal = Object.values(faultPrices).reduce((s, v) => s + (Number(v) || 0), 0);
   const receivable = Math.max(0, orderTotal - (Number(deposit) || 0));
+
+  const finalBrand = brand === "其他" ? customBrand.trim() : brand;
+
+  const printPayload: OrderPrintPayload = useMemo(() => {
+    const variant = printedPublicNo ? "saved" : "draft";
+    return {
+      variant,
+      publicNo: printedPublicNo,
+      printedAtIso: new Date().toISOString(),
+      customerName: customerName.trim() || null,
+      customerPhone: customerPhone.trim(),
+      brand: finalBrand || "—",
+      model: model.trim() || "—",
+      serialOrImei: serialOrImei.trim() || null,
+      issueSummaryIt: buildIssueItalianFromFaults(selectedFaults, faultNote),
+      diagnosisResult: null,
+      quotationAmount: orderTotal > 0 ? orderTotal : null,
+      depositAmount: deposit ? Number(deposit) : null,
+      balanceAmount: receivable > 0 ? receivable : null,
+      technicianName: technician.trim() || null,
+      warrantyTextCn: warranty,
+      internalTag: internalTag.trim() || null,
+    };
+  }, [
+    printedPublicNo,
+    customerName,
+    customerPhone,
+    finalBrand,
+    model,
+    serialOrImei,
+    selectedFaults,
+    faultNote,
+    orderTotal,
+    deposit,
+    receivable,
+    technician,
+    warranty,
+    internalTag,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -86,24 +129,45 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     return () => clearTimeout(timer);
   }, [customerPhone]);
 
-  async function handleSubmit() {
-    const finalBrand = brand === "其他" ? customBrand.trim() : brand;
+  useEffect(() => {
+    if (!printedPublicNo) return;
+    const id = requestAnimationFrame(() => {
+      window.print();
+      setPrintedPublicNo(null);
+      onClose();
+      router.refresh();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [printedPublicNo, onClose, router]);
+
+  function validateForSubmit(): boolean {
     if (!customerPhone.trim()) {
       setError("客户电话不能为空");
-      return;
+      return false;
     }
     if (!finalBrand) {
       setError("设备品牌不能为空");
-      return;
+      return false;
     }
     if (!model.trim()) {
       setError("设备型号不能为空");
-      return;
+      return false;
     }
     if (selectedFaults.size === 0 && !faultNote.trim()) {
       setError("请至少选择一个故障类型或填写故障描述");
-      return;
+      return false;
     }
+    return true;
+  }
+
+  function handleDraftPrint() {
+    setError(null);
+    if (!validateForSubmit()) return;
+    requestAnimationFrame(() => window.print());
+  }
+
+  async function handleSubmit() {
+    if (!validateForSubmit()) return;
 
     setPending(true);
     setError(null);
@@ -126,10 +190,14 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
           warrantyText: warranty,
         }),
       });
-      const data = (await res.json()) as { id?: string; error?: string };
+      const data = (await res.json()) as { id?: string; public_no?: string; error?: string };
       if (!res.ok) throw new Error(data.error ?? "创建失败");
-      onClose();
-      router.refresh();
+      const pub = data.public_no?.trim();
+      if (pub) setPrintedPublicNo(pub);
+      else {
+        onClose();
+        router.refresh();
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");
     } finally {
@@ -146,8 +214,10 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[85dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:max-h-[85vh] md:rounded-2xl xl:max-w-6xl">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <OrderPrintSheet payload={printPayload} />
+
+      <div className="flex max-h-[85dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:h-[min(720px,calc(100vh-5rem))] md:min-h-[640px] md:max-h-[85vh] md:rounded-2xl xl:max-w-6xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div>
             <h2 className="text-base font-semibold text-neutral-900">新建维修订单</h2>
             <p className="text-xs text-neutral-500">填写客户和设备信息以创建新工单</p>
@@ -157,40 +227,44 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-            <OrderFormCustomerDevice
-              brand={brand}
-              customBrand={customBrand}
-              customerName={customerName}
-              customerPhone={customerPhone}
-              customerSuggestions={customerSuggestions}
-              model={model}
-              phonePlaceholder="输入电话搜索客户"
-              scannerOpen={scannerOpen}
-              serialOrImei={serialOrImei}
-              setBrand={setBrand}
-              setCustomBrand={setCustomBrand}
-              setCustomerName={setCustomerName}
-              setCustomerPhone={setCustomerPhone}
-              setModel={setModel}
-              setScannerOpen={setScannerOpen}
-              setSerialOrImei={setSerialOrImei}
-              setShowSuggestions={setShowSuggestions}
-              showSuggestions={showSuggestions}
-            />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto px-4 py-4 xl:grid-cols-3 xl:gap-5 xl:overflow-hidden xl:p-4">
+            <div className="min-h-0 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+              <OrderFormCustomerDevice
+                brand={brand}
+                customBrand={customBrand}
+                customerName={customerName}
+                customerPhone={customerPhone}
+                customerSuggestions={customerSuggestions}
+                model={model}
+                phonePlaceholder="输入电话搜索客户"
+                scannerOpen={scannerOpen}
+                serialOrImei={serialOrImei}
+                setBrand={setBrand}
+                setCustomBrand={setCustomBrand}
+                setCustomerName={setCustomerName}
+                setCustomerPhone={setCustomerPhone}
+                setModel={setModel}
+                setScannerOpen={setScannerOpen}
+                setSerialOrImei={setSerialOrImei}
+                setShowSuggestions={setShowSuggestions}
+                showSuggestions={showSuggestions}
+              />
+            </div>
 
-            <OrderFormFaultSection
-              faultNote={faultNote}
-              faultNotePlaceholder="详细描述故障情况..."
-              setFaultNote={setFaultNote}
-              selectedFaults={selectedFaults}
-              setSelectedFaults={setSelectedFaults}
-              title="故障诊断"
-              titleIcon={<IconSearch className="h-4 w-4 text-neutral-600" />}
-            />
+            <div className="min-h-0 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:px-1">
+              <OrderFormFaultSection
+                faultNote={faultNote}
+                faultNotePlaceholder="详细描述故障情况..."
+                setFaultNote={setFaultNote}
+                selectedFaults={selectedFaults}
+                setSelectedFaults={setSelectedFaults}
+                title="故障诊断"
+                titleIcon={<IconSearch className="h-4 w-4 text-neutral-600" />}
+              />
+            </div>
 
-            <div className="space-y-4">
+            <div className="min-h-0 space-y-4 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pl-1">
               <SectionTitle icon={<IconMoney className="h-4 w-4 text-neutral-600" />} title="报价 & 服务" />
               <FaultPriceLineInputs
                 lines={faultLines}
@@ -224,9 +298,12 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3">
           <div className="min-w-0 flex-1">{error && <span className="text-xs text-rose-600">{error}</span>}</div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <button className="ui-btn ui-btn-secondary h-10 px-4 md:h-9" onClick={handleDraftPrint} type="button">
+              打印草稿
+            </button>
             <button className="ui-btn ui-btn-secondary h-10 px-4 md:h-9" onClick={onClose} type="button">
               取消
             </button>

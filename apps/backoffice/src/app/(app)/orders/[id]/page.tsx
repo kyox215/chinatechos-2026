@@ -6,6 +6,7 @@ import { NotifyCustomerButton } from "@/components/orders/NotifyCustomerButton";
 import { OrderInfoCard } from "@/components/orders/OrderInfoCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { StatusPopover } from "@/components/orders/StatusPopover";
+import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
 
@@ -36,6 +37,22 @@ export default async function OrderDetailPage(props: {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-semibold tracking-tight">{order.publicNo}</h1>
               <StatusPopover orderId={order.id} status={order.status} />
+              <OrderDetailPrint
+                balanceAmount={order.balanceAmount}
+                brand={order.device?.brand ?? "—"}
+                customerName={order.customer?.name ?? null}
+                customerPhone={order.customer?.phoneE164 ?? "—"}
+                depositAmount={order.depositAmount}
+                diagnosisResult={order.diagnosisResult}
+                internalTag={order.internalTag}
+                issueDescription={order.issueDescription}
+                model={order.device?.model ?? "—"}
+                publicNo={order.publicNo}
+                quotationAmount={order.quotationAmount}
+                serialOrImei={order.device?.serialOrImei ?? null}
+                technicianName={order.technicianName}
+                warrantyText={order.warrantyText}
+              />
             </div>
             <div className="mt-1 text-sm text-neutral-600">
               {order.customer?.name ?? "未命名客户"} · {order.customer?.phoneE164 ?? "-"}

@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FAULT_TYPES } from "@/lib/domain/fault-types";
 import type { FaultType } from "@/lib/domain/fault-types";
 
@@ -98,23 +99,145 @@ const FaultButton = memo(function FaultButton({
   onClosePopover: () => void;
   onRemove: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const hasSubs = fault.subTypes && fault.subTypes.length > 0;
   const subCount = selectedSubs.filter((k) => k !== "_self").length;
+
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!popoverOpen || !hasSubs || !wrapRef.current) {
+      setPanelPos(null);
+      return;
+    }
+
+    function updatePosition() {
+      const el = wrapRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const panelWidth = 192;
+      const margin = 8;
+      let left = r.left;
+      left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin));
+
+      const spaceBelow = window.innerHeight - r.bottom - margin;
+      const spaceAbove = r.top - margin;
+      const maxPreferred = Math.min(320, window.innerHeight * 0.45);
+      let top = r.bottom + 4;
+      let maxHeight = Math.min(maxPreferred, spaceBelow);
+
+      if (spaceBelow < 160 && spaceAbove > spaceBelow) {
+        const approxHeight = Math.min(maxPreferred, spaceAbove - 4);
+        top = r.top - approxHeight - 4;
+        maxHeight = approxHeight;
+      }
+
+      if (top + maxHeight > window.innerHeight - margin) {
+        maxHeight = Math.max(120, window.innerHeight - margin - top);
+      }
+      if (top < margin) {
+        top = margin;
+        maxHeight = Math.min(maxHeight, Math.max(120, r.top - margin - 4));
+      }
+
+      setPanelPos({ top, left, maxHeight: Math.max(120, maxHeight) });
+    }
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [popoverOpen, hasSubs]);
 
   useEffect(() => {
     if (!popoverOpen) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClosePopover();
-      }
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      onClosePopover();
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [popoverOpen, onClosePopover]);
 
+  const panelContent =
+    popoverOpen && hasSubs && panelPos ? (
+      <div
+        ref={panelRef}
+        className="fixed z-[100] w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg"
+        style={{
+          top: panelPos.top,
+          left: panelPos.left,
+          maxHeight: panelPos.maxHeight,
+          overflowY: "auto",
+        }}
+      >
+        <button
+          className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
+            selectedSubs.includes("_self") ? "bg-primary-2 text-primary" : "text-neutral-500 hover:bg-muted"
+          }`}
+          onClick={() => onSubToggle("_self")}
+          type="button"
+        >
+          <span
+            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+              selectedSubs.includes("_self") ? "border-primary bg-primary text-white" : "border-neutral-300"
+            }`}
+          >
+            {selectedSubs.includes("_self") && (
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            )}
+          </span>
+          <span>不细分</span>
+        </button>
+        <div className="my-1 border-t border-border" />
+        {fault.subTypes!.map((sub) => {
+          const checked = selectedSubs.includes(sub.key);
+          return (
+            <button
+              key={sub.key}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
+                checked ? "bg-primary-2 text-primary" : "text-neutral-700 hover:bg-muted"
+              }`}
+              onClick={() => onSubToggle(sub.key)}
+              type="button"
+            >
+              <span
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                  checked ? "border-primary bg-primary text-white" : "border-neutral-300"
+                }`}
+              >
+                {checked && (
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+              </span>
+              <span>{sub.label}</span>
+            </button>
+          );
+        })}
+        <div className="mt-1 border-t border-border pt-1">
+          <button
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-rose-600 hover:bg-rose-50"
+            onClick={onRemove}
+            type="button"
+          >
+            取消选择
+          </button>
+        </div>
+      </div>
+    ) : null;
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={wrapRef} className="relative">
       <button
         className={`flex min-h-[36px] w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
           active
@@ -138,63 +261,7 @@ const FaultButton = memo(function FaultButton({
         )}
       </button>
 
-      {popoverOpen && hasSubs && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
-          <button
-            className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
-              selectedSubs.includes("_self") ? "bg-primary-2 text-primary" : "text-neutral-500 hover:bg-muted"
-            }`}
-            onClick={() => onSubToggle("_self")}
-            type="button"
-          >
-            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-              selectedSubs.includes("_self") ? "border-primary bg-primary text-white" : "border-neutral-300"
-            }`}>
-              {selectedSubs.includes("_self") && (
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              )}
-            </span>
-            <span>不细分</span>
-          </button>
-          <div className="my-1 border-t border-border" />
-          {fault.subTypes!.map((sub) => {
-            const checked = selectedSubs.includes(sub.key);
-            return (
-              <button
-                key={sub.key}
-                className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
-                  checked ? "bg-primary-2 text-primary" : "text-neutral-700 hover:bg-muted"
-                }`}
-                onClick={() => onSubToggle(sub.key)}
-                type="button"
-              >
-                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                  checked ? "border-primary bg-primary text-white" : "border-neutral-300"
-                }`}>
-                  {checked && (
-                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  )}
-                </span>
-                <span>{sub.label}</span>
-              </button>
-            );
-          })}
-          <div className="mt-1 border-t border-border pt-1">
-            <button
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-rose-600 hover:bg-rose-50"
-              onClick={onRemove}
-              type="button"
-            >
-              取消选择
-            </button>
-          </div>
-        </div>
-      )}
+      {typeof document !== "undefined" && panelContent ? createPortal(panelContent, document.body) : null}
     </div>
   );
 });
-
