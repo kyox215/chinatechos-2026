@@ -3,7 +3,7 @@ import { writeOrderEvent } from "@/lib/data/order-events";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const EDITABLE_FIELDS = [
+const ORDER_FIELDS = [
   "diagnosis_result",
   "quotation_amount",
   "deposit_amount",
@@ -31,7 +31,7 @@ export async function PATCH(
 
   const current = await supabase
     .from("repair_orders")
-    .select("id, status")
+    .select("id, status, customer_id, device_id")
     .eq("id", params.id)
     .eq("store_id", storeId)
     .is("deleted_at", null)
@@ -46,37 +46,75 @@ export async function PATCH(
   }
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const updatedFields: string[] = [];
 
-  for (const field of EDITABLE_FIELDS) {
+  for (const field of ORDER_FIELDS) {
     if (field in body) {
       patch[field] = body[field] ?? null;
+      updatedFields.push(field);
     }
   }
 
-  if (Object.keys(patch).length <= 1) {
+  if (body.customer_name !== undefined || body.customer_phone !== undefined) {
+    const customerPhone = body.customer_phone ? String(body.customer_phone).trim() : null;
+    const customerName = body.customer_name ? String(body.customer_name).trim() : null;
+
+    if (customerPhone && current.data.customer_id) {
+      await supabase
+        .from("customers")
+        .update({
+          name: customerName,
+          phone_e164: customerPhone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", current.data.customer_id);
+      updatedFields.push("customer");
+    }
+  }
+
+  if (body.brand !== undefined || body.model !== undefined || body.serial_or_imei !== undefined) {
+    if (current.data.device_id) {
+      const devicePatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (body.brand !== undefined) devicePatch.brand = String(body.brand ?? "").trim();
+      if (body.model !== undefined) devicePatch.model = String(body.model ?? "").trim();
+      if (body.serial_or_imei !== undefined) devicePatch.serial_or_imei = body.serial_or_imei ? String(body.serial_or_imei).trim() : null;
+
+      await supabase
+        .from("devices")
+        .update(devicePatch)
+        .eq("id", current.data.device_id);
+      updatedFields.push("device");
+    }
+  }
+
+  if (Object.keys(patch).length <= 1 && updatedFields.length === 0) {
     return NextResponse.json({ error: "没有可更新的字段" }, { status: 400 });
   }
 
-  const updateRes = await supabase
-    .from("repair_orders")
-    .update(patch)
-    .eq("id", params.id)
-    .eq("store_id", storeId)
-    .is("deleted_at", null)
-    .select("id, status")
-    .single();
+  if (Object.keys(patch).length > 1) {
+    const updateRes = await supabase
+      .from("repair_orders")
+      .update(patch)
+      .eq("id", params.id)
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .select("id, status")
+      .single();
 
-  if (updateRes.error) {
-    return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
+    if (updateRes.error) {
+      return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
+    }
   }
 
-  await writeOrderEvent({
-    storeId,
-    orderId: params.id,
-    eventType: "fields_updated",
-    payload: { fields: Object.keys(patch).filter((k) => k !== "updated_at") },
-    operatorName: String(body.operatorName ?? "frontdesk"),
-  });
+  if (updatedFields.length > 0) {
+    await writeOrderEvent({
+      storeId,
+      orderId: params.id,
+      eventType: "fields_updated",
+      payload: { fields: updatedFields },
+      operatorName: String(body.operatorName ?? "frontdesk"),
+    });
+  }
 
   return NextResponse.json({ ok: true, id: params.id });
 }

@@ -13,29 +13,49 @@ export function FaultSelector({ selected, onChange }: Props) {
   const [openPopover, setOpenPopover] = useState<string | null>(null);
 
   function handleMainClick(ft: FaultType) {
-    if (!ft.subTypes || ft.subTypes.length === 0) {
-      const next = new Map(selected);
-      if (next.has(ft.key)) next.delete(ft.key);
-      else next.set(ft.key, ["_self"]);
-      onChange(next);
+    const next = new Map(selected);
+    if (next.has(ft.key)) {
+      if (openPopover === ft.key) {
+        setOpenPopover(null);
+      } else if (ft.subTypes && ft.subTypes.length > 0) {
+        setOpenPopover(ft.key);
+      } else {
+        next.delete(ft.key);
+        onChange(next);
+      }
     } else {
-      setOpenPopover(openPopover === ft.key ? null : ft.key);
+      next.set(ft.key, ["_self"]);
+      onChange(next);
+      if (ft.subTypes && ft.subTypes.length > 0) {
+        setOpenPopover(ft.key);
+      }
     }
   }
 
   function handleSubToggle(mainKey: string, subKey: string) {
     const next = new Map(selected);
     const current = next.get(mainKey) ?? [];
-    const filtered = current.filter((k) => k !== "_self");
 
-    if (filtered.includes(subKey)) {
-      const updated = filtered.filter((k) => k !== subKey);
-      if (updated.length === 0) next.delete(mainKey);
-      else next.set(mainKey, updated);
+    if (subKey === "_self") {
+      next.set(mainKey, ["_self"]);
     } else {
-      next.set(mainKey, [...filtered, subKey]);
+      const filtered = current.filter((k) => k !== "_self");
+      if (filtered.includes(subKey)) {
+        const updated = filtered.filter((k) => k !== subKey);
+        if (updated.length === 0) next.set(mainKey, ["_self"]);
+        else next.set(mainKey, updated);
+      } else {
+        next.set(mainKey, [...filtered.filter((k) => k !== subKey), subKey]);
+      }
     }
     onChange(next);
+  }
+
+  function handleRemove(mainKey: string) {
+    const next = new Map(selected);
+    next.delete(mainKey);
+    onChange(next);
+    setOpenPopover(null);
   }
 
   const isActive = (key: string) => selected.has(key) && (selected.get(key)?.length ?? 0) > 0;
@@ -52,6 +72,7 @@ export function FaultSelector({ selected, onChange }: Props) {
           onMainClick={() => handleMainClick(ft)}
           onSubToggle={(subKey) => handleSubToggle(ft.key, subKey)}
           onClosePopover={() => setOpenPopover(null)}
+          onRemove={() => handleRemove(ft.key)}
         />
       ))}
     </div>
@@ -66,6 +87,7 @@ function FaultButton({
   onMainClick,
   onSubToggle,
   onClosePopover,
+  onRemove,
 }: {
   fault: FaultType;
   active: boolean;
@@ -74,6 +96,7 @@ function FaultButton({
   onMainClick: () => void;
   onSubToggle: (subKey: string) => void;
   onClosePopover: () => void;
+  onRemove: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const hasSubs = fault.subTypes && fault.subTypes.length > 0;
@@ -93,7 +116,7 @@ function FaultButton({
   return (
     <div ref={ref} className="relative">
       <button
-        className={`flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
+        className={`flex min-h-[36px] w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
           active
             ? "border-primary bg-primary-2 text-primary"
             : "border-border bg-surface-2 text-neutral-600 hover:bg-muted"
@@ -101,8 +124,8 @@ function FaultButton({
         onClick={onMainClick}
         type="button"
       >
-        <span className="shrink-0">{fault.icon}</span>
-        <span className="text-xs leading-tight">{fault.label}</span>
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center">{fault.icon}</span>
+        <span className="truncate text-xs leading-tight">{fault.label}</span>
         {hasSubs && subCount > 0 && (
           <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
             {subCount}
@@ -117,6 +140,25 @@ function FaultButton({
 
       {popoverOpen && hasSubs && (
         <div className="absolute left-0 top-full z-30 mt-1 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
+          <button
+            className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
+              selectedSubs.includes("_self") ? "bg-primary-2 text-primary" : "text-neutral-500 hover:bg-muted"
+            }`}
+            onClick={() => onSubToggle("_self")}
+            type="button"
+          >
+            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+              selectedSubs.includes("_self") ? "border-primary bg-primary text-white" : "border-neutral-300"
+            }`}>
+              {selectedSubs.includes("_self") && (
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
+            </span>
+            <span>不细分</span>
+          </button>
+          <div className="my-1 border-t border-border" />
           {fault.subTypes!.map((sub) => {
             const checked = selectedSubs.includes(sub.key);
             return (
@@ -141,6 +183,15 @@ function FaultButton({
               </button>
             );
           })}
+          <div className="mt-1 border-t border-border pt-1">
+            <button
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-rose-600 hover:bg-rose-50"
+              onClick={onRemove}
+              type="button"
+            >
+              取消选择
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -14,6 +14,7 @@ export async function PATCH(
 
   const params = await context.params;
   const body = (await request.json()) as {
+    quotationAmount?: number | null;
     depositAmount?: number | null;
     balanceAmount?: number | null;
     isPaid?: boolean;
@@ -40,12 +41,21 @@ export async function PATCH(
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
+  if (body.quotationAmount !== undefined) {
+    patch.quotation_amount = body.quotationAmount;
+  }
   if (body.depositAmount !== undefined) {
     patch.deposit_amount = body.depositAmount;
   }
-  if (body.balanceAmount !== undefined) {
-    patch.balance_amount = body.balanceAmount;
-  }
+
+  const finalQuotation = body.quotationAmount !== undefined
+    ? (body.quotationAmount ?? 0)
+    : (current.data.quotation_amount ?? 0);
+  const finalDeposit = body.depositAmount !== undefined
+    ? (body.depositAmount ?? 0)
+    : (current.data.deposit_amount ?? 0);
+  patch.balance_amount = Math.max(0, finalQuotation - finalDeposit);
+
   if (body.isPaid !== undefined) {
     patch.is_paid = body.isPaid;
   }

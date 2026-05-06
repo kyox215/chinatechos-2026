@@ -4,7 +4,7 @@ import { generatePublicNo } from "@/lib/domain/public-no";
 import { writeOrderEvent } from "@/lib/data/order-events";
 
 export type CreateOrderInput = {
-  orderType: "quick_repair" | "dropoff_repair";
+  orderType?: "quick_repair" | "dropoff_repair";
   customerPhone: string;
   customerName?: string;
   brand: string;
@@ -110,7 +110,7 @@ export async function createOrder(input: CreateOrderInput) {
     .insert({
       store_id: storeId,
       public_no: publicNo,
-      order_type: input.orderType,
+      order_type: input.orderType ?? "dropoff_repair",
       status: "new",
       customer_id: customerId,
       device_id: deviceId,

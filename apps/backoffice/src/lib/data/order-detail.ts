@@ -37,6 +37,12 @@ export type OrderDetail = {
     model: string;
     serialOrImei: string | null;
   } | null;
+  supplier: {
+    id: string;
+    name: string;
+    shortName: string;
+    color: string;
+  } | null;
 };
 
 export type OrderEvent = {
@@ -79,7 +85,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       created_at,
       updated_at,
       customers:customer_id ( id, name, phone_e164, phone_raw ),
-      devices:device_id ( id, brand, model, serial_or_imei )
+      devices:device_id ( id, brand, model, serial_or_imei ),
+      suppliers:supplier_id ( id, name, short_name, color )
     `)
     .eq("id", id)
     .eq("store_id", storeId)
@@ -90,6 +97,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
 
   const customer = Array.isArray(data.customers) ? data.customers[0] : data.customers;
   const device = Array.isArray(data.devices) ? data.devices[0] : data.devices;
+  const supplier = Array.isArray(data.suppliers) ? data.suppliers[0] : data.suppliers;
 
   return {
     id: data.id,
@@ -128,6 +136,14 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
           brand: device.brand,
           model: device.model,
           serialOrImei: device.serial_or_imei,
+        }
+      : null,
+    supplier: supplier
+      ? {
+          id: supplier.id,
+          name: supplier.name,
+          shortName: supplier.short_name,
+          color: supplier.color,
         }
       : null,
   };

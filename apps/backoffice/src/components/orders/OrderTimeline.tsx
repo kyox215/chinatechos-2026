@@ -4,6 +4,7 @@ import {
   IconPlus, IconArrowPath, IconCheck, IconXMark,
   IconPencil, IconEnvelope, IconFlag, IconTruck, IconMoney,
 } from "@/components/icons";
+import { getOrderStatusPresentation } from "@/lib/order-status";
 
 const EVENT_ICONS: Record<string, ReactNode> = {
   created: <IconPlus />,
@@ -79,7 +80,9 @@ function formatPayload(type: string, payload: Record<string, unknown>): string {
   if (type === "status_changed") {
     const from = String(payload.fromStatus ?? "");
     const to = String(payload.toStatus ?? "");
-    let text = `${from} → ${to}`;
+    const fromLabel = getOrderStatusPresentation(from).label;
+    const toLabel = getOrderStatusPresentation(to).label;
+    let text = `${fromLabel} → ${toLabel}`;
     if (payload.cancelReason) text += ` (原因: ${payload.cancelReason})`;
     return text;
   }

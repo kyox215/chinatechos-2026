@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     body = Object.fromEntries(formData.entries());
   }
 
-  const orderType = String(body.orderType ?? "");
+  const orderType = String(body.orderType || "dropoff_repair");
   const customerPhone = String(body.customerPhone ?? "");
   const customerName = String(body.customerName ?? "");
   const brand = String(body.brand ?? "");
@@ -23,10 +23,6 @@ export async function POST(request: NextRequest) {
   const depositAmount = body.depositAmount != null ? Number(body.depositAmount) : undefined;
   const technicianName = String(body.technicianName ?? "");
   const internalTag = String(body.internalTag ?? "");
-
-  if (!orderType || !["quick_repair", "dropoff_repair"].includes(orderType)) {
-    return NextResponse.json({ error: "orderType 必须为 quick_repair 或 dropoff_repair" }, { status: 400 });
-  }
   if (!customerPhone.trim()) {
     return NextResponse.json({ error: "客户电话不能为空" }, { status: 400 });
   }

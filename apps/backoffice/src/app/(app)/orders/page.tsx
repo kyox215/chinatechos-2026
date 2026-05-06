@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
-import { OrderTransitionButton } from "@/components/OrderTransitionButton";
-import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
+import { StatusPopover } from "@/components/orders/StatusPopover";
 import { listOrders } from "@/lib/data/orders";
-import { getNextActions } from "@/lib/domain/order-status";
 
 type QueryValue = string | string[] | undefined;
 
@@ -66,7 +64,7 @@ export default async function OrdersPage(props: {
             items.map((it) => (
               <article key={it.id} className="rounded-xl border border-border bg-surface-2 p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <OrderStatusBadge status={it.status} />
+                  <StatusPopover orderId={it.id} status={it.status} />
                   <div className="text-sm font-semibold text-neutral-900">{it.publicNo}</div>
                 </div>
                 <div className="mt-2 text-sm text-neutral-900">
@@ -79,14 +77,13 @@ export default async function OrdersPage(props: {
                   <div>创建：{formatDate(it.createdAt)}</div>
                   <div className="font-semibold text-neutral-900">金额：{formatEUR(it.total)}</div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3">
                   <Link
-                    className="h-9 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted leading-9"
+                    className="inline-flex h-9 items-center rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
                     href={`/orders/${it.id}`}
                   >
                     详情
                   </Link>
-                  <OrderActions it={it} />
                 </div>
               </article>
             ))
@@ -101,32 +98,6 @@ export default async function OrdersPage(props: {
   );
 }
 
-function OrderActions(props: {
-  it: {
-    id: string;
-    publicNo: string;
-    status: string;
-    orderType: string;
-  };
-}) {
-  const { primary } = getNextActions(props.it.status);
-  if (primary.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {primary.map((action) => (
-        <OrderTransitionButton
-          key={action.toStatus}
-          confirmText={action.confirmText}
-          label={action.label}
-          orderId={props.it.id}
-          toStatus={action.toStatus}
-          variant={action.variant}
-        />
-      ))}
-    </div>
-  );
-}
 
 function formatEUR(value: number | null) {
   if (value == null) return "-";

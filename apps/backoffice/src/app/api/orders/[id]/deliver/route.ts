@@ -29,8 +29,8 @@ export async function POST(
     return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
   }
 
-  if (current.data.status !== "waiting_pickup") {
-    return NextResponse.json({ error: "仅在待取件状态下可标记交付" }, { status: 400 });
+  if (current.data.status !== "notified") {
+    return NextResponse.json({ error: "仅在已通知状态下可标记交付" }, { status: 400 });
   }
 
   if (current.data.delivered_at) {
@@ -40,11 +40,11 @@ export async function POST(
   const now = new Date().toISOString();
   const updateRes = await supabase
     .from("repair_orders")
-    .update({ delivered_at: now, updated_at: now })
+    .update({ delivered_at: now, completed_at: now, status: "completed", updated_at: now })
     .eq("id", params.id)
     .eq("store_id", storeId)
     .is("deleted_at", null)
-    .select("id, delivered_at")
+    .select("id, delivered_at, status")
     .single();
 
   if (updateRes.error) {
@@ -56,6 +56,14 @@ export async function POST(
     orderId: params.id,
     eventType: "delivered",
     payload: { deliveredAt: now },
+    operatorName: body.operatorName ?? "frontdesk",
+  });
+
+  await writeOrderEvent({
+    storeId: storeId,
+    orderId: params.id,
+    eventType: "status_changed",
+    payload: { fromStatus: "notified", toStatus: "completed" },
     operatorName: body.operatorName ?? "frontdesk",
   });
 
