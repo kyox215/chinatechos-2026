@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { OrderTransitionButton } from "@/components/OrderTransitionButton";
+import { DeliverButton } from "@/components/orders/DeliverButton";
+import { OrderTimeline } from "@/components/orders/OrderTimeline";
+import { PaymentCard } from "@/components/orders/PaymentCard";
+import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
 import { getNextActions } from "@/lib/domain/order-status";
 
@@ -104,16 +108,28 @@ export default async function OrderDetailPage(props: {
         {/* Right column */}
         <div className="space-y-4">
           {/* Payment */}
-          <DetailCard title="付款信息">
-            <DetailRow label="报价" value={formatEUR(order.quotationAmount)} />
-            <DetailRow label="押金" value={formatEUR(order.depositAmount)} />
-            <DetailRow label="余额" value={formatEUR(order.balanceAmount)} />
-            <DetailRow
-              label="结清"
-              value={order.isPaid ? "✓ 已结清" : "✗ 未结清"}
-              highlight={!order.isPaid && order.quotationAmount != null}
-            />
-          </DetailCard>
+          <PaymentCard
+            orderId={order.id}
+            quotationAmount={order.quotationAmount}
+            depositAmount={order.depositAmount}
+            balanceAmount={order.balanceAmount}
+            isPaid={order.isPaid}
+            isEditable={!isTerminal}
+          />
+
+          {/* Delivery */}
+          {order.status === "waiting_pickup" && (
+            <DetailCard title="交付">
+              <DeliverButton orderId={order.id} deliveredAt={order.deliveredAt} />
+            </DetailCard>
+          )}
+
+          {/* WhatsApp */}
+          {order.customer?.phoneE164 && (
+            <DetailCard title="消息">
+              <WhatsAppButton orderId={order.id} customerPhone={order.customer.phoneE164} />
+            </DetailCard>
+          )}
 
           {/* Dates */}
           <DetailCard title="时间节点">
@@ -153,28 +169,7 @@ export default async function OrderDetailPage(props: {
 
       {/* Timeline */}
       <DetailCard title="操作时间线">
-        {events.length === 0 ? (
-          <div className="py-4 text-sm text-neutral-500">暂无事件记录</div>
-        ) : (
-          <div className="space-y-3">
-            {events.map((evt) => (
-              <div key={evt.id} className="flex items-start gap-3 border-b border-border pb-3 last:border-0">
-                <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-400" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-neutral-900">
-                    {formatEventType(evt.eventType)}
-                  </div>
-                  <div className="mt-0.5 text-xs text-neutral-600">
-                    {formatEventPayload(evt.eventType, evt.payload)}
-                  </div>
-                  <div className="mt-1 text-xs text-neutral-400">
-                    {evt.operatorName ?? "-"} · {formatDateTime(evt.createdAt)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <OrderTimeline events={events} />
       </DetailCard>
     </div>
   );
@@ -200,11 +195,6 @@ function DetailRow(props: { label: string; value: string; highlight?: boolean })
   );
 }
 
-function formatEUR(value: number | null) {
-  if (value == null) return "-";
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
-}
-
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("it-IT", {
     year: "numeric",
@@ -215,40 +205,3 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function formatEventType(type: string): string {
-  const map: Record<string, string> = {
-    created: "工单创建",
-    status_changed: "状态变更",
-    quote_sent: "报价发送",
-    approval_marked: "审批结果",
-    payment_updated: "付款更新",
-    delivered: "交付客户",
-    completed: "工单完成",
-    cancelled: "工单取消",
-    message_opened: "消息已打开",
-    message_marked_sent: "消息已发送",
-  };
-  return map[type] ?? type;
-}
-
-function formatEventPayload(type: string, payload: Record<string, unknown>): string {
-  if (type === "status_changed") {
-    const from = String(payload.fromStatus ?? "");
-    const to = String(payload.toStatus ?? "");
-    let text = `${from} → ${to}`;
-    if (payload.cancelReason) text += `（原因：${payload.cancelReason}）`;
-    return text;
-  }
-  if (type === "created") {
-    return `${payload.brand ?? ""} ${payload.model ?? ""} · ${payload.customerPhone ?? ""}`;
-  }
-  if (type === "payment_updated") {
-    return `押金 ${payload.deposit ?? "-"} / 余额 ${payload.balance ?? "-"}`;
-  }
-  if (type === "approval_marked") {
-    return `结果：${payload.result ?? "-"}`;
-  }
-  const entries = Object.entries(payload);
-  if (entries.length === 0) return "";
-  return entries.map(([k, v]) => `${k}: ${v}`).join(", ");
-}
