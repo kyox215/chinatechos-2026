@@ -14,15 +14,13 @@ function MoneyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Compact finance block: aligned columns + light container (matches DB semantics). */
+/** Three separate rows: label + right-aligned amount (no outer box; matches DB semantics). */
 export function OrderListMoneyCell({ money }: Props) {
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/35 px-2 py-1.5 dark:bg-muted/25">
-      <div className="space-y-0.5 leading-none">
-        <MoneyRow label="总" value={formatOrderEUR(money.quotationAmount)} />
-        <MoneyRow label="定" value={formatOrderEUR(money.depositAmount)} />
-        <MoneyRow label="收" value={formatOrderEUR(money.balanceAmount)} />
-      </div>
+    <div className="space-y-1 leading-none">
+      <MoneyRow label="总" value={formatOrderEUR(money.quotationAmount)} />
+      <MoneyRow label="定" value={formatOrderEUR(money.depositAmount)} />
+      <MoneyRow label="收" value={formatOrderEUR(money.balanceAmount)} />
     </div>
   );
 }

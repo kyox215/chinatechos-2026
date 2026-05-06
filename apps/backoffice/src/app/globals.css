@@ -156,10 +156,15 @@ body {
 @media print {
   @page {
     size: A5;
-    margin: 12mm;
+    margin: 10mm;
   }
 
+  html,
   body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
   }
 
@@ -173,9 +178,12 @@ body {
   }
 
   .order-print-sheet {
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
+    right: 0;
     width: 100%;
+    margin: 0;
+    padding: 0;
   }
 }
