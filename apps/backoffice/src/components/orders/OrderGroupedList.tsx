@@ -3,43 +3,32 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useState } from "react";
+import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
-
-type OrderItem = {
-  id: string;
-  publicNo: string;
-  status: string;
-  orderType: string;
-  customerName: string | null;
-  customerPhone: string;
-  deviceLabel: string;
-  issue: string;
-  total: number | null;
-  isPaid: boolean;
-  createdAt: string;
-  technicianName: string | null;
-  supplierShortName?: string | null;
-  supplierColor?: string | null;
-};
+import { SupplierBadge } from "@/components/orders/SupplierBadge";
+import type { OrderListItem } from "@/lib/data/orders";
 
 type StatusGroup = {
   key: string;
   label: string;
-  items: OrderItem[];
+  items: OrderListItem[];
   defaultOpen: boolean;
   titleColor: string;
   bgColor: string;
 };
 
+const DESKTOP_GRID =
+  "grid grid-cols-[32px_88px_124px_minmax(132px,1fr)_76px_104px_88px_72px_128px] gap-0";
+
 const NEW_STATUSES = new Set(["new"]);
 const PROCESSING_STATUSES = new Set(["diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
 const PICKUP_STATUSES = new Set(["repaired", "notified"]);
 
-function groupOrders(items: OrderItem[]): StatusGroup[] {
-  const newOrders: OrderItem[] = [];
-  const processing: OrderItem[] = [];
-  const pickup: OrderItem[] = [];
-  const ended: OrderItem[] = [];
+function groupOrders(items: OrderListItem[]): StatusGroup[] {
+  const newOrders: OrderListItem[] = [];
+  const processing: OrderListItem[] = [];
+  const pickup: OrderListItem[] = [];
+  const ended: OrderListItem[] = [];
 
   for (const item of items) {
     if (NEW_STATUSES.has(item.status)) newOrders.push(item);
@@ -60,7 +49,7 @@ function groupOrders(items: OrderItem[]): StatusGroup[] {
   return groups;
 }
 
-export function OrderGroupedList({ items }: { items: OrderItem[] }) {
+export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const router = useRouter();
   const groups = groupOrders(items);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -76,7 +65,7 @@ export function OrderGroupedList({ items }: { items: OrderItem[] }) {
     });
   }
 
-  function toggleGroup(groupItems: OrderItem[]) {
+  function toggleGroup(groupItems: OrderListItem[]) {
     const ids = groupItems.map((i) => i.id);
     const allSelected = ids.every((id) => selected.has(id));
     setSelected((prev) => {
@@ -231,18 +220,29 @@ const GroupSection = memo(function GroupSection({
                     <div className="text-sm text-neutral-900">
                       {(it.customerName ?? "未命名客户") + (it.deviceLabel ? ` · ${it.deviceLabel}` : "")}
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-600">
-                      <span>{it.issue || "未填写问题描述"}</span>
-                      {it.supplierShortName ? (
-                        <SupplierTag name={it.supplierShortName} color={it.supplierColor} />
-                      ) : null}
+                    <div className="text-xs text-neutral-600">
+                      <span className="text-neutral-400">{it.issue || "-"}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
                       <div>电话：{it.customerPhone || "-"}</div>
                       <div>技师：{it.technicianName ?? "-"}</div>
                       <div>创建：{fmtDate(it.createdAt)}</div>
-                      <div className="font-semibold text-neutral-900">金额：{fmtEUR(it.total)}</div>
+                      <div className="text-neutral-700">
+                        供应商：
+                        {it.supplierShortName ? (
+                          <SupplierBadge name={it.supplierShortName} color={it.supplierColor} size="sm" />
+                        ) : (
+                          "-"
+                        )}
+                      </div>
                     </div>
+                    <OrderListMoneyCell
+                      money={{
+                        quotationAmount: it.quotationAmount,
+                        depositAmount: it.depositAmount,
+                        balanceAmount: it.balanceAmount,
+                      }}
+                    />
                     <div>
                       <Link
                         className="inline-flex h-9 items-center rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
@@ -258,14 +258,15 @@ const GroupSection = memo(function GroupSection({
           </div>
 
           <div className="hidden overflow-x-auto lg:block">
-            <div className="min-w-[800px]">
-              <div className="grid grid-cols-[32px_90px_150px_1fr_90px_80px_80px_160px] gap-0 border-t border-border bg-surface px-3 py-1.5 text-xs font-semibold text-neutral-500">
+            <div className="min-w-[980px]">
+              <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-1.5 text-xs font-semibold text-neutral-500`}>
                 <div />
                 <div>状态</div>
                 <div>工单号</div>
                 <div>客户 / 设备</div>
                 <div>时间</div>
-                <div>金额</div>
+                <div>财务</div>
+                <div>供应商</div>
                 <div>技师</div>
                 <div className="text-right">操作</div>
               </div>
@@ -273,9 +274,9 @@ const GroupSection = memo(function GroupSection({
               {group.items.map((it) => (
                 <div
                   key={it.id}
-                  className={`grid grid-cols-[32px_90px_150px_1fr_90px_80px_80px_160px] items-center gap-0 border-t border-border px-3 py-2 ${selected.has(it.id) ? "bg-indigo-50/50" : ""}`}
+                  className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-2 ${selected.has(it.id) ? "bg-indigo-50/50" : ""}`}
                 >
-                  <div>
+                  <div className="pt-1">
                     <input
                       checked={selected.has(it.id)}
                       className="h-4 w-4 rounded border-neutral-300"
@@ -283,24 +284,34 @@ const GroupSection = memo(function GroupSection({
                       type="checkbox"
                     />
                   </div>
-                  <div><StatusPopover orderId={it.id} status={it.status} /></div>
-                  <div className="text-xs font-medium text-neutral-900">{it.publicNo}</div>
-                  <div className="min-w-0 pr-2">
+                  <div className="pt-0.5"><StatusPopover orderId={it.id} status={it.status} /></div>
+                  <div className="pt-1 text-xs font-medium text-neutral-900">{it.publicNo}</div>
+                  <div className="min-w-0 pr-2 pt-1">
                     <div className="truncate text-sm font-medium text-neutral-900">
                       {it.customerName ?? "未命名客户"}
                       {it.deviceLabel ? <span className="font-normal text-neutral-500"> · {it.deviceLabel}</span> : null}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-xs text-neutral-400">{it.issue || "-"}</span>
-                      {it.supplierShortName && (
-                        <SupplierTag name={it.supplierShortName} color={it.supplierColor} />
-                      )}
-                    </div>
+                    <div className="truncate text-xs text-neutral-400">{it.issue || "-"}</div>
                   </div>
-                  <div className="text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
-                  <div className="text-xs font-semibold text-neutral-900">{fmtEUR(it.total)}</div>
-                  <div className="truncate text-xs text-neutral-500">{it.technicianName ?? "-"}</div>
-                  <div className="flex justify-end">
+                  <div className="pt-1 text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
+                  <div className="min-w-0 pt-0.5">
+                    <OrderListMoneyCell
+                      money={{
+                        quotationAmount: it.quotationAmount,
+                        depositAmount: it.depositAmount,
+                        balanceAmount: it.balanceAmount,
+                      }}
+                    />
+                  </div>
+                  <div className="flex min-w-0 items-start pt-1">
+                    {it.supplierShortName ? (
+                      <SupplierBadge name={it.supplierShortName} color={it.supplierColor} />
+                    ) : (
+                      <span className="text-xs text-neutral-400">-</span>
+                    )}
+                  </div>
+                  <div className="truncate pt-1 text-xs text-neutral-500">{it.technicianName ?? "-"}</div>
+                  <div className="flex justify-end pt-1">
                     <Link
                       className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium text-neutral-600 leading-7 hover:bg-muted"
                       href={`/orders/${it.id}`}
@@ -317,34 +328,6 @@ const GroupSection = memo(function GroupSection({
     </div>
   );
 });
-
-const SUPPLIER_COLORS: Record<string, { bg: string; text: string }> = {
-  red: { bg: "bg-red-100", text: "text-red-700" },
-  orange: { bg: "bg-orange-100", text: "text-orange-700" },
-  amber: { bg: "bg-amber-100", text: "text-amber-700" },
-  green: { bg: "bg-green-100", text: "text-green-700" },
-  teal: { bg: "bg-teal-100", text: "text-teal-700" },
-  blue: { bg: "bg-blue-100", text: "text-blue-700" },
-  indigo: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  violet: { bg: "bg-violet-100", text: "text-violet-700" },
-  pink: { bg: "bg-pink-100", text: "text-pink-700" },
-  slate: { bg: "bg-slate-100", text: "text-slate-700" },
-};
-
-function SupplierTag({ name, color }: { name: string; color?: string | null }) {
-  const c = SUPPLIER_COLORS[color ?? "blue"] ?? SUPPLIER_COLORS.blue;
-  return (
-    <span className={`inline-flex shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${c.bg} ${c.text}`}>
-      {name}
-    </span>
-  );
-}
-
-
-function fmtEUR(v: number | null) {
-  if (v == null) return "-";
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(v);
-}
 
 function fmtDate(v: string) {
   return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(v));

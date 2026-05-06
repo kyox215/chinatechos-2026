@@ -11,6 +11,8 @@ import {
   ORDER_FORM_BRANDS,
 } from "@/components/orders/OrderFormFields";
 import { buildIssueFromFaults, extractFaultExtraNote, parseFaultsFromIssue } from "@/lib/domain/fault-types";
+import { SupplierBadge } from "@/components/orders/SupplierBadge";
+import { SupplierSelect } from "@/components/orders/SupplierSelect";
 
 type SupplierInfo = { id: string; name: string; shortName: string; color: string } | null;
 
@@ -37,18 +39,6 @@ function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-const SUPPLIER_COLORS: Record<string, { bg: string; text: string }> = {
-  red: { bg: "bg-red-100", text: "text-red-700" },
-  orange: { bg: "bg-orange-100", text: "text-orange-700" },
-  amber: { bg: "bg-amber-100", text: "text-amber-700" },
-  green: { bg: "bg-green-100", text: "text-green-700" },
-  teal: { bg: "bg-teal-100", text: "text-teal-700" },
-  blue: { bg: "bg-blue-100", text: "text-blue-700" },
-  indigo: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  violet: { bg: "bg-violet-100", text: "text-violet-700" },
-  pink: { bg: "bg-pink-100", text: "text-pink-700" },
-  slate: { bg: "bg-slate-100", text: "text-slate-700" },
-};
 
 function normalizeBrand(stored: string): { brand: string; customBrand: string } {
   const b = stored.trim();
@@ -81,6 +71,7 @@ export function OrderInfoCard(props: Props) {
   const [customerSuggestions, setCustomerSuggestions] = useState<{ id: string; name: string | null; phoneE164: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [supplierId, setSupplierId] = useState("");
 
   useEffect(() => {
     if (!editing) return;
@@ -98,6 +89,7 @@ export function OrderInfoCard(props: Props) {
       setTag(props.internalTag ?? "");
       setWarranty(props.warrantyText ?? "");
       setPause(props.pauseReason ?? "");
+      setSupplierId(props.supplier?.id ?? "");
     }, 0);
     return () => window.clearTimeout(timer);
   }, [editing, props]);
@@ -141,6 +133,7 @@ export function OrderInfoCard(props: Props) {
           internal_tag: tag.trim() || null,
           warranty_text: warranty.trim() || null,
           pause_reason: pause.trim() || null,
+          supplier_id: supplierId.trim() || null,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -210,6 +203,17 @@ export function OrderInfoCard(props: Props) {
               warranty={warranty}
               inputClass="text-xs"
             />
+            <div className="space-y-1 pt-1">
+              <label className="text-xs font-medium text-neutral-600" htmlFor="order-supplier-edit">
+                配件来源
+              </label>
+              <SupplierSelect
+                disabled={pending}
+                id="order-supplier-edit"
+                onChange={setSupplierId}
+                value={supplierId}
+              />
+            </div>
           </fieldset>
 
           {error && <div className="text-xs text-rose-600">{error}</div>}
@@ -231,8 +235,6 @@ export function OrderInfoCard(props: Props) {
       </section>
     );
   }
-
-  const supplierColor = SUPPLIER_COLORS[props.supplier?.color ?? "blue"] ?? SUPPLIER_COLORS.blue;
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
@@ -283,13 +285,13 @@ export function OrderInfoCard(props: Props) {
               <p className="whitespace-pre-wrap break-words leading-relaxed text-neutral-900">{props.issueDescription || "-"}</p>
             </div>
             <InfoRow label="技师">{props.technicianName ?? "-"}</InfoRow>
-            {props.supplier && (
-              <InfoRow label="配件来源">
-                <span className={`inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ${supplierColor.bg} ${supplierColor.text}`}>
-                  {props.supplier.shortName}
-                </span>
-              </InfoRow>
-            )}
+            <InfoRow label="配件来源">
+              {props.supplier ? (
+                <SupplierBadge color={props.supplier.color} name={props.supplier.shortName} size="sm" />
+              ) : (
+                "-"
+              )}
+            </InfoRow>
             <InfoRow label="标签/配件">{props.internalTag ?? "-"}</InfoRow>
             <InfoRow label="保修">{props.warrantyText ?? "-"}</InfoRow>
             {props.pauseReason && (

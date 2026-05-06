@@ -76,6 +76,26 @@ export async function PATCH(
     if (!updatedFields.includes("balance_amount")) updatedFields.push("balance_amount");
   }
 
+  if (body.supplier_id !== undefined) {
+    const raw = body.supplier_id;
+    const sid = raw === null || raw === "" ? null : String(raw);
+    if (sid) {
+      const supCheck = await supabase
+        .from("suppliers")
+        .select("id")
+        .eq("id", sid)
+        .eq("store_id", storeId)
+        .maybeSingle();
+      if (supCheck.error || !supCheck.data) {
+        return NextResponse.json({ error: "供应商无效或不属于当前门店" }, { status: 400 });
+      }
+      patch.supplier_id = sid;
+    } else {
+      patch.supplier_id = null;
+    }
+    updatedFields.push("supplier_id");
+  }
+
   if (body.customer_name !== undefined || body.customer_phone !== undefined) {
     const customerPhone = body.customer_phone ? String(body.customer_phone).trim() : null;
     const customerName = body.customer_name ? String(body.customer_name).trim() : null;

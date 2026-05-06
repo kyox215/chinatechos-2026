@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { getNextActions } from "@/lib/domain/order-status";
+import { SupplierSelect } from "@/components/orders/SupplierSelect";
 
 type SupplierOption = { id: string; short_name: string; color: string };
 
@@ -149,18 +150,13 @@ export function StatusPopover({
           <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setSupplierPicker(false)} />
           <div className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-4 shadow-xl">
             <h3 className="mb-3 text-sm font-semibold text-neutral-900">选择供应商</h3>
-            <select
-              className="ui-input mb-3 w-full"
-              onChange={(e) => setSelectedSupplier(e.target.value)}
+            <SupplierSelect
+              className="ui-input mb-3 w-full text-sm"
+              emptyLabel="不指定供应商"
+              onChange={setSelectedSupplier}
+              options={suppliers}
               value={selectedSupplier}
-            >
-              <option value="">不指定供应商</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.short_name}
-                </option>
-              ))}
-            </select>
+            />
             <div className="flex gap-2">
               <button
                 className="ui-btn ui-btn-primary h-9 flex-1 text-sm disabled:opacity-60"

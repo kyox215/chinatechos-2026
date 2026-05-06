@@ -11,7 +11,10 @@ export type OrderListItem = {
   customerPhone: string;
   deviceLabel: string;
   issue: string;
-  total: number | null;
+  /** Same as `repair_orders.quotation_amount` */
+  quotationAmount: number | null;
+  depositAmount: number | null;
+  balanceAmount: number | null;
   isPaid: boolean;
   createdAt: string;
   technicianName: string | null;
@@ -50,6 +53,8 @@ export async function listOrders(filters: OrderListFilters = {}) {
       order_type,
       issue_description,
       quotation_amount,
+      deposit_amount,
+      balance_amount,
       is_paid,
       created_at,
       approval_sent_at,
@@ -145,7 +150,9 @@ export async function listOrders(filters: OrderListFilters = {}) {
       customerPhone: customer?.phone_e164 ?? "",
       deviceLabel,
       issue: row.issue_description,
-      total: row.quotation_amount ?? null,
+      quotationAmount: row.quotation_amount ?? null,
+      depositAmount: row.deposit_amount ?? null,
+      balanceAmount: row.balance_amount ?? null,
       isPaid: row.is_paid ?? false,
       createdAt: row.created_at,
       technicianName: row.technician_name ?? null,
