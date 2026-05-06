@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { MobileSidebarContext } from "@/components/MobileSidebarContext";
 
-export function AppShell(props: { children: ReactNode }) {
+export function AppShell(props: { children: ReactNode; storeCode?: string }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -69,6 +69,7 @@ export function AppShell(props: { children: ReactNode }) {
               onToggleDesktopSidebar={() => setSidebarCollapsed((v) => !v)}
               mobileSidebarOpen={mobileSidebarOpen}
               sidebarCollapsed={sidebarCollapsed}
+              storeCode={props.storeCode}
             />
             <main className="min-w-0 rounded-2xl border border-border bg-surface p-3 md:p-6">
               {props.children}

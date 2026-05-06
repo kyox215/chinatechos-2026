@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
-import { useMobileSidebar } from "@/components/MobileSidebarContext";
 
 type Suggestion = {
   id: string;
@@ -34,8 +33,6 @@ type Props = {
 
 export function OrdersSearchControls(props: Props) {
   const router = useRouter();
-  const pathname = usePathname();
-  const sidebar = useMobileSidebar();
   const [q, setQ] = useState(props.q ?? "");
   const [status, setStatus] = useState(props.status);
   const [technician, setTechnician] = useState(props.technician === "all" ? "" : props.technician);
@@ -117,17 +114,6 @@ export function OrdersSearchControls(props: Props) {
     <>
       <div className="ui-panel flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {pathname === "/orders" && sidebar ? (
-            <button
-              aria-label="打开菜单"
-              aria-expanded={sidebar.mobileSidebarOpen}
-              className="ui-btn ui-btn-secondary h-10 w-10 shrink-0 text-lg text-neutral-700 md:hidden"
-              onClick={sidebar.toggleMobileSidebar}
-              type="button"
-            >
-              ☰
-            </button>
-          ) : null}
           <div className="relative flex-1">
             <input
               className="ui-input h-10 w-full pl-3 pr-3 md:h-9"

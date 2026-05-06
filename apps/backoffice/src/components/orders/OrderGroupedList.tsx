@@ -19,7 +19,7 @@ type StatusGroup = {
 };
 
 const DESKTOP_GRID =
-  "grid grid-cols-[32px_92px_118px_minmax(128px,1fr)_72px_122px_84px_72px_124px] gap-0";
+  "grid grid-cols-[32px_92px_118px_minmax(128px,1fr)_72px_150px_84px_72px_124px] gap-x-1.5";
 
 const NEW_STATUSES = new Set(["new"]);
 const PROCESSING_STATUSES = new Set(["diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);

@@ -33,12 +33,7 @@ export default async function OrdersPage(props: {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">工单</h1>
-          <div className="mt-1 text-sm text-neutral-600">高频操作优先：先搜索，再筛选。</div>
-        </div>
-      </div>
+      <h1 className="text-xl font-semibold tracking-tight">工单</h1>
 
       <div className="space-y-3">
         <OrdersSearchControls
