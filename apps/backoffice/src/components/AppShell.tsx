@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
+import { MobileSidebarContext } from "@/components/MobileSidebarContext";
 
 export function AppShell(props: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -28,7 +29,12 @@ export function AppShell(props: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKeydown);
   }, [mobileSidebarOpen]);
 
+  const toggleMobileSidebar = () => setMobileSidebarOpen((v) => !v);
+
   return (
+    <MobileSidebarContext.Provider
+      value={{ mobileSidebarOpen, toggleMobileSidebar }}
+    >
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-3 md:px-5 md:py-5">
         <div
@@ -71,5 +77,6 @@ export function AppShell(props: { children: ReactNode }) {
         </div>
       </div>
     </div>
+    </MobileSidebarContext.Provider>
   );
 }

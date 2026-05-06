@@ -31,7 +31,7 @@ export async function PATCH(
 
   const current = await supabase
     .from("repair_orders")
-    .select("id, status, customer_id, device_id")
+    .select("id, status, customer_id, device_id, quotation_amount, deposit_amount")
     .eq("id", params.id)
     .eq("store_id", storeId)
     .is("deleted_at", null)
@@ -50,9 +50,30 @@ export async function PATCH(
 
   for (const field of ORDER_FIELDS) {
     if (field in body) {
+      if (field === "balance_amount" && (body.quotation_amount !== undefined || body.deposit_amount !== undefined)) {
+        continue;
+      }
       patch[field] = body[field] ?? null;
       updatedFields.push(field);
     }
+  }
+
+  const touchesMoney =
+    body.quotation_amount !== undefined ||
+    body.deposit_amount !== undefined ||
+    patch.quotation_amount !== undefined ||
+    patch.deposit_amount !== undefined;
+  if (touchesMoney) {
+    const nextQ =
+      body.quotation_amount !== undefined
+        ? Number(body.quotation_amount ?? 0)
+        : Number(current.data.quotation_amount ?? 0);
+    const nextD =
+      body.deposit_amount !== undefined
+        ? Number(body.deposit_amount ?? 0)
+        : Number(current.data.deposit_amount ?? 0);
+    patch.balance_amount = Math.max(0, nextQ - nextD);
+    if (!updatedFields.includes("balance_amount")) updatedFields.push("balance_amount");
   }
 
   if (body.customer_name !== undefined || body.customer_phone !== undefined) {

@@ -160,3 +160,18 @@ export function parseFaultsFromIssue(issue: string): Map<string, string[]> {
 
   return map;
 }
+
+
+/** Text in issue_description that is not represented by structured fault labels (best-effort). */
+export function extractFaultExtraNote(issue: string): string {
+  const trimmed = issue.trim();
+  if (!trimmed) return "";
+  const map = parseFaultsFromIssue(trimmed);
+  const structured = buildIssueFromFaults(map, "");
+  if (trimmed === structured) return "";
+  const sep = structured + "; ";
+  const idx = trimmed.indexOf(sep);
+  if (idx >= 0) return trimmed.slice(idx + sep.length).trim();
+  if (map.size === 0) return trimmed;
+  return trimmed.replace(structured, "").replace(/^;\s*/, "").trim();
+}

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FAULT_TYPES, parseFaultsFromIssue } from "@/lib/domain/fault-types";
+import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
 import { SendQuoteModal } from "@/components/orders/SendQuoteModal";
 
 type Props = {
@@ -94,73 +95,45 @@ export function FinanceCard(props: Props) {
 
       {editing ? (
         <div className="space-y-4">
-          {faultItems.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-neutral-500">报价明细</div>
-              {faultItems.map((item) => (
-                <div key={item.key} className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-neutral-700">{item.label}</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-neutral-400">&euro;</span>
-                    <input
-                      className="ui-input h-8 w-20 text-xs"
-                      onChange={(e) => setPrices((p) => ({ ...p, [item.key]: e.target.value }))}
-                      placeholder="0"
-                      type="number"
-                      value={prices[item.key]}
-                    />
-                  </div>
-                </div>
-              ))}
-              <div className="flex items-center justify-between border-t border-border pt-2">
-                <span className="text-xs font-semibold text-neutral-900">报价总额</span>
-                <span className="text-sm font-semibold text-neutral-900">&euro;{quotation.toFixed(2)}</span>
-              </div>
+          <div className="text-xs font-medium text-neutral-500">报价明细</div>
+          {faultItems.length > 0 ? (
+            <FaultPriceLineInputs
+              lines={faultItems}
+              prices={prices}
+              onPriceChange={(key, value) => setPrices((prev) => ({ ...prev, [key]: value }))}
+            />
+          ) : (
+            <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-neutral-600">
+              当前无结构化故障分项；订单总金额取自数据库总额。
             </div>
           )}
 
-          {faultItems.length === 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-neutral-500">报价总额</span>
-              <span className="text-sm font-semibold text-neutral-900">
-                {props.quotationAmount != null ? `€${props.quotationAmount.toFixed(2)}` : "-"}
-              </span>
-            </div>
-          )}
+          <FinancialSummaryThree
+            depositInput={
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-neutral-400">&euro;</span>
+                <input
+                  className="ui-input h-8 max-w-[140px] flex-1 text-xs"
+                  onChange={(e) => setDeposit(e.target.value)}
+                  placeholder="0"
+                  type="number"
+                  value={deposit}
+                />
+              </div>
+            }
+            orderTotal={quotation}
+            receivable={remaining}
+          />
 
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-neutral-500">收款</div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs text-neutral-400">已收押金</label>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-neutral-400">&euro;</span>
-                  <input
-                    className="ui-input h-8 flex-1 text-xs"
-                    onChange={(e) => setDeposit(e.target.value)}
-                    placeholder="0"
-                    type="number"
-                    value={deposit}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-neutral-400">待收余额</label>
-                <div className="flex h-8 items-center text-sm font-semibold text-neutral-900">
-                  &euro;{remaining.toFixed(2)}
-                </div>
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-xs text-neutral-700">
-              <input
-                checked={isPaid}
-                onChange={(e) => setIsPaid(e.target.checked)}
-                type="checkbox"
-                className="h-4 w-4 rounded border-neutral-300"
-              />
-              已全额结清
-            </label>
-          </div>
+          <label className="flex items-center gap-2 text-xs text-neutral-700">
+            <input
+              checked={isPaid}
+              onChange={(e) => setIsPaid(e.target.checked)}
+              type="checkbox"
+              className="h-4 w-4 rounded border-neutral-300"
+            />
+            已全额结清
+          </label>
 
           {error && <div className="text-xs text-rose-600">{error}</div>}
 
@@ -205,9 +178,9 @@ export function FinanceCard(props: Props) {
               ))}
             </div>
           )}
-          <Row label="报价总额" value={formatEUR(props.quotationAmount)} />
-          <Row label="已收押金" value={formatEUR(props.depositAmount)} />
-          <Row label="待收余额" value={formatEUR(props.balanceAmount ?? (remaining || null))} />
+          <Row label="订单总金额" value={formatEUR(props.quotationAmount)} />
+          <Row label="定金" value={formatEUR(props.depositAmount)} />
+          <Row label="应收金额" value={formatEUR(props.balanceAmount ?? (remaining || null))} />
           <Row
             label="结清状态"
             value={props.isPaid ? "已结清" : "未结清"}
