@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 
 type OrderItem = {
@@ -165,7 +165,7 @@ export function OrderGroupedList({ items }: { items: OrderItem[] }) {
   );
 }
 
-function GroupSection({
+const GroupSection = memo(function GroupSection({
   group,
   selected,
   onToggleSelect,
@@ -267,7 +267,7 @@ function GroupSection({
       )}
     </div>
   );
-}
+});
 
 const SUPPLIER_COLORS: Record<string, { bg: string; text: string }> = {
   red: { bg: "bg-red-100", text: "text-red-700" },

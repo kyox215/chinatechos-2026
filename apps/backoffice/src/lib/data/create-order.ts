@@ -15,6 +15,7 @@ export type CreateOrderInput = {
   depositAmount?: number;
   technicianName?: string;
   internalTag?: string;
+  warrantyText?: string;
 };
 
 export async function createOrder(input: CreateOrderInput) {
@@ -119,6 +120,7 @@ export async function createOrder(input: CreateOrderInput) {
       deposit_amount: input.depositAmount ?? null,
       technician_name: input.technicianName || null,
       internal_tag: input.internalTag || null,
+      warranty_text: input.warrantyText || "6个月",
     })
     .select("id, public_no, status")
     .single();

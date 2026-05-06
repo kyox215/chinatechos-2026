@@ -51,7 +51,6 @@ export function OrderInfoCard(props: Props) {
     () => parseFaultsFromIssue(props.issueDescription),
   );
   const [faultNote, setFaultNote] = useState("");
-  const [diagnosis, setDiagnosis] = useState(props.diagnosisResult ?? "");
   const [technician, setTechnician] = useState(props.technicianName ?? "");
   const [tag, setTag] = useState(props.internalTag ?? "");
   const [warranty, setWarranty] = useState(props.warrantyText ?? "");
@@ -70,7 +69,6 @@ export function OrderInfoCard(props: Props) {
     setModel(props.device?.model ?? "");
     setSerialOrImei(props.device?.serialOrImei ?? "");
     setSelectedFaults(parseFaultsFromIssue(props.issueDescription));
-    setDiagnosis(props.diagnosisResult ?? "");
     setTechnician(props.technicianName ?? "");
     setTag(props.internalTag ?? "");
     setWarranty(props.warrantyText ?? "");
@@ -106,7 +104,6 @@ export function OrderInfoCard(props: Props) {
           model: model.trim() || null,
           serial_or_imei: serialOrImei.trim() || null,
           issue_description: buildIssueFromFaults(selectedFaults, faultNote),
-          diagnosis_result: diagnosis.trim() || null,
           technician_name: technician.trim() || null,
           internal_tag: tag.trim() || null,
           warranty_text: warranty.trim() || null,
@@ -175,7 +172,7 @@ export function OrderInfoCard(props: Props) {
 
           <fieldset className="space-y-2">
             <legend className="text-xs font-semibold text-neutral-500">设备</legend>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="mb-0.5 block text-[11px] text-neutral-400">品牌</label>
                 <select className="ui-input w-full text-xs" value={brand} onChange={(e) => setBrand(e.target.value)}>
@@ -187,21 +184,21 @@ export function OrderInfoCard(props: Props) {
                 <label className="mb-0.5 block text-[11px] text-neutral-400">型号</label>
                 <input className="ui-input w-full text-xs" value={model} onChange={(e) => setModel(e.target.value)} />
               </div>
-              <div>
-                <label className="mb-0.5 block text-[11px] text-neutral-400">IMEI/SN</label>
-                <div className="flex gap-1">
-                  <input className="ui-input flex-1 text-xs" value={serialOrImei} onChange={(e) => setSerialOrImei(e.target.value)} />
-                  <button
-                    className="ui-btn ui-btn-secondary flex h-9 w-9 shrink-0 items-center justify-center"
-                    onClick={() => setScannerOpen(true)}
-                    title="扫码"
-                    type="button"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h3.375v1.5H5.25v3H3.75v-3.375zM3.75 15.75v3.375c0 .621.504 1.125 1.125 1.125h3.375v-1.5H5.25v-3H3.75zm16.5-10.875v3.375h-1.5v-3h-3v-1.5h3.375c.621 0 1.125.504 1.125 1.125zm-1.5 10.875v3h-3v1.5h3.375c.621 0 1.125-.504 1.125-1.125V15.75h-1.5zM7.5 9v6h1.5V9H7.5zm3 0v6h3V9h-3zm4.5 0v6h1.5V9H15z" />
-                    </svg>
-                  </button>
-                </div>
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[11px] text-neutral-400">IMEI/SN</label>
+              <div className="flex gap-1">
+                <input className="ui-input flex-1 text-xs" value={serialOrImei} onChange={(e) => setSerialOrImei(e.target.value)} />
+                <button
+                  className="ui-btn ui-btn-secondary flex h-9 w-9 shrink-0 items-center justify-center"
+                  onClick={() => setScannerOpen(true)}
+                  title="扫码"
+                  type="button"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h3.375v1.5H5.25v3H3.75v-3.375zM3.75 15.75v3.375c0 .621.504 1.125 1.125 1.125h3.375v-1.5H5.25v-3H3.75zm16.5-10.875v3.375h-1.5v-3h-3v-1.5h3.375c.621 0 1.125.504 1.125 1.125zm-1.5 10.875v3h-3v1.5h3.375c.621 0 1.125-.504 1.125-1.125V15.75h-1.5zM7.5 9v6h1.5V9H7.5zm3 0v6h3V9h-3zm4.5 0v6h1.5V9H15z" />
+                  </svg>
+                </button>
               </div>
             </div>
             <BarcodeScanner open={scannerOpen} onScan={(v) => setSerialOrImei(v)} onClose={() => setScannerOpen(false)} />
@@ -218,23 +215,21 @@ export function OrderInfoCard(props: Props) {
             />
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="mb-0.5 block text-[11px] text-neutral-400">诊断结果</label>
-                <input className="ui-input w-full text-xs" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} />
-              </div>
-              <div>
                 <label className="mb-0.5 block text-[11px] text-neutral-400">技师</label>
                 <input className="ui-input w-full text-xs" value={technician} onChange={(e) => setTechnician(e.target.value)} />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="mb-0.5 block text-[11px] text-neutral-400">配件标签</label>
-                <input className="ui-input w-full text-xs" value={tag} onChange={(e) => setTag(e.target.value)} placeholder="如: SIM卡, 手机壳" />
-              </div>
               <div>
                 <label className="mb-0.5 block text-[11px] text-neutral-400">保修</label>
-                <input className="ui-input w-full text-xs" value={warranty} onChange={(e) => setWarranty(e.target.value)} placeholder="如: 90天" />
+                <select className="ui-input w-full text-xs" value={warranty} onChange={(e) => setWarranty(e.target.value)}>
+                  <option value="3个月">3个月</option>
+                  <option value="6个月">6个月</option>
+                  <option value="12个月">12个月</option>
+                </select>
               </div>
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[11px] text-neutral-400">配件标签</label>
+              <input className="ui-input w-full text-xs" value={tag} onChange={(e) => setTag(e.target.value)} placeholder="如: SIM卡, 手机壳" />
             </div>
             <div>
               <label className="mb-0.5 block text-[11px] text-neutral-400">暂停原因</label>
@@ -314,7 +309,6 @@ export function OrderInfoCard(props: Props) {
               <span className="text-neutral-500">问题描述</span>
               <span className="max-w-[60%] text-right text-neutral-900">{props.issueDescription || "-"}</span>
             </div>
-            <div className="flex justify-between"><span className="text-neutral-500">诊断结果</span><span className="text-neutral-900">{props.diagnosisResult ?? "-"}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500">技师</span><span className="text-neutral-900">{props.technicianName ?? "-"}</span></div>
             {props.supplier && (
               <div className="flex items-center justify-between">

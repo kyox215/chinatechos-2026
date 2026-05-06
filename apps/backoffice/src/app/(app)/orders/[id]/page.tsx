@@ -107,7 +107,15 @@ export default async function OrderDetailPage(props: {
                   <DeliverButton orderId={order.id} deliveredAt={order.deliveredAt} />
                 )}
                 {order.customer?.phoneE164 && (
-                  <WhatsAppButton orderId={order.id} customerPhone={order.customer.phoneE164} />
+                  <WhatsAppButton
+                    orderId={order.id}
+                    customerPhone={order.customer.phoneE164}
+                    status={order.status}
+                    customerName={order.customer.name}
+                    deviceLabel={[order.device?.brand, order.device?.model].filter(Boolean).join(" ")}
+                    issueDescription={order.issueDescription}
+                    quotationAmount={order.quotationAmount}
+                  />
                 )}
               </div>
             </section>

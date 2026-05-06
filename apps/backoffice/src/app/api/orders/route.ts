@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
   const depositAmount = body.depositAmount != null ? Number(body.depositAmount) : undefined;
   const technicianName = String(body.technicianName ?? "");
   const internalTag = String(body.internalTag ?? "");
+  const warrantyText = String(body.warrantyText ?? "6个月");
   if (!customerPhone.trim()) {
     return NextResponse.json({ error: "客户电话不能为空" }, { status: 400 });
   }
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
       depositAmount: depositAmount && !isNaN(depositAmount) ? depositAmount : undefined,
       technicianName: technicianName.trim() || undefined,
       internalTag: internalTag.trim() || undefined,
+      warrantyText: warrantyText.trim() || undefined,
     });
 
     return NextResponse.json({ ok: true, ...result }, { status: 201 });

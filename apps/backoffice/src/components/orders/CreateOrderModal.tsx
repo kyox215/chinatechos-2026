@@ -42,6 +42,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   const [accessories, setAccessories] = useState<Set<string>>(new Set());
   const [customAccessory, setCustomAccessory] = useState("");
   const [technician, setTechnician] = useState("");
+  const [warranty, setWarranty] = useState("6个月");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
           depositAmount: deposit ? Number(deposit) : undefined,
           technicianName: technician.trim() || undefined,
           internalTag: buildInternalTag() || undefined,
+          warrantyText: warranty,
         }),
       });
       const data = (await res.json()) as { id?: string; error?: string };
@@ -135,7 +137,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* Col 1: Customer + Device */}
             <div className="space-y-4">
               <SectionTitle icon={<IconUser />} title="客户信息" />
@@ -203,17 +205,14 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
               <BarcodeScanner open={scannerOpen} onScan={(v) => setSerialOrImei(v)} onClose={() => setScannerOpen(false)} />
             </div>
 
-            {/* Col 2: Fault diagnosis */}
+            {/* Col 2: Fault + Finance + Service */}
             <div className="space-y-4">
               <SectionTitle icon={<IconSearch />} title="故障诊断" />
               <FaultSelector selected={selectedFaults} onChange={setSelectedFaults} />
               <Lbl label="故障备注 / 其他问题">
-                <textarea className="ui-input min-h-[80px] w-full py-2" onChange={(e) => setFaultNote(e.target.value)} placeholder="详细描述故障情况..." value={faultNote} />
+                <textarea className="ui-input min-h-[60px] w-full py-2" onChange={(e) => setFaultNote(e.target.value)} placeholder="详细描述故障情况..." value={faultNote} />
               </Lbl>
-            </div>
-
-            {/* Col 3: Finance & Service */}
-            <div className="space-y-4">
+              <div className="border-t border-border pt-4" />
               <SectionTitle icon={<IconMoney />} title="报价 & 服务" />
               {selectedFaults.size > 0 && (
                 <div className="space-y-2">
@@ -278,9 +277,18 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
               </div>
               <input className="ui-input w-full" onChange={(e) => setCustomAccessory(e.target.value)} placeholder="其他配件..." value={customAccessory} />
 
-              <Lbl label="技术员">
-                <input className="ui-input w-full" onChange={(e) => setTechnician(e.target.value)} placeholder="可选" value={technician} />
-              </Lbl>
+              <div className="grid grid-cols-2 gap-2">
+                <Lbl label="技术员">
+                  <input className="ui-input w-full" onChange={(e) => setTechnician(e.target.value)} placeholder="可选" value={technician} />
+                </Lbl>
+                <Lbl label="保修">
+                  <select className="ui-input w-full" value={warranty} onChange={(e) => setWarranty(e.target.value)}>
+                    <option value="3个月">3个月</option>
+                    <option value="6个月">6个月</option>
+                    <option value="12个月">12个月</option>
+                  </select>
+                </Lbl>
+              </div>
             </div>
           </div>
         </div>

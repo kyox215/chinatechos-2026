@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { FAULT_TYPES } from "@/lib/domain/fault-types";
 import type { FaultType } from "@/lib/domain/fault-types";
 
@@ -79,7 +79,7 @@ export function FaultSelector({ selected, onChange }: Props) {
   );
 }
 
-function FaultButton({
+const FaultButton = memo(function FaultButton({
   fault,
   active,
   selectedSubs,
@@ -196,4 +196,5 @@ function FaultButton({
       )}
     </div>
   );
-}
+});
+
