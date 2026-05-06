@@ -46,6 +46,7 @@ export function OrdersSearchControls(props: Props) {
   const [customerPhone, setCustomerPhone] = useState("");
   const [deviceBrand, setDeviceBrand] = useState("");
   const [deviceModel, setDeviceModel] = useState("");
+  const [serialOrImei, setSerialOrImei] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
   const [createOrderType, setCreateOrderType] = useState<"quick_repair" | "dropoff_repair">("quick_repair");
   const [createPending, setCreatePending] = useState(false);
@@ -315,6 +316,7 @@ export function OrdersSearchControls(props: Props) {
                 <input className="ui-input" onChange={(e) => setCustomerPhone(e.target.value)} placeholder="客户电话 (必填)" value={customerPhone} />
                 <input className="ui-input" onChange={(e) => setDeviceBrand(e.target.value)} placeholder="设备品牌 (必填)" value={deviceBrand} />
                 <input className="ui-input" onChange={(e) => setDeviceModel(e.target.value)} placeholder="设备型号 (必填)" value={deviceModel} />
+                <input className="ui-input md:col-span-2" onChange={(e) => setSerialOrImei(e.target.value)} placeholder="IMEI / 序列号 (可选)" value={serialOrImei} />
               </div>
               <select
                 className="ui-input w-full"
@@ -359,10 +361,11 @@ export function OrdersSearchControls(props: Props) {
                         customerName: customerName.trim() || undefined,
                         brand: deviceBrand.trim(),
                         model: deviceModel.trim(),
+                        serialOrImei: serialOrImei.trim() || undefined,
                         issueDescription: issueDescription.trim(),
                       }),
                     });
-                    const data = await res.json() as { error?: string };
+                    const data = await res.json() as { id?: string; error?: string };
                     if (!res.ok) throw new Error(data.error ?? "创建失败");
                     setCreateOpen(false);
                     setCreateQuery("");
@@ -371,10 +374,15 @@ export function OrdersSearchControls(props: Props) {
                     setCustomerPhone("");
                     setDeviceBrand("");
                     setDeviceModel("");
+                    setSerialOrImei("");
                     setIssueDescription("");
                     setCreateOrderType("quick_repair");
                     setCreateError(null);
-                    router.refresh();
+                    if (data.id) {
+                      router.push(`/orders/${data.id}`);
+                    } else {
+                      router.refresh();
+                    }
                   } catch (e) {
                     setCreateError(e instanceof Error ? e.message : "创建失败");
                   } finally {
