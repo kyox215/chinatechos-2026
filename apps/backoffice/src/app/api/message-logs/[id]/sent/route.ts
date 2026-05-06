@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!env.defaultStoreId) {
-    return NextResponse.json({ error: "Missing env: DEFAULT_STORE_ID" }, { status: 500 });
+  const storeId = await resolveStoreId();
+  if (!storeId) {
+    return NextResponse.json({ error: "无法确定门店" }, { status: 500 });
   }
 
   const params = await context.params;
@@ -17,7 +18,7 @@ export async function POST(
     .from("message_logs")
     .update({ status: "sent", sent_at: new Date().toISOString() })
     .eq("id", params.id)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .select("id, status")
     .single();
 

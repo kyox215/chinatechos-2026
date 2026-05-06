@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 
 export type OrderDetail = {
   id: string;
@@ -47,7 +48,8 @@ export type OrderEvent = {
 };
 
 export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
-  if (!env.supabaseUrl || !env.defaultStoreId) return null;
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return null;
 
   const supabase = createSupabaseServerClient();
 
@@ -80,7 +82,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       devices:device_id ( id, brand, model, serial_or_imei )
     `)
     .eq("id", id)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .single();
 
@@ -132,7 +134,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
 }
 
 export async function getOrderEvents(orderId: string): Promise<OrderEvent[]> {
-  if (!env.supabaseUrl || !env.defaultStoreId) return [];
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return [];
 
   const supabase = createSupabaseServerClient();
 
@@ -140,7 +143,7 @@ export async function getOrderEvents(orderId: string): Promise<OrderEvent[]> {
     .from("order_events")
     .select("id, event_type, payload, operator_name, created_at")
     .eq("order_id", orderId)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
-  if (!env.defaultStoreId) {
-    return NextResponse.json({ error: "Missing env: DEFAULT_STORE_ID" }, { status: 500 });
+  const storeId = await resolveStoreId();
+  if (!storeId) {
+    return NextResponse.json({ error: "无法确定门店，请配置 DEFAULT_STORE_ID 或确保 stores 表有数据" }, { status: 500 });
   }
 
   const body = (await request.json()) as {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   const existing = await supabase
     .from("customers")
     .select("id, deleted_at")
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .eq("phone_e164", phoneE164)
     .maybeSingle();
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
   const result = await supabase
     .from("customers")
     .insert({
-      store_id: env.defaultStoreId,
+      store_id: storeId,
       name: body.name?.trim() || null,
       phone_raw: body.phone.trim(),
       phone_e164: phoneE164,

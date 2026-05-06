@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 import { generatePublicNo } from "@/lib/domain/public-no";
 import { writeOrderEvent } from "@/lib/data/order-events";
 
@@ -14,12 +14,12 @@ export type CreateOrderInput = {
 };
 
 export async function createOrder(input: CreateOrderInput) {
-  if (!env.defaultStoreId) {
-    throw new Error("Missing env: DEFAULT_STORE_ID");
+  const storeId = await resolveStoreId();
+  if (!storeId) {
+    throw new Error("无法确定门店，请配置 DEFAULT_STORE_ID 或确保 stores 表有数据");
   }
 
   const supabase = createSupabaseServerClient();
-  const storeId = env.defaultStoreId;
 
   // Normalize phone to E.164
   const phoneE164 = normalizePhone(input.customerPhone);

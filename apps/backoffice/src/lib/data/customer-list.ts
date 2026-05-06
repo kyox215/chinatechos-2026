@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 
 export type CustomerListItem = {
   id: string;
@@ -23,7 +24,8 @@ export type CustomerListFilters = {
 export async function listCustomers(filters: CustomerListFilters = {}): Promise<{
   items: CustomerListItem[];
 }> {
-  if (!env.supabaseUrl || !env.defaultStoreId) {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) {
     return { items: [] };
   }
 
@@ -32,7 +34,7 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
   let query = supabase
     .from("customers")
     .select("id, name, phone_e164, phone_raw, created_at")
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -53,7 +55,7 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
   const { data: orders } = await supabase
     .from("repair_orders")
     .select("customer_id, status, quotation_amount, created_at")
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .in("customer_id", customerIds)
     .order("created_at", { ascending: false });

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeOrderEvent } from "@/lib/data/order-events";
 import { validateOrderTransition } from "@/lib/domain/order-status";
-import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!env.defaultStoreId) {
-    return NextResponse.json({ error: "Missing env: DEFAULT_STORE_ID" }, { status: 500 });
+  const storeId = await resolveStoreId();
+  if (!storeId) {
+    return NextResponse.json({ error: "无法确定门店，请配置 DEFAULT_STORE_ID" }, { status: 500 });
   }
 
   const params = await context.params;
@@ -42,7 +43,7 @@ export async function POST(
     .from("repair_orders")
     .select("id, store_id, status, order_type, quotation_amount, delivered_at, is_paid")
     .eq("id", params.id)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .single();
 
@@ -91,7 +92,7 @@ export async function POST(
     .from("repair_orders")
     .update(patch)
     .eq("id", params.id)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .select("id, status")
     .single();
@@ -101,7 +102,7 @@ export async function POST(
   }
 
   await writeOrderEvent({
-    storeId: env.defaultStoreId,
+    storeId: storeId,
     orderId: params.id,
     eventType: "status_changed",
     payload: {

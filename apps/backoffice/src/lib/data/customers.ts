@@ -1,5 +1,6 @@
 import { env } from "@/lib/env/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 
 export type CustomerSuggestion = {
   id: string;
@@ -14,7 +15,8 @@ export async function suggestCustomers(input: {
 }): Promise<CustomerSuggestion[]> {
   const q = input.q.trim();
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 20);
-  if (!q || !env.defaultStoreId || !env.supabaseUrl || !env.supabaseAnonKey) {
+  const storeId = await resolveStoreId();
+  if (!q || !storeId || !env.supabaseUrl) {
     return [];
   }
 
@@ -25,7 +27,7 @@ export async function suggestCustomers(input: {
   const customerRes = await supabase
     .from("customers")
     .select("id,name,phone_e164")
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .or(`phone_e164.ilike.${like},name.ilike.${like}`)
     .order("created_at", { ascending: false })
@@ -42,7 +44,7 @@ export async function suggestCustomers(input: {
   const orderRes = await supabase
     .from("repair_orders")
     .select("customer_id,created_at")
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .in("customer_id", ids)
     .order("created_at", { ascending: false })

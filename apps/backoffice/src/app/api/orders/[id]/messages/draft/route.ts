@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildWhatsAppLink, renderTemplate } from "@/lib/domain/whatsapp";
 
@@ -7,8 +7,9 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!env.defaultStoreId) {
-    return NextResponse.json({ error: "Missing env: DEFAULT_STORE_ID" }, { status: 500 });
+  const storeId = await resolveStoreId();
+  if (!storeId) {
+    return NextResponse.json({ error: "无法确定门店" }, { status: 500 });
   }
 
   const params = await context.params;
@@ -29,7 +30,7 @@ export async function POST(
       devices:device_id ( brand, model )
     `)
     .eq("id", params.id)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .single();
 
@@ -56,7 +57,7 @@ export async function POST(
     const template = await supabase
       .from("message_templates")
       .select("body")
-      .eq("store_id", env.defaultStoreId)
+      .eq("store_id", storeId)
       .eq("code", body.templateCode)
       .eq("is_active", true)
       .is("deleted_at", null)
@@ -83,7 +84,7 @@ export async function POST(
   const logRes = await supabase
     .from("message_logs")
     .insert({
-      store_id: env.defaultStoreId,
+      store_id: storeId,
       order_id: params.id,
       customer_id: customer.id ?? null,
       template_code: body.templateCode ?? null,

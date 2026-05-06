@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 
 export type CustomerDetail = {
   id: string;
@@ -36,14 +37,15 @@ export type CustomerOrder = {
 };
 
 export async function getCustomerDetail(id: string): Promise<CustomerDetail | null> {
-  if (!env.supabaseUrl || !env.defaultStoreId) return null;
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return null;
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("customers")
     .select("id, name, phone_e164, phone_raw, consent_required_notify, consent_marketing, notes, created_at, updated_at")
     .eq("id", id)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .single();
 
@@ -63,13 +65,14 @@ export async function getCustomerDetail(id: string): Promise<CustomerDetail | nu
 }
 
 export async function getCustomerDevices(customerId: string): Promise<CustomerDevice[]> {
-  if (!env.supabaseUrl || !env.defaultStoreId) return [];
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return [];
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("devices")
     .select("id, brand, model, serial_or_imei, created_at")
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .eq("customer_id", customerId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -86,7 +89,8 @@ export async function getCustomerDevices(customerId: string): Promise<CustomerDe
 }
 
 export async function getCustomerOrders(customerId: string): Promise<CustomerOrder[]> {
-  if (!env.supabaseUrl || !env.defaultStoreId) return [];
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return [];
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -96,7 +100,7 @@ export async function getCustomerOrders(customerId: string): Promise<CustomerOrd
       quotation_amount, is_paid, technician_name, created_at,
       devices:device_id ( brand, model )
     `)
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .eq("customer_id", customerId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })

@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 
 /**
  * Generate a public order number in the format: {storeCode}-{YYMMDD}-{seq}
@@ -12,12 +12,13 @@ export async function generatePublicNo(storeCode: string): Promise<string> {
   const dd = String(now.getDate()).padStart(2, "0");
   const datePrefix = `${storeCode}-${yy}${mm}${dd}`;
 
+  const storeId = await resolveStoreId();
   const supabase = createSupabaseServerClient();
 
   const { count } = await supabase
     .from("repair_orders")
     .select("id", { count: "exact", head: true })
-    .eq("store_id", env.defaultStoreId!)
+    .eq("store_id", storeId!)
     .like("public_no", `${datePrefix}-%`);
 
   const seq = (count ?? 0) + 1;

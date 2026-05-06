@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
+import { resolveStoreId } from "@/lib/env/resolve-store";
 
 export type OrderListItem = {
   id: string;
@@ -29,7 +30,8 @@ export type OrderListFilters = {
 };
 
 export async function listOrders(filters: OrderListFilters = {}) {
-  if (!env.supabaseUrl || !env.supabaseAnonKey || !env.defaultStoreId) {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) {
     return { items: [] as OrderListItem[] };
   }
 
@@ -54,7 +56,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       devices:device_id ( brand, model, serial_or_imei )
     `,
     )
-    .eq("store_id", env.defaultStoreId)
+    .eq("store_id", storeId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
