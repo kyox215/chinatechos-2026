@@ -1,0 +1,9 @@
+{
+  "name": "chinatechos-2026-root",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Root package for Vercel framework detection",
+  "dependencies": {
+    "next": "16.2.4"
+  }
+}
