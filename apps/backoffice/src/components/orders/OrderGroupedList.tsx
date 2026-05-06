@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { OrderStatusBadge } from "@/components/OrderStatusBadge";
-import { OrderTransitionButton } from "@/components/OrderTransitionButton";
-import { getNextActions } from "@/lib/domain/order-status";
+import { StatusPopover } from "@/components/orders/StatusPopover";
 
 type OrderItem = {
   id: string;
@@ -237,7 +235,7 @@ function GroupSection({
                     type="checkbox"
                   />
                 </div>
-                <div><OrderStatusBadge status={it.status} /></div>
+                <div><StatusPopover orderId={it.id} status={it.status} /></div>
                 <div className="text-xs font-medium text-neutral-900">{it.publicNo}</div>
                 <div className="min-w-0 pr-2">
                   <div className="truncate text-sm font-medium text-neutral-900">
@@ -254,14 +252,13 @@ function GroupSection({
                 <div className="text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
                 <div className="text-xs font-semibold text-neutral-900">{fmtEUR(it.total)}</div>
                 <div className="truncate text-xs text-neutral-500">{it.technicianName ?? "-"}</div>
-                <div className="flex justify-end gap-1">
+                <div className="flex justify-end">
                   <Link
                     className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium text-neutral-600 leading-7 hover:bg-muted"
                     href={`/orders/${it.id}`}
                   >
                     详情
                   </Link>
-                  <PrimaryAction status={it.status} orderId={it.id} />
                 </div>
               </div>
             ))}
@@ -294,21 +291,6 @@ function SupplierTag({ name, color }: { name: string; color?: string | null }) {
   );
 }
 
-function PrimaryAction({ status, orderId }: { status: string; orderId: string }) {
-  const { primary } = getNextActions(status);
-  const action = primary[0];
-  if (!action) return null;
-
-  return (
-    <OrderTransitionButton
-      confirmText={action.confirmText}
-      label={action.label}
-      orderId={orderId}
-      toStatus={action.toStatus}
-      variant={action.variant}
-    />
-  );
-}
 
 function fmtEUR(v: number | null) {
   if (v == null) return "-";
