@@ -44,6 +44,12 @@ export function OrdersSearchControls(props: Props) {
   const [createSelected, setCreateSelected] = useState<Suggestion | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [deviceBrand, setDeviceBrand] = useState("");
+  const [deviceModel, setDeviceModel] = useState("");
+  const [issueDescription, setIssueDescription] = useState("");
+  const [createOrderType, setCreateOrderType] = useState<"quick_repair" | "dropoff_repair">("quick_repair");
+  const [createPending, setCreatePending] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -306,19 +312,78 @@ export function OrdersSearchControls(props: Props) {
 
               <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 <input className="ui-input" onChange={(e) => setCustomerName(e.target.value)} placeholder="客户姓名" value={customerName} />
-                <input className="ui-input" onChange={(e) => setCustomerPhone(e.target.value)} placeholder="客户电话" value={customerPhone} />
-                <input className="ui-input" placeholder="设备品牌" />
-                <input className="ui-input" placeholder="设备型号" />
+                <input className="ui-input" onChange={(e) => setCustomerPhone(e.target.value)} placeholder="客户电话 (必填)" value={customerPhone} />
+                <input className="ui-input" onChange={(e) => setDeviceBrand(e.target.value)} placeholder="设备品牌 (必填)" value={deviceBrand} />
+                <input className="ui-input" onChange={(e) => setDeviceModel(e.target.value)} placeholder="设备型号 (必填)" value={deviceModel} />
               </div>
-              <textarea className="ui-input min-h-[88px] w-full py-2" placeholder="问题描述" />
+              <select
+                className="ui-input w-full"
+                onChange={(e) => setCreateOrderType(e.target.value as "quick_repair" | "dropoff_repair")}
+                value={createOrderType}
+              >
+                <option value="quick_repair">快速维修（当场修好）</option>
+                <option value="dropoff_repair">留机维修（需诊断报价）</option>
+              </select>
+              <textarea
+                className="ui-input min-h-[88px] w-full py-2"
+                onChange={(e) => setIssueDescription(e.target.value)}
+                placeholder="问题描述 (必填)"
+                value={issueDescription}
+              />
+              {createError ? (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{createError}</div>
+              ) : null}
             </div>
 
             <div className="mt-3 flex justify-end gap-2">
-              <button className="ui-btn ui-btn-secondary h-10 px-3 md:h-9" onClick={() => setCreateOpen(false)} type="button">
+              <button className="ui-btn ui-btn-secondary h-10 px-3 md:h-9" onClick={() => { setCreateOpen(false); setCreateError(null); }} type="button">
                 取消
               </button>
-              <button className="ui-btn ui-btn-primary h-10 px-3 md:h-9" type="button">
-                创建工单（下一步接入）
+              <button
+                className="ui-btn ui-btn-primary h-10 px-3 md:h-9 disabled:opacity-60"
+                disabled={createPending}
+                onClick={async () => {
+                  setCreateError(null);
+                  if (!customerPhone.trim()) { setCreateError("客户电话不能为空"); return; }
+                  if (!deviceBrand.trim()) { setCreateError("设备品牌不能为空"); return; }
+                  if (!deviceModel.trim()) { setCreateError("设备型号不能为空"); return; }
+                  if (!issueDescription.trim()) { setCreateError("问题描述不能为空"); return; }
+                  setCreatePending(true);
+                  try {
+                    const res = await fetch("/api/orders", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        orderType: createOrderType,
+                        customerPhone: customerPhone.trim(),
+                        customerName: customerName.trim() || undefined,
+                        brand: deviceBrand.trim(),
+                        model: deviceModel.trim(),
+                        issueDescription: issueDescription.trim(),
+                      }),
+                    });
+                    const data = await res.json() as { error?: string };
+                    if (!res.ok) throw new Error(data.error ?? "创建失败");
+                    setCreateOpen(false);
+                    setCreateQuery("");
+                    setCreateSelected(null);
+                    setCustomerName("");
+                    setCustomerPhone("");
+                    setDeviceBrand("");
+                    setDeviceModel("");
+                    setIssueDescription("");
+                    setCreateOrderType("quick_repair");
+                    setCreateError(null);
+                    router.refresh();
+                  } catch (e) {
+                    setCreateError(e instanceof Error ? e.message : "创建失败");
+                  } finally {
+                    setCreatePending(false);
+                  }
+                }}
+                type="button"
+              >
+                {createPending ? "创建中..." : "创建工单"}
               </button>
             </div>
           </div>

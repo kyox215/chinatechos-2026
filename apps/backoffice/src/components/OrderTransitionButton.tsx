@@ -10,6 +10,7 @@ export function OrderTransitionButton(props: {
   confirmText: string;
   reasonPrompt?: string;
   reasonField?: string;
+  variant?: "danger";
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -21,7 +22,7 @@ export function OrderTransitionButton(props: {
 
     let reason = "";
     if (props.reasonPrompt && props.reasonField) {
-      const input = window.prompt(props.reasonPrompt, "客户拒绝报价");
+      const input = window.prompt(props.reasonPrompt, "");
       if (input === null) return;
       reason = input.trim();
     }
@@ -55,10 +56,15 @@ export function OrderTransitionButton(props: {
     }
   }
 
+  const btnClass =
+    props.variant === "danger"
+      ? "h-8 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+      : "h-8 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60";
+
   return (
     <div className="flex flex-col items-end gap-1">
       <button
-        className="h-8 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className={btnClass}
         disabled={pending}
         onClick={onClick}
         type="button"

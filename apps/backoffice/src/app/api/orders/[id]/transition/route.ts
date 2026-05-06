@@ -40,7 +40,7 @@ export async function POST(
   const supabase = createSupabaseServerClient();
   const current = await supabase
     .from("repair_orders")
-    .select("id, store_id, status")
+    .select("id, store_id, status, order_type, quotation_amount, delivered_at, is_paid")
     .eq("id", params.id)
     .eq("store_id", env.defaultStoreId)
     .is("deleted_at", null)
@@ -50,7 +50,12 @@ export async function POST(
     return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
   }
 
-  const validation = validateOrderTransition(current.data.status, toStatus);
+  const validation = validateOrderTransition(current.data.status, toStatus, {
+    orderType: current.data.order_type,
+    quotationAmount: current.data.quotation_amount,
+    deliveredAt: current.data.delivered_at,
+    isPaid: current.data.is_paid,
+  });
   if (!validation.ok) {
     return NextResponse.json({ error: validation.reason }, { status: 400 });
   }
@@ -60,16 +65,26 @@ export async function POST(
     updated_at: new Date().toISOString(),
   };
 
+  if (toStatus === "waiting_approval") {
+    patch.approval_sent_at = new Date().toISOString();
+  }
   if (toStatus === "waiting_pickup") {
     patch.completed_at = new Date().toISOString();
   }
-  if (toStatus === "repairing") {
+  if (toStatus === "repairing" && current.data.status === "waiting_approval") {
     patch.approval_status = "approved";
     patch.approval_confirmed_at = new Date().toISOString();
   }
   if (toStatus === "cancelled") {
-    patch.approval_status = "rejected";
+    if (current.data.status === "waiting_approval") {
+      patch.approval_status = "rejected";
+    }
     patch.cancel_reason = cancelReason || "客户拒绝报价";
+  }
+  if (toStatus === "completed") {
+    if (!current.data.delivered_at) {
+      patch.delivered_at = new Date().toISOString();
+    }
   }
 
   const updateRes = await supabase

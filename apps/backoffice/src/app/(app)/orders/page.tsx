@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
 import { OrderTransitionButton } from "@/components/OrderTransitionButton";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { listOrders } from "@/lib/data/orders";
+import { getNextActions } from "@/lib/domain/order-status";
 
 type QueryValue = string | string[] | undefined;
 
@@ -76,12 +78,12 @@ export default async function OrdersPage(props: {
                   <div className="font-semibold text-neutral-900">金额：{formatEUR(it.total)}</div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button className="h-9 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted">
+                  <Link
+                    className="h-9 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted leading-9"
+                    href={`/orders/${it.id}`}
+                  >
                     详情
-                  </button>
-                  <button className="h-9 rounded-xl bg-primary px-3 text-xs font-semibold text-white">
-                    WhatsApp
-                  </button>
+                  </Link>
                   <OrderActions it={it} />
                 </div>
               </article>
@@ -129,12 +131,12 @@ export default async function OrdersPage(props: {
                 <div className="text-sm font-semibold text-neutral-900">{formatEUR(it.total)}</div>
                 <div className="text-sm text-neutral-700">{it.technicianName ?? "-"}</div>
                 <div className="flex justify-end gap-2">
-                  <button className="h-8 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted">
+                  <Link
+                    className="h-8 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted leading-8"
+                    href={`/orders/${it.id}`}
+                  >
                     详情
-                  </button>
-                  <button className="h-8 rounded-xl bg-primary px-3 text-xs font-semibold text-white">
-                    WhatsApp
-                  </button>
+                  </Link>
                   <OrderActions it={it} />
                 </div>
               </div>
@@ -151,41 +153,29 @@ function OrderActions(props: {
     id: string;
     publicNo: string;
     status: string;
+    orderType: string;
   };
 }) {
-  if (props.it.status === "repairing") {
-    return (
-      <OrderTransitionButton
-        confirmText={`确认将工单 ${props.it.publicNo} 标记为待取件/待付款吗？`}
-        label="标记完工"
-        orderId={props.it.id}
-        toStatus="waiting_pickup"
-      />
-    );
-  }
+  const actions = getNextActions(props.it.status, props.it.orderType);
+  if (actions.length === 0) return null;
 
-  if (props.it.status === "waiting_approval") {
-    return (
-      <div className="flex flex-wrap gap-2">
+  return (
+    <div className="flex flex-wrap gap-2">
+      {actions.map((action) => (
         <OrderTransitionButton
-          confirmText={`确认将工单 ${props.it.publicNo} 标记为客户已同意并进入维修中吗？`}
-          label="同意维修"
+          key={action.toStatus}
+          confirmText={action.confirmText}
+          label={action.label}
           orderId={props.it.id}
-          toStatus="repairing"
+          toStatus={action.toStatus}
+          variant={action.variant}
+          {...(action.toStatus === "cancelled"
+            ? { reasonField: "cancelReason", reasonPrompt: "请输入取消原因" }
+            : {})}
         />
-        <OrderTransitionButton
-          confirmText={`确认将工单 ${props.it.publicNo} 标记为已取消吗？`}
-          label="拒绝报价"
-          orderId={props.it.id}
-          reasonField="cancelReason"
-          reasonPrompt="请输入拒绝原因（将写入取消原因）"
-          toStatus="cancelled"
-        />
-      </div>
-    );
-  }
-
-  return null;
+      ))}
+    </div>
+  );
 }
 
 function formatEUR(value: number | null) {
