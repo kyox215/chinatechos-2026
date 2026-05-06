@@ -84,7 +84,16 @@ export default async function OrderDetailPage(props: {
         <div className="space-y-4">
           {/* Customer */}
           <DetailCard title="客户信息">
-            <DetailRow label="姓名" value={order.customer?.name ?? "-"} />
+            <div className="flex items-start justify-between py-1.5 text-sm">
+              <span className="text-neutral-500">姓名</span>
+              {order.customer ? (
+                <Link href={`/customers/${order.customer.id}`} className="text-indigo-600 hover:underline">
+                  {order.customer.name ?? "未命名客户"}
+                </Link>
+              ) : (
+                <span className="text-neutral-900">-</span>
+              )}
+            </div>
             <DetailRow label="电话" value={order.customer?.phoneE164 ?? "-"} />
           </DetailCard>
 
