@@ -11,6 +11,10 @@ export type CreateOrderInput = {
   model: string;
   serialOrImei?: string;
   issueDescription: string;
+  quotationAmount?: number;
+  depositAmount?: number;
+  technicianName?: string;
+  internalTag?: string;
 };
 
 export async function createOrder(input: CreateOrderInput) {
@@ -111,6 +115,10 @@ export async function createOrder(input: CreateOrderInput) {
       customer_id: customerId,
       device_id: deviceId,
       issue_description: input.issueDescription,
+      quotation_amount: input.quotationAmount ?? null,
+      deposit_amount: input.depositAmount ?? null,
+      technician_name: input.technicianName || null,
+      internal_tag: input.internalTag || null,
     })
     .select("id, public_no, status")
     .single();

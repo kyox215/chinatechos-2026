@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { OrderTransitionButton } from "@/components/OrderTransitionButton";
 import { DeliverButton } from "@/components/orders/DeliverButton";
-import { EditableRepairCard } from "@/components/orders/EditableRepairCard";
+import { OrderEditButton } from "@/components/orders/OrderEditButton";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { PaymentCard } from "@/components/orders/PaymentCard";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
@@ -106,17 +106,30 @@ export default async function OrderDetailPage(props: {
           </DetailCard>
 
           {/* Repair */}
-          <EditableRepairCard
-            orderId={order.id}
-            issueDescription={order.issueDescription}
-            diagnosisResult={order.diagnosisResult}
-            technicianName={order.technicianName}
-            quotationAmount={order.quotationAmount}
-            internalTag={order.internalTag}
-            warrantyText={order.warrantyText}
-            pauseReason={order.pauseReason}
-            isEditable={!isTerminal}
-          />
+          <DetailCard title="维修信息">
+            <DetailRow label="问题描述" value={order.issueDescription} />
+            <DetailRow label="诊断结果" value={order.diagnosisResult ?? "-"} />
+            <DetailRow label="技师" value={order.technicianName ?? "-"} />
+            <DetailRow label="报价" value={order.quotationAmount != null ? `€${order.quotationAmount}` : "-"} />
+            <DetailRow label="标签" value={order.internalTag ?? "-"} />
+            <DetailRow label="保修" value={order.warrantyText ?? "-"} />
+            {order.pauseReason && <DetailRow label="暂停原因" value={order.pauseReason} highlight />}
+            {!isTerminal && (
+              <div className="mt-3 border-t border-border pt-3">
+                <OrderEditButton
+                  orderId={order.id}
+                  issueDescription={order.issueDescription}
+                  diagnosisResult={order.diagnosisResult}
+                  technicianName={order.technicianName}
+                  quotationAmount={order.quotationAmount}
+                  depositAmount={order.depositAmount}
+                  internalTag={order.internalTag}
+                  warrantyText={order.warrantyText}
+                  pauseReason={order.pauseReason}
+                />
+              </div>
+            )}
+          </DetailCard>
         </div>
 
         {/* Right column */}

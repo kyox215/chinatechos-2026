@@ -19,6 +19,10 @@ export async function POST(request: NextRequest) {
   const model = String(body.model ?? "");
   const serialOrImei = String(body.serialOrImei ?? "");
   const issueDescription = String(body.issueDescription ?? "");
+  const quotationAmount = body.quotationAmount != null ? Number(body.quotationAmount) : undefined;
+  const depositAmount = body.depositAmount != null ? Number(body.depositAmount) : undefined;
+  const technicianName = String(body.technicianName ?? "");
+  const internalTag = String(body.internalTag ?? "");
 
   if (!orderType || !["quick_repair", "dropoff_repair"].includes(orderType)) {
     return NextResponse.json({ error: "orderType 必须为 quick_repair 或 dropoff_repair" }, { status: 400 });
@@ -45,6 +49,10 @@ export async function POST(request: NextRequest) {
       model: model.trim(),
       serialOrImei: serialOrImei.trim() || undefined,
       issueDescription: issueDescription.trim(),
+      quotationAmount: quotationAmount && !isNaN(quotationAmount) ? quotationAmount : undefined,
+      depositAmount: depositAmount && !isNaN(depositAmount) ? depositAmount : undefined,
+      technicianName: technicianName.trim() || undefined,
+      internalTag: internalTag.trim() || undefined,
     });
 
     return NextResponse.json({ ok: true, ...result }, { status: 201 });
