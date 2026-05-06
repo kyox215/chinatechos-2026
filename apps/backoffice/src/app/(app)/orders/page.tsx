@@ -2,6 +2,7 @@ import Link from "next/link";
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
 import { OrderTransitionButton } from "@/components/OrderTransitionButton";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
 import { listOrders } from "@/lib/data/orders";
 import { getNextActions } from "@/lib/domain/order-status";
 
@@ -91,57 +92,8 @@ export default async function OrdersPage(props: {
           )}
         </div>
 
-        <div className="hidden overflow-hidden rounded-xl border border-border lg:block">
-          <div className="grid grid-cols-[140px_220px_1fr_120px_140px_120px_220px] gap-0 bg-surface-2 px-3 py-2 text-xs font-semibold text-neutral-600">
-            <div>状态</div>
-            <div>工单号</div>
-            <div>客户 / 设备 / 问题</div>
-            <div>创建时间</div>
-            <div>金额</div>
-            <div>技师</div>
-            <div className="text-right">操作</div>
-          </div>
-
-          {items.length === 0 ? (
-            <div className="px-3 py-8 text-sm text-neutral-500">
-              暂无工单数据（请先配置 Supabase 并写入 repair_orders）。
-            </div>
-          ) : (
-            items.map((it) => (
-              <div
-                key={it.id}
-                className="grid grid-cols-[140px_220px_1fr_120px_140px_120px_220px] items-center gap-0 border-t border-border px-3 py-2"
-              >
-                <div>
-                  <OrderStatusBadge status={it.status} />
-                </div>
-                <div className="text-sm font-medium text-neutral-900">{it.publicNo}</div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm text-neutral-900">
-                    {(it.customerName ?? "未命名客户") +
-                      (it.deviceLabel ? ` · ${it.deviceLabel}` : "") +
-                      (it.issue ? ` · ${it.issue}` : "")}
-                  </div>
-                  <div className="truncate text-xs text-neutral-500">
-                    {it.customerPhone}
-                    {it.technicianName ? ` · ${it.technicianName}` : ""}
-                  </div>
-                </div>
-                <div className="text-sm text-neutral-700">{formatDate(it.createdAt)}</div>
-                <div className="text-sm font-semibold text-neutral-900">{formatEUR(it.total)}</div>
-                <div className="text-sm text-neutral-700">{it.technicianName ?? "-"}</div>
-                <div className="flex justify-end gap-2">
-                  <Link
-                    className="h-8 rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted leading-8"
-                    href={`/orders/${it.id}`}
-                  >
-                    详情
-                  </Link>
-                  <OrderActions it={it} />
-                </div>
-              </div>
-            ))
-          )}
+        <div className="hidden lg:block">
+          <OrderGroupedList items={items} />
         </div>
       </div>
     </div>
@@ -184,7 +136,7 @@ function formatEUR(value: number | null) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("it-IT", { month: "2-digit", day: "2-digit" }).format(
+  return new Intl.DateTimeFormat("it-IT", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(
     new Date(value),
   );
 }

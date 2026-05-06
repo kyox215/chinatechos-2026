@@ -1,4 +1,9 @@
-export default function SettingsPage() {
+import { SettingsForm } from "@/components/settings/SettingsForm";
+import { getStoreSettings } from "@/lib/data/store-settings";
+
+export default async function SettingsPage() {
+  const settings = await getStoreSettings();
+
   return (
     <div className="space-y-4">
       <div>
@@ -6,21 +11,13 @@ export default function SettingsPage() {
         <div className="mt-1 text-sm text-neutral-600">管理门店信息、自动化参数与系统选项。</div>
       </div>
 
-      <section className="ui-panel">
-        <div className="text-sm font-semibold text-neutral-900">门店信息</div>
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-          <input className="ui-input" placeholder="门店名称" />
-          <input className="ui-input" placeholder="门店短号（store_code）" />
+      {settings ? (
+        <SettingsForm settings={settings} />
+      ) : (
+        <div className="rounded-xl border border-border px-4 py-8 text-sm text-neutral-500">
+          无法加载门店设置。请检查数据库连接和 stores 表数据。
         </div>
-      </section>
-
-      <section className="ui-panel">
-        <div className="text-sm font-semibold text-neutral-900">自动化参数</div>
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-          <input className="ui-input" placeholder="报价提醒（小时）默认 48" />
-          <input className="ui-input" placeholder="未取件提醒（天）默认 5" />
-        </div>
-      </section>
+      )}
     </div>
   );
 }
