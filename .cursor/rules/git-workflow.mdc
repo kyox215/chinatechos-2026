@@ -1,0 +1,11 @@
+---
+description: Git workflow rules for this project
+globs:
+alwaysApply: true
+---
+
+# Git 工作流规则
+
+- 所有提交和推送都直接在 `main` 分支上进行
+- 推送目标始终为 `origin main`
+- 不需要创建 feature 分支，除非用户明确要求
