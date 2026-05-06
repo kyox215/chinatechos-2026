@@ -1,4 +1,5 @@
 {
   "framework": "nextjs",
-  "rootDirectory": "apps/backoffice"
+  "installCommand": "npm install --prefix apps/backoffice",
+  "buildCommand": "npm run build --prefix apps/backoffice"
 }
