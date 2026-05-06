@@ -61,6 +61,12 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
   const [supplierModalItem, setSupplierModalItem] = useState<OrderListItem | null>(null);
+  const [supplierAnchorEl, setSupplierAnchorEl] = useState<HTMLElement | null>(null);
+
+  function openSupplierPicker(item: OrderListItem, anchor: HTMLElement | null) {
+    setSupplierModalItem(item);
+    setSupplierAnchorEl(anchor);
+  }
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -115,7 +121,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
           key={group.key}
           group={group}
           selected={selected}
-          onOpenSupplierPicker={setSupplierModalItem}
+          onOpenSupplierPicker={openSupplierPicker}
           onToggleSelect={toggleSelect}
           onToggleGroup={() => toggleGroup(group.items)}
         />
@@ -159,11 +165,12 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
       )}
 
       <SupplierPickerModal
+        anchorEl={supplierAnchorEl}
         initialSupplierId={supplierModalItem?.supplierId ?? null}
         open={supplierModalItem != null}
         orderId={supplierModalItem?.id ?? ""}
         publicNo={supplierModalItem?.publicNo ?? ""}
-        onClose={() => setSupplierModalItem(null)}
+        onClose={() => { setSupplierModalItem(null); setSupplierAnchorEl(null); }}
         onSaved={() => router.refresh()}
       />
     </div>
@@ -181,7 +188,7 @@ const GroupSection = memo(function GroupSection({
   selected: Set<string>;
   onToggleSelect: (id: string) => void;
   onToggleGroup: () => void;
-  onOpenSupplierPicker: (item: OrderListItem) => void;
+  onOpenSupplierPicker: (item: OrderListItem, anchor: HTMLElement | null) => void;
 }) {
   const [open, setOpen] = useState(group.defaultOpen);
   const allSelected = group.items.length > 0 && group.items.every((i) => selected.has(i.id));
@@ -253,15 +260,15 @@ const GroupSection = memo(function GroupSection({
                               : "点击选择供应商"
                           }
                           type="button"
-                          onClick={() => {
-                            if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it);
+                          onClick={(e) => {
+                            if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it, e.currentTarget);
                           }}
                         >
                           <span className="shrink-0">供应商：</span>
                           {it.supplierShortName ? (
                             <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
                           ) : (
-                            <span className="text-neutral-400">-</span>
+                            <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
                           )}
                         </button>
                       </div>
@@ -351,14 +358,14 @@ const GroupSection = memo(function GroupSection({
                           : "点击选择供应商"
                       }
                       type="button"
-                      onClick={() => {
-                        if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it);
+                      onClick={(e) => {
+                        if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it, e.currentTarget);
                       }}
                     >
                       {it.supplierShortName ? (
                         <SupplierBadge color={it.supplierColor} name={it.supplierShortName} />
                       ) : (
-                        <span className="text-xs text-neutral-400">-</span>
+                        <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
                       )}
                     </button>
                   </div>

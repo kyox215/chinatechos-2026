@@ -1,7 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { SupplierSelect } from "@/components/orders/SupplierSelect";
+import { createPortal } from "react-dom";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { SUPPLIER_PALETTE } from "@/components/orders/supplier-palette";
+
+type SupplierOption = { id: string; short_name: string; color: string };
+
+const MENU_W = 200;
+const GAP = 4;
+const EDGE = 8;
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return mobile;
+}
 
 type Props = {
   open: boolean;
@@ -10,9 +28,10 @@ type Props = {
   publicNo: string;
   initialSupplierId: string | null;
   onSaved?: () => void;
+  anchorEl?: HTMLElement | null;
 };
 
-/** Bottom-sheet on mobile, centered dialog on sm+; PATCH order supplier_id. */
+/** Popover on desktop, bottom-sheet on mobile; click to save immediately. */
 export function SupplierPickerModal({
   open,
   onClose,
@@ -20,32 +39,64 @@ export function SupplierPickerModal({
   publicNo,
   initialSupplierId,
   onSaved,
+  anchorEl,
 }: Props) {
-  const [value, setValue] = useState("");
+  const isMobile = useIsMobile();
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     if (!open) return;
-    setValue(initialSupplierId ?? "");
-    setError(null);
-  }, [open, orderId, initialSupplierId]);
+    fetch("/api/suppliers")
+      .then((r) => r.json())
+      .then((d: { items?: SupplierOption[] }) => setSuppliers(d.items ?? []))
+      .catch(() => {});
+  }, [open]);
 
-  async function handleSave() {
+  const recalcPos = useCallback(() => {
+    if (!anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    const mH = menuRef.current?.offsetHeight ?? 300;
+    const top =
+      rect.bottom + GAP + mH > window.innerHeight - EDGE
+        ? Math.max(EDGE, rect.top - mH - GAP)
+        : rect.bottom + GAP;
+    const left = Math.min(Math.max(EDGE, rect.left), window.innerWidth - MENU_W - EDGE);
+    setPos({ top, left });
+  }, [anchorEl]);
+
+  useLayoutEffect(() => {
+    if (open && !isMobile) recalcPos();
+  }, [open, isMobile, recalcPos]);
+
+  useEffect(() => {
+    if (!open || isMobile) return;
+    const handler = () => recalcPos();
+    window.addEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
+  }, [open, isMobile, recalcPos]);
+
+  async function handleSelect(supplierId: string | null) {
     setPending(true);
-    setError(null);
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ supplier_id: value.trim() || null }),
+        body: JSON.stringify({ supplier_id: supplierId }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "保存失败");
       onSaved?.();
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "保存失败");
+    } catch {
+      // silently close on error for quick-pick UX
+      onClose();
     } finally {
       setPending(false);
     }
@@ -53,53 +104,104 @@ export function SupplierPickerModal({
 
   if (!open) return null;
 
-  return (
+  const palette = (color: string) => SUPPLIER_PALETTE[color] ?? SUPPLIER_PALETTE.blue;
+
+  const optionList = (mobile: boolean) => (
     <>
-      <div aria-hidden className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
-      <div
-        aria-labelledby="supplier-picker-title"
-        aria-modal="true"
-        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[min(88dvh,560px)] flex-col rounded-t-2xl border border-border bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[min(90dvh,520px)] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
-        role="dialog"
+      <button
+        className={
+          mobile
+            ? `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
+                !initialSupplierId ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-500"
+              }`
+            : `flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
+                !initialSupplierId ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-500"
+              }`
+        }
+        disabled={pending}
+        onClick={() => handleSelect(null)}
+        type="button"
       >
-        <div className="mb-3 shrink-0 border-b border-border pb-3">
-          <h2 className="text-base font-semibold text-neutral-900" id="supplier-picker-title">
-            选择供应商
-          </h2>
-          <p className="mt-1 text-xs text-neutral-500">{publicNo}</p>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <label className="mb-1 block text-xs font-medium text-neutral-600" htmlFor="supplier-picker-select">
-            配件来源
-          </label>
-          <SupplierSelect
-            id="supplier-picker-select"
-            className="ui-input w-full text-sm"
-            emptyLabel="未选择供应商"
-            onChange={setValue}
-            value={value}
-          />
-          {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
-        </div>
-        <div className="mt-4 flex shrink-0 gap-2 border-t border-border pt-4">
+        <span className={`${mobile ? "h-2.5 w-2.5" : "h-2 w-2"} shrink-0 rounded-full bg-neutral-300`} />
+        不指定供应商
+      </button>
+      {suppliers.map((s) => {
+        const c = palette(s.color);
+        const isActive = s.id === initialSupplierId;
+        return (
           <button
-            className="ui-btn ui-btn-secondary h-11 min-h-[44px] flex-1 text-sm"
+            key={s.id}
+            className={
+              mobile
+                ? `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
+                    isActive ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-700"
+                  }`
+                : `flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
+                    isActive ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-700"
+                  }`
+            }
             disabled={pending}
+            onClick={() => handleSelect(s.id)}
             type="button"
-            onClick={onClose}
           >
-            取消
+            <span className={`${mobile ? "h-2.5 w-2.5" : "h-2 w-2"} shrink-0 rounded-full ${c.bg} ${c.text}`} />
+            {s.short_name}
           </button>
-          <button
-            className="ui-btn ui-btn-primary h-11 min-h-[44px] flex-1 text-sm disabled:opacity-60"
-            disabled={pending}
-            type="button"
-            onClick={handleSave}
-          >
-            {pending ? "保存中..." : "保存"}
-          </button>
+        );
+      })}
+    </>
+  );
+
+  const desktopPopover = !isMobile && (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div
+        ref={menuRef}
+        className="fixed z-50 w-[200px] rounded-xl border border-border bg-surface p-1 shadow-lg"
+        style={{ top: pos.top, left: pos.left }}
+      >
+        <div className="max-h-64 overflow-y-auto">
+          {optionList(false)}
         </div>
       </div>
     </>
+  );
+
+  const mobileSheet = isMobile && (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <span className="text-sm font-semibold text-neutral-900">选择供应商</span>
+            <p className="mt-0.5 text-xs text-neutral-500">{publicNo}</p>
+          </div>
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-muted"
+            onClick={onClose}
+            type="button"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="space-y-1">
+            {optionList(true)}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <>
+      {desktopPopover}
+      {mobileSheet}
+    </>,
+    document.body,
   );
 }
