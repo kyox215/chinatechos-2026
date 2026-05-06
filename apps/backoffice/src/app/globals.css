@@ -34,3 +34,75 @@ body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, Segoe UI, Roboto,
     "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
 }
+
+.ui-panel {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  padding: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .ui-panel {
+    padding: 1rem;
+  }
+}
+
+.ui-input {
+  height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: rgb(64 64 64);
+  outline: none;
+}
+
+.ui-input:focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+@media (min-width: 768px) {
+  .ui-input {
+    height: 2.25rem;
+  }
+}
+
+.ui-btn {
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease,
+    box-shadow 160ms ease, transform 120ms ease;
+}
+
+.ui-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.ui-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ui-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.ui-btn-primary:hover {
+  filter: brightness(0.97);
+}
+
+.ui-btn-secondary {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: rgb(55 65 81);
+}
+
+.ui-btn-secondary:hover {
+  background: var(--muted);
+}

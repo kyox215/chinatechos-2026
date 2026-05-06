@@ -1,24 +1,44 @@
-export function TopBar() {
+export function TopBar(props: {
+  onMenuClick: () => void;
+  onToggleDesktopSidebar: () => void;
+  mobileSidebarOpen: boolean;
+  sidebarCollapsed: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface px-4 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-3 py-3 md:px-4">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="hidden text-sm font-semibold text-neutral-900 md:block">欢迎回来</div>
-        <div className="relative w-[320px] max-w-[56vw]">
+        <button
+          aria-label="打开菜单"
+          aria-expanded={props.mobileSidebarOpen}
+          className="ui-btn ui-btn-secondary h-10 w-10 text-lg text-neutral-700 md:hidden"
+          onClick={props.onMenuClick}
+          type="button"
+        >
+          ☰
+        </button>
+        <button
+          className="ui-btn ui-btn-secondary hidden h-9 w-9 text-sm text-neutral-700 md:block"
+          onClick={props.onToggleDesktopSidebar}
+          type="button"
+        >
+          {props.sidebarCollapsed ? "▸" : "◂"}
+        </button>
+        <div className="relative w-full max-w-[58vw] md:w-[320px]">
           <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-neutral-400">
             <span className="text-xs">⌕</span>
           </div>
           <input
-            className="h-9 w-full rounded-xl border border-border bg-surface-2 pl-8 pr-3 text-sm outline-none ring-0 focus:border-primary/40 focus:shadow-[0_0_0_4px_var(--color-ring)]"
+            className="ui-input w-full pl-8 pr-3"
             placeholder="搜索：电话 / 工单号 / IMEI / 型号"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="h-9 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-neutral-800 hover:bg-muted">
+        <button className="ui-btn ui-btn-secondary h-10 px-3 font-medium text-neutral-800 md:h-9">
           新建工单
         </button>
-        <div className="h-9 w-9 rounded-xl border border-border bg-surface" />
+        <div className="hidden h-9 w-9 rounded-xl border border-border bg-surface md:block" />
       </div>
     </div>
   );

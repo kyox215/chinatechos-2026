@@ -1,0 +1,115 @@
+import { NextRequest, NextResponse } from "next/server";
+import { writeOrderEvent } from "@/lib/data/order-events";
+import { validateOrderTransition } from "@/lib/domain/order-status";
+import { env } from "@/lib/env/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  if (!env.defaultStoreId) {
+    return NextResponse.json({ error: "Missing env: DEFAULT_STORE_ID" }, { status: 500 });
+  }
+
+  const params = await context.params;
+  const contentType = request.headers.get("content-type") ?? "";
+  let toStatus = "";
+  let operatorName = "frontdesk";
+  let cancelReason = "";
+  if (contentType.includes("application/json")) {
+    const body = (await request.json()) as {
+      toStatus?: string;
+      operatorName?: string;
+      cancelReason?: string;
+    };
+    toStatus = String(body.toStatus ?? "");
+    operatorName = String(body.operatorName ?? "frontdesk");
+    cancelReason = String(body.cancelReason ?? "");
+  } else {
+    const formData = await request.formData();
+    toStatus = String(formData.get("toStatus") ?? "");
+    operatorName = String(formData.get("operatorName") ?? "frontdesk");
+    cancelReason = String(formData.get("cancelReason") ?? "");
+  }
+
+  if (!toStatus) {
+    return NextResponse.json({ error: "Missing field: toStatus" }, { status: 400 });
+  }
+
+  const supabase = createSupabaseServerClient();
+  const current = await supabase
+    .from("repair_orders")
+    .select("id, store_id, status")
+    .eq("id", params.id)
+    .eq("store_id", env.defaultStoreId)
+    .is("deleted_at", null)
+    .single();
+
+  if (current.error || !current.data) {
+    return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
+  }
+
+  const validation = validateOrderTransition(current.data.status, toStatus);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.reason }, { status: 400 });
+  }
+
+  const patch: Record<string, unknown> = {
+    status: toStatus,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (toStatus === "waiting_pickup") {
+    patch.completed_at = new Date().toISOString();
+  }
+  if (toStatus === "repairing") {
+    patch.approval_status = "approved";
+    patch.approval_confirmed_at = new Date().toISOString();
+  }
+  if (toStatus === "cancelled") {
+    patch.approval_status = "rejected";
+    patch.cancel_reason = cancelReason || "客户拒绝报价";
+  }
+
+  const updateRes = await supabase
+    .from("repair_orders")
+    .update(patch)
+    .eq("id", params.id)
+    .eq("store_id", env.defaultStoreId)
+    .is("deleted_at", null)
+    .select("id, status")
+    .single();
+
+  if (updateRes.error || !updateRes.data) {
+    return NextResponse.json({ error: updateRes.error?.message ?? "状态更新失败" }, { status: 500 });
+  }
+
+  await writeOrderEvent({
+    storeId: env.defaultStoreId,
+    orderId: params.id,
+    eventType: "status_changed",
+    payload: {
+      fromStatus: current.data.status,
+      toStatus,
+      ...(toStatus === "cancelled"
+        ? { cancelReason: cancelReason || "客户拒绝报价" }
+        : {}),
+    },
+    operatorName,
+  });
+
+  const accept = request.headers.get("accept") ?? "";
+  const shouldReturnJson = contentType.includes("application/json") || accept.includes("application/json");
+  const referer = request.headers.get("referer");
+  if (!shouldReturnJson && referer) {
+    return NextResponse.redirect(referer, { status: 303 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    orderId: params.id,
+    fromStatus: current.data.status,
+    toStatus: updateRes.data.status,
+  });
+}
