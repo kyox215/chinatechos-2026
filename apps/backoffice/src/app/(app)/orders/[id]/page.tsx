@@ -6,6 +6,8 @@ import { DeliverButton } from "@/components/orders/DeliverButton";
 import { OrderEditButton } from "@/components/orders/OrderEditButton";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { PaymentCard } from "@/components/orders/PaymentCard";
+import { NotifyCustomerButton } from "@/components/orders/NotifyCustomerButton";
+import { QuoteForm } from "@/components/orders/QuoteForm";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
 import { getNextActions } from "@/lib/domain/order-status";
@@ -134,6 +136,31 @@ export default async function OrderDetailPage(props: {
 
         {/* Right column */}
         <div className="space-y-4">
+          {/* Notification prompt for repaired / parts_arrived */}
+          {(order.status === "repaired" || order.status === "parts_arrived") && order.customer?.phoneE164 && (
+            <DetailCard title="通知客户">
+              <NotifyCustomerButton
+                orderId={order.id}
+                status={order.status}
+                customerPhone={order.customer.phoneE164}
+                customerName={order.customer.name}
+                deviceLabel={[order.device?.brand, order.device?.model].filter(Boolean).join(" ")}
+              />
+            </DetailCard>
+          )}
+
+          {/* Quote Form for diagnosing status */}
+          {order.status === "diagnosing" && order.customer && (
+            <QuoteForm
+              orderId={order.id}
+              issueDescription={order.issueDescription}
+              customerPhone={order.customer.phoneE164}
+              customerName={order.customer.name}
+              deviceLabel={[order.device?.brand, order.device?.model].filter(Boolean).join(" ")}
+              currentQuotation={order.quotationAmount}
+            />
+          )}
+
           {/* Payment */}
           <PaymentCard
             orderId={order.id}

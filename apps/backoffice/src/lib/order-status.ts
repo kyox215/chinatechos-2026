@@ -1,8 +1,12 @@
 export type RepairOrderStatus =
   | "new"
+  | "parts_ordered"
+  | "parts_arrived"
   | "diagnosing"
   | "waiting_approval"
   | "repairing"
+  | "repaired"
+  | "notified"
   | "waiting_pickup"
   | "completed"
   | "cancelled";
@@ -17,6 +21,14 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
     label: "新建",
     className: "border-neutral-200 bg-neutral-100 text-neutral-700",
   },
+  parts_ordered: {
+    label: "配件已下单",
+    className: "border-orange-100 bg-orange-50 text-orange-700",
+  },
+  parts_arrived: {
+    label: "配件到货",
+    className: "border-orange-200 bg-orange-100 text-orange-800",
+  },
   diagnosing: {
     label: "检测中",
     className: "border-sky-100 bg-sky-50 text-sky-700",
@@ -28,6 +40,14 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
   repairing: {
     label: "维修中",
     className: "border-indigo-100 bg-indigo-50 text-indigo-700",
+  },
+  repaired: {
+    label: "修好待通知",
+    className: "border-teal-100 bg-teal-50 text-teal-700",
+  },
+  notified: {
+    label: "已通知待取件",
+    className: "border-cyan-100 bg-cyan-50 text-cyan-700",
   },
   waiting_pickup: {
     label: "待取件 / 待付款",
@@ -45,7 +65,7 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
 
 export function getOrderStatusPresentation(status: string): StatusPresentation {
   const fallback: StatusPresentation = {
-    label: "新建",
+    label: status,
     className: "border-neutral-200 bg-neutral-100 text-neutral-700",
   };
   return PRESENTATION[status as RepairOrderStatus] ?? fallback;

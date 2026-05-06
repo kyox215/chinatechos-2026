@@ -102,7 +102,7 @@ function FaultButton({
         type="button"
       >
         <span className="shrink-0">{fault.icon}</span>
-        <span className="truncate">{fault.label}</span>
+        <span className="text-xs leading-tight">{fault.label}</span>
         {hasSubs && subCount > 0 && (
           <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
             {subCount}

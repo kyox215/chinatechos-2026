@@ -29,21 +29,28 @@ type StatusGroup = {
   defaultOpen: boolean;
 };
 
+const PENDING_STATUSES = new Set(["new", "parts_ordered", "parts_arrived"]);
+const REPAIRING_STATUSES = new Set(["diagnosing", "waiting_approval", "repairing"]);
+const PICKUP_STATUSES = new Set(["repaired", "notified", "waiting_pickup"]);
+
 function groupOrders(items: OrderItem[]): StatusGroup[] {
-  const active: OrderItem[] = [];
-  const completed: OrderItem[] = [];
-  const cancelled: OrderItem[] = [];
+  const pending: OrderItem[] = [];
+  const repairing: OrderItem[] = [];
+  const pickup: OrderItem[] = [];
+  const ended: OrderItem[] = [];
 
   for (const item of items) {
-    if (item.status === "completed") completed.push(item);
-    else if (item.status === "cancelled") cancelled.push(item);
-    else active.push(item);
+    if (PENDING_STATUSES.has(item.status)) pending.push(item);
+    else if (REPAIRING_STATUSES.has(item.status)) repairing.push(item);
+    else if (PICKUP_STATUSES.has(item.status)) pickup.push(item);
+    else ended.push(item);
   }
 
   const groups: StatusGroup[] = [];
-  if (active.length > 0) groups.push({ key: "active", label: "进行中", items: active, defaultOpen: true });
-  if (completed.length > 0) groups.push({ key: "completed", label: "已完成", items: completed, defaultOpen: false });
-  if (cancelled.length > 0) groups.push({ key: "cancelled", label: "已取消", items: cancelled, defaultOpen: false });
+  if (pending.length > 0) groups.push({ key: "pending", label: "待处理", items: pending, defaultOpen: true });
+  if (repairing.length > 0) groups.push({ key: "repairing", label: "维修中", items: repairing, defaultOpen: true });
+  if (pickup.length > 0) groups.push({ key: "pickup", label: "待取件", items: pickup, defaultOpen: true });
+  if (ended.length > 0) groups.push({ key: "ended", label: "已结束", items: ended, defaultOpen: false });
   return groups;
 }
 

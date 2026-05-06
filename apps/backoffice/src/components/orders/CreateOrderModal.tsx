@@ -7,6 +7,7 @@ import {
   IconUser, IconDevice, IconSearch, IconMoney, IconPackage,
   IconSim, IconPhoneCase, IconBox, IconPlug, IconCable, IconHeadphones,
 } from "@/components/icons";
+import { BarcodeScanner } from "@/components/orders/BarcodeScanner";
 import { FaultSelector } from "@/components/orders/FaultSelector";
 import { buildIssueFromFaults } from "@/lib/domain/fault-types";
 
@@ -28,6 +29,8 @@ export function CreateOrderModal({ open, onClose }: Props) {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerSuggestions, setCustomerSuggestions] = useState<{ id: string; name: string | null; phoneE164: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [brand, setBrand] = useState("");
   const [customBrand, setCustomBrand] = useState("");
   const [model, setModel] = useState("");
@@ -40,6 +43,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
   const [accessories, setAccessories] = useState<Set<string>>(new Set());
   const [customAccessory, setCustomAccessory] = useState("");
   const [technician, setTechnician] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +53,20 @@ export function CreateOrderModal({ open, onClose }: Props) {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = orig; };
   }, [open]);
+
+  useEffect(() => {
+    const q = customerPhone.trim();
+    if (q.length < 3) return;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/customers/suggest?q=${encodeURIComponent(q)}&limit=5`);
+        const data = (await res.json()) as { items?: { id: string; name: string | null; phoneE164: string }[] };
+        setCustomerSuggestions(data.items ?? []);
+        setShowSuggestions(true);
+      } catch { /* ignore */ }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [customerPhone]);
 
   function toggleAccessory(key: string) {
     setAccessories((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
@@ -91,8 +109,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
       const data = (await res.json()) as { id?: string; error?: string };
       if (!res.ok) throw new Error(data.error ?? "创建失败");
       onClose();
-      if (data.id) router.push(`/orders/${data.id}`);
-      else router.refresh();
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");
     } finally {
@@ -123,11 +140,39 @@ export function CreateOrderModal({ open, onClose }: Props) {
             {/* Col 1: Customer + Device */}
             <div className="space-y-4">
               <SectionTitle icon={<IconUser />} title="客户信息" />
-              <Lbl label="姓名" required>
-                <input className="ui-input w-full" onChange={(e) => setCustomerName(e.target.value)} placeholder="客户姓名" value={customerName} />
-              </Lbl>
               <Lbl label="电话" required>
-                <input className="ui-input w-full" onChange={(e) => setCustomerPhone(e.target.value)} placeholder="联系电话" value={customerPhone} />
+                <div className="relative">
+                  <input
+                    className="ui-input w-full"
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onFocus={() => customerSuggestions.length > 0 && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder="输入电话搜索客户"
+                    value={customerPhone}
+                  />
+                  {showSuggestions && customerSuggestions.length > 0 && (
+                    <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-xl border border-border bg-surface p-1 shadow-lg">
+                      {customerSuggestions.map((c) => (
+                        <button
+                          key={c.id}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-muted"
+                          onMouseDown={() => {
+                            setCustomerPhone(c.phoneE164);
+                            setCustomerName(c.name ?? "");
+                            setShowSuggestions(false);
+                          }}
+                          type="button"
+                        >
+                          <span className="font-medium text-neutral-900">{c.name ?? "未命名"}</span>
+                          <span className="text-neutral-500">{c.phoneE164}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Lbl>
+              <Lbl label="姓名">
+                <input className="ui-input w-full" onChange={(e) => setCustomerName(e.target.value)} placeholder="客户姓名 (可选)" value={customerName} />
               </Lbl>
 
               <SectionTitle icon={<IconDevice />} title="设备信息" />
@@ -142,8 +187,21 @@ export function CreateOrderModal({ open, onClose }: Props) {
                 <input className="ui-input w-full" onChange={(e) => setModel(e.target.value)} placeholder="例如: iPhone 13" value={model} />
               </Lbl>
               <Lbl label="IMEI / 序列号">
-                <input className="ui-input w-full" onChange={(e) => setSerialOrImei(e.target.value)} placeholder="可选" value={serialOrImei} />
+                <div className="flex gap-2">
+                  <input className="ui-input flex-1" onChange={(e) => setSerialOrImei(e.target.value)} placeholder="可选" value={serialOrImei} />
+                  <button
+                    className="ui-btn ui-btn-secondary h-10 w-10 flex shrink-0 items-center justify-center md:h-9 md:w-9"
+                    onClick={() => setScannerOpen(true)}
+                    title="扫码录入"
+                    type="button"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h3.375v1.5H5.25v3H3.75v-3.375zM3.75 15.75v3.375c0 .621.504 1.125 1.125 1.125h3.375v-1.5H5.25v-3H3.75zm16.5-10.875v3.375h-1.5v-3h-3v-1.5h3.375c.621 0 1.125.504 1.125 1.125zm-1.5 10.875v3h-3v1.5h3.375c.621 0 1.125-.504 1.125-1.125V15.75h-1.5zM7.5 9v6h1.5V9H7.5zm3 0v6h3V9h-3zm4.5 0v6h1.5V9H15z" />
+                    </svg>
+                  </button>
+                </div>
               </Lbl>
+              <BarcodeScanner open={scannerOpen} onScan={(v) => setSerialOrImei(v)} onClose={() => setScannerOpen(false)} />
             </div>
 
             {/* Col 2: Fault diagnosis */}

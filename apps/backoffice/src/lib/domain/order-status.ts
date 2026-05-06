@@ -11,16 +11,24 @@ export type TransitionContext = {
 };
 
 const QUICK_REPAIR_TRANSITIONS: Record<string, string[]> = {
-  new: ["repairing", "cancelled"],
-  repairing: ["waiting_pickup", "cancelled"],
+  new: ["parts_ordered", "repairing", "cancelled"],
+  parts_ordered: ["parts_arrived", "repairing", "cancelled"],
+  parts_arrived: ["repairing", "cancelled"],
+  repairing: ["repaired", "waiting_pickup", "cancelled"],
+  repaired: ["notified", "waiting_pickup", "cancelled"],
+  notified: ["waiting_pickup", "cancelled"],
   waiting_pickup: ["completed", "cancelled"],
 };
 
 const DROPOFF_REPAIR_TRANSITIONS: Record<string, string[]> = {
-  new: ["diagnosing", "cancelled"],
+  new: ["parts_ordered", "diagnosing", "cancelled"],
+  parts_ordered: ["parts_arrived", "diagnosing", "cancelled"],
+  parts_arrived: ["diagnosing", "cancelled"],
   diagnosing: ["waiting_approval", "cancelled"],
   waiting_approval: ["repairing", "cancelled"],
-  repairing: ["waiting_pickup", "cancelled"],
+  repairing: ["repaired", "waiting_pickup", "cancelled"],
+  repaired: ["notified", "waiting_pickup", "cancelled"],
+  notified: ["waiting_pickup", "cancelled"],
   waiting_pickup: ["completed", "cancelled"],
 };
 
@@ -41,7 +49,6 @@ export function validateOrderTransition(
     return { ok: false, reason: `不允许从 ${fromStatus} 流转到 ${toStatus}` };
   }
 
-  // Pre-condition checks
   if (toStatus === "waiting_approval" && !context?.quotationAmount) {
     return { ok: false, reason: "进入待客户确认报价状态前，必须填写报价金额" };
   }
@@ -63,9 +70,22 @@ export function getNextActions(
     switch (status) {
       case "new":
         actions.push({ toStatus: "repairing", label: "开始维修", confirmText: "确认开始维修？" });
+        actions.push({ toStatus: "parts_ordered", label: "配件下单", confirmText: "确认配件已下单？" });
+        break;
+      case "parts_ordered":
+        actions.push({ toStatus: "parts_arrived", label: "配件到货", confirmText: "确认配件已到货？" });
+        break;
+      case "parts_arrived":
+        actions.push({ toStatus: "repairing", label: "开始维修", confirmText: "确认开始维修？" });
         break;
       case "repairing":
-        actions.push({ toStatus: "waiting_pickup", label: "标记完工", confirmText: "确认标记为待取件？" });
+        actions.push({ toStatus: "repaired", label: "标记修好", confirmText: "确认已修好？" });
+        break;
+      case "repaired":
+        actions.push({ toStatus: "notified", label: "通知客户", confirmText: "确认已通知客户取件？" });
+        break;
+      case "notified":
+        actions.push({ toStatus: "waiting_pickup", label: "待取件", confirmText: "确认进入待取件状态？" });
         break;
       case "waiting_pickup":
         actions.push({ toStatus: "completed", label: "完成工单", confirmText: "确认完成工单？" });
@@ -75,16 +95,29 @@ export function getNextActions(
     switch (status) {
       case "new":
         actions.push({ toStatus: "diagnosing", label: "开始诊断", confirmText: "确认开始诊断？" });
+        actions.push({ toStatus: "parts_ordered", label: "配件下单", confirmText: "确认配件已下单？" });
+        break;
+      case "parts_ordered":
+        actions.push({ toStatus: "parts_arrived", label: "配件到货", confirmText: "确认配件已到货？" });
+        break;
+      case "parts_arrived":
+        actions.push({ toStatus: "diagnosing", label: "开始诊断", confirmText: "确认开始诊断？" });
         break;
       case "diagnosing":
         actions.push({ toStatus: "waiting_approval", label: "发送报价", confirmText: "确认发送报价给客户？" });
         break;
       case "waiting_approval":
-        actions.push({ toStatus: "repairing", label: "客户同意", confirmText: "确认客户已同意报价，开始维修？" });
-        actions.push({ toStatus: "cancelled", label: "客户拒绝", confirmText: "确认客户拒绝报价？工单将被取消。", variant: "danger" });
+        actions.push({ toStatus: "repairing", label: "客户同意", confirmText: "确认客户已同意报价？" });
+        actions.push({ toStatus: "cancelled", label: "客户拒绝", confirmText: "确认客户拒绝？工单将被取消。", variant: "danger" });
         break;
       case "repairing":
-        actions.push({ toStatus: "waiting_pickup", label: "标记完工", confirmText: "确认标记为待取件？" });
+        actions.push({ toStatus: "repaired", label: "标记修好", confirmText: "确认已修好？" });
+        break;
+      case "repaired":
+        actions.push({ toStatus: "notified", label: "通知客户", confirmText: "确认已通知客户取件？" });
+        break;
+      case "notified":
+        actions.push({ toStatus: "waiting_pickup", label: "待取件", confirmText: "确认进入待取件状态？" });
         break;
       case "waiting_pickup":
         actions.push({ toStatus: "completed", label: "完成工单", confirmText: "确认完成工单？" });
