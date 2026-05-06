@@ -2,7 +2,11 @@
 
 import { PrintOrderButton } from "@/components/orders/PrintOrderButton";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
-import { issueSummaryForPrintIt } from "@/lib/domain/fault-print-it";
+import {
+  buildFaultPriceLinesFromStoredIssue,
+  issueSummaryForPrintIt,
+} from "@/lib/domain/fault-print-it";
+import { extractFaultExtraNote } from "@/lib/domain/fault-types";
 
 export type OrderDetailPrintProps = {
   publicNo: string;
@@ -23,6 +27,11 @@ export type OrderDetailPrintProps = {
 
 export function OrderDetailPrint(props: OrderDetailPrintProps) {
   const { summaryIt, originalUnparsed } = issueSummaryForPrintIt(props.issueDescription);
+  const faultPriceLines = buildFaultPriceLinesFromStoredIssue(
+    props.issueDescription,
+    props.quotationAmount,
+  );
+  const interventionFreeNote = extractFaultExtraNote(props.issueDescription).trim() || null;
 
   const payload: OrderPrintPayload = {
     variant: "saved",
@@ -34,6 +43,7 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     model: props.model,
     serialOrImei: props.serialOrImei,
     issueSummaryIt: summaryIt,
+    interventionFreeNote,
     issueOriginalUnparsed: originalUnparsed,
     diagnosisResult: props.diagnosisResult,
     quotationAmount: props.quotationAmount,
@@ -42,6 +52,7 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     technicianName: props.technicianName,
     warrantyTextCn: props.warrantyText,
     internalTag: props.internalTag,
+    faultPriceLines: faultPriceLines.length > 0 ? faultPriceLines : undefined,
   };
 
   return <PrintOrderButton payload={payload} />;

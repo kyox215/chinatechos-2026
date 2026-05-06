@@ -93,6 +93,65 @@ const FAULT_IT: Record<string, { category: string; subs?: Record<string, string>
 
 const KEY_ORDER = Object.keys(FAULT_IT);
 
+function italianLabelForFaultKey(key: string, selected: string[]): string {
+  const meta = FAULT_IT[key];
+  if (!meta) return key;
+
+  if (!meta.subs || selected.includes("_self")) {
+    return meta.category;
+  }
+  const subLabels = selected
+    .map((sk) => meta.subs?.[sk])
+    .filter(Boolean) as string[];
+  if (subLabels.length > 0) {
+    return `${meta.category} (${subLabels.join(", ")})`;
+  }
+  return meta.category;
+}
+
+export function buildFaultPriceLinesItalian(
+  faultMap: Map<string, string[]>,
+  faultPrices: Record<string, string>,
+): { labelIt: string; amountEur: number | null }[] {
+  const lines: { labelIt: string; amountEur: number | null }[] = [];
+  for (const key of KEY_ORDER) {
+    const selected = faultMap.get(key);
+    if (!selected || selected.length === 0) continue;
+    const labelIt = italianLabelForFaultKey(key, selected);
+    const raw = faultPrices[key];
+    const n = raw != null && raw !== "" ? Number(raw) : NaN;
+    const amountEur = Number.isFinite(n) ? n : null;
+    lines.push({ labelIt, amountEur });
+  }
+  return lines;
+}
+
+/**
+ * For saved orders: DB has only total quotation — split evenly across parsed fault keys (same heuristic as FinanceCard).
+ */
+export function buildFaultPriceLinesFromStoredIssue(
+  issueDescription: string,
+  quotationAmount: number | null,
+): { labelIt: string; amountEur: number | null }[] {
+  const map = parseFaultsFromIssue(issueDescription);
+  const lines: { labelIt: string; amountEur: number | null }[] = [];
+  for (const key of KEY_ORDER) {
+    const selected = map.get(key);
+    if (!selected || selected.length === 0) continue;
+    lines.push({
+      labelIt: italianLabelForFaultKey(key, selected),
+      amountEur: null,
+    });
+  }
+  const n = lines.length;
+  const total = quotationAmount != null && !Number.isNaN(quotationAmount) ? quotationAmount : null;
+  if (n === 0 || total == null || total <= 0) {
+    return lines.map((l) => ({ ...l, amountEur: null }));
+  }
+  const per = total / n;
+  return lines.map((l) => ({ ...l, amountEur: per }));
+}
+
 export function buildIssueItalianFromFaults(
   faultMap: Map<string, string[]>,
   extraNote: string,
@@ -100,22 +159,9 @@ export function buildIssueItalianFromFaults(
   const parts: string[] = [];
 
   for (const key of KEY_ORDER) {
-    const meta = FAULT_IT[key];
     const selected = faultMap.get(key);
     if (!selected || selected.length === 0) continue;
-
-    if (!meta.subs || selected.includes("_self")) {
-      parts.push(meta.category);
-    } else {
-      const subLabels = selected
-        .map((sk) => meta.subs?.[sk])
-        .filter(Boolean) as string[];
-      if (subLabels.length > 0) {
-        parts.push(`${meta.category} (${subLabels.join(", ")})`);
-      } else {
-        parts.push(meta.category);
-      }
-    }
+    parts.push(italianLabelForFaultKey(key, selected));
   }
 
   if (extraNote.trim()) parts.push(extraNote.trim());

@@ -11,7 +11,7 @@ import {
 } from "@/components/orders/OrderFormFields";
 import { OrderPrintSheet } from "@/components/orders/OrderPrintSheet";
 import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
-import { buildIssueItalianFromFaults } from "@/lib/domain/fault-print-it";
+import { buildFaultPriceLinesItalian, buildIssueItalianFromFaults } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, buildIssueFromFaults } from "@/lib/domain/fault-types";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 
@@ -69,6 +69,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
 
   const printPayload: OrderPrintPayload = useMemo(() => {
     const variant = printedPublicNo ? "saved" : "draft";
+    const lines = buildFaultPriceLinesItalian(selectedFaults, faultPrices);
     return {
       variant,
       publicNo: printedPublicNo,
@@ -79,6 +80,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
       model: model.trim() || "—",
       serialOrImei: serialOrImei.trim() || null,
       issueSummaryIt: buildIssueItalianFromFaults(selectedFaults, faultNote),
+      interventionFreeNote: faultNote.trim() || null,
       diagnosisResult: null,
       quotationAmount: orderTotal > 0 ? orderTotal : null,
       depositAmount: deposit ? Number(deposit) : null,
@@ -86,6 +88,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
       technicianName: technician.trim() || null,
       warrantyTextCn: warranty,
       internalTag: internalTag.trim() || null,
+      faultPriceLines: lines.length > 0 ? lines : undefined,
     };
   }, [
     printedPublicNo,
@@ -95,6 +98,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     model,
     serialOrImei,
     selectedFaults,
+    faultPrices,
     faultNote,
     orderTotal,
     deposit,

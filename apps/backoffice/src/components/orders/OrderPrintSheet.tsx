@@ -7,6 +7,7 @@ import {
   formatEURPrint,
   formatPrintDate,
   mapWarrantyCnToIt,
+  translateAccessoryTagsToIt,
 } from "@/lib/domain/order-print-it";
 
 export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
@@ -42,7 +43,36 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
 
         <section className="mt-3 border-t border-neutral-200 pt-2">
           <h2 className="mb-1 font-semibold">Intervento richiesto</h2>
-          <p className="whitespace-pre-wrap text-neutral-800">{p.issueSummaryIt}</p>
+          {p.faultPriceLines && p.faultPriceLines.length > 0 ? (
+            <table className="mt-1 w-full border-collapse text-[10px]">
+              <thead>
+                <tr className="border-b border-neutral-300 text-left text-neutral-600">
+                  <th className="py-1 pr-2 font-medium">Descrizione</th>
+                  <th className="py-1 font-medium">Importo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {p.faultPriceLines.map((row, i) => (
+                  <tr key={`${row.labelIt}-${i}`} className="border-b border-neutral-100">
+                    <td className="py-1 pr-2 align-top text-neutral-800">{row.labelIt}</td>
+                    <td className="py-1 whitespace-nowrap align-top tabular-nums text-neutral-800">
+                      {formatEURPrint(row.amountEur)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+          {p.faultPriceLines && p.faultPriceLines.length > 0 ? (
+            p.interventionFreeNote?.trim() ? (
+              <div className="mt-2">
+                <div className="text-[10px] font-semibold text-neutral-600">Note aggiuntive</div>
+                <p className="whitespace-pre-wrap text-neutral-800">{p.interventionFreeNote.trim()}</p>
+              </div>
+            ) : null
+          ) : (
+            <p className="whitespace-pre-wrap text-neutral-800">{p.issueSummaryIt}</p>
+          )}
           {p.issueOriginalUnparsed ? (
             <div className="mt-2 rounded border border-neutral-200 bg-neutral-50 p-2">
               <div className="text-[10px] font-semibold text-neutral-600">
@@ -70,7 +100,10 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
           <h2 className="mb-1 font-semibold">Servizio</h2>
           <Row label="Tecnico" value={p.technicianName?.trim() || "—"} />
           <Row label="Durata garanzia (riparazione)" value={mapWarrantyCnToIt(p.warrantyTextCn)} />
-          <Row label="Etichette accessori" value={p.internalTag?.trim() || "—"} />
+          <Row
+            label="Etichette accessori"
+            value={translateAccessoryTagsToIt(p.internalTag ?? "") || "—"}
+          />
         </section>
 
         <section className="mt-4 border-t border-neutral-300 pt-3">

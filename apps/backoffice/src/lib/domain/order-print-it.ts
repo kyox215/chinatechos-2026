@@ -1,5 +1,10 @@
 export type OrderPrintVariant = "draft" | "saved";
 
+export type FaultPriceLinePrint = {
+  labelIt: string;
+  amountEur: number | null;
+};
+
 export type OrderPrintPayload = {
   variant: OrderPrintVariant;
   /** Null or empty when draft */
@@ -11,6 +16,8 @@ export type OrderPrintPayload = {
   model: string;
   serialOrImei: string | null;
   issueSummaryIt: string;
+  /** Optional free-text note (e.g. fault note); shown under intervention when fault lines exist */
+  interventionFreeNote?: string | null;
   issueOriginalUnparsed?: string;
   diagnosisResult: string | null;
   quotationAmount: number | null;
@@ -19,6 +26,7 @@ export type OrderPrintPayload = {
   technicianName: string | null;
   warrantyTextCn: string | null;
   internalTag: string | null;
+  faultPriceLines?: FaultPriceLinePrint[];
 };
 
 export function formatEURPrint(value: number | null): string {
@@ -37,6 +45,35 @@ export function formatPrintDate(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(iso));
+}
+
+/** Maps common CN accessory phrases to Italian for customer-facing print */
+export function translateAccessoryTagsToIt(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return "";
+
+  const phraseMap: Record<string, string> = {
+    SIM卡: "Scheda SIM",
+    手机壳: "Custodia",
+    手机套: "Custodia",
+    钢化膜: "Pellicola vetro temperato",
+    保护膜: "Pellicola protettiva",
+    充电器: "Caricabatterie",
+    数据线: "Cavo dati",
+    耳机: "Auricolari",
+    内存卡: "Scheda di memoria",
+    SD卡: "Scheda SD",
+    电池: "Batteria (accessorio)",
+    发票: "Ricevuta / fattura",
+  };
+
+  const segments = trimmed
+    .split(/[,，;；]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const translated = segments.map((seg) => phraseMap[seg] ?? seg);
+  return translated.join(", ");
 }
 
 export function mapWarrantyCnToIt(warrantyTextCn: string | null | undefined): string {
