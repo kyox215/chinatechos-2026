@@ -3,26 +3,9 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import {
-  IconScreen, IconBattery, IconCharging, IconCamera, IconWater,
-  IconMotherboard, IconSystem, IconBackcover, IconFaceId, IconSpeaker,
-  IconMic, IconButtons, IconSearch, IconWrench, IconMoney,
-} from "@/components/icons";
-
-const FAULT_TYPES: { key: string; label: string; icon: ReactNode }[] = [
-  { key: "screen", label: "屏幕", icon: <IconScreen /> },
-  { key: "battery", label: "电池", icon: <IconBattery /> },
-  { key: "charging", label: "尾插", icon: <IconCharging /> },
-  { key: "camera", label: "摄像头", icon: <IconCamera /> },
-  { key: "water", label: "进水", icon: <IconWater /> },
-  { key: "motherboard", label: "主板", icon: <IconMotherboard /> },
-  { key: "system", label: "系统", icon: <IconSystem /> },
-  { key: "backcover", label: "后盖", icon: <IconBackcover /> },
-  { key: "faceid", label: "面容/指纹", icon: <IconFaceId /> },
-  { key: "speaker", label: "听筒/扬声器", icon: <IconSpeaker /> },
-  { key: "mic", label: "麦克风", icon: <IconMic /> },
-  { key: "buttons", label: "按键", icon: <IconButtons /> },
-];
+import { IconSearch, IconWrench, IconMoney } from "@/components/icons";
+import { FaultSelector } from "@/components/orders/FaultSelector";
+import { buildIssueFromFaults, parseFaultsFromIssue } from "@/lib/domain/fault-types";
 
 type Props = {
   open: boolean;
@@ -49,13 +32,9 @@ export function OrderEditModal(props: Props) {
   const [tag, setTag] = useState(props.internalTag ?? "");
   const [warranty, setWarranty] = useState(props.warrantyText ?? "");
   const [pause, setPause] = useState(props.pauseReason ?? "");
-  const [selectedFaults, setSelectedFaults] = useState<Set<string>>(() => {
-    const faults = new Set<string>();
-    for (const ft of FAULT_TYPES) {
-      if (props.issueDescription.includes(ft.label)) faults.add(ft.key);
-    }
-    return faults;
-  });
+  const [selectedFaults, setSelectedFaults] = useState<Map<string, string[]>>(
+    () => parseFaultsFromIssue(props.issueDescription),
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,18 +45,6 @@ export function OrderEditModal(props: Props) {
     return () => { document.body.style.overflow = orig; };
   }, [props.open]);
 
-  function toggleFault(key: string) {
-    setSelectedFaults((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
-  }
-
-  function buildIssue(): string {
-    const labels = FAULT_TYPES.filter((f) => selectedFaults.has(f.key)).map((f) => f.label);
-    const knownLabels = new Set(FAULT_TYPES.map((f) => f.label));
-    const extraClean = issue.split(/[;；]/).map((s) => s.trim()).filter((s) => s && !knownLabels.has(s)).join("; ");
-    const parts = [...labels];
-    if (extraClean) parts.push(extraClean);
-    return parts.join("; ") || issue || "未填写";
-  }
 
   async function handleSave() {
     setPending(true);
@@ -87,7 +54,7 @@ export function OrderEditModal(props: Props) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          issue_description: buildIssue(),
+          issue_description: buildIssueFromFaults(selectedFaults, issue),
           diagnosis_result: diagnosis.trim() || null,
           technician_name: technician.trim() || null,
           quotation_amount: quotation ? Number(quotation) : null,
@@ -131,23 +98,7 @@ export function OrderEditModal(props: Props) {
             {/* Col 1: Fault */}
             <div className="space-y-4">
               <SectionTitle icon={<IconSearch />} title="故障诊断" />
-              <div className="grid grid-cols-3 gap-2">
-                {FAULT_TYPES.map((f) => (
-                  <button
-                    key={f.key}
-                    className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs transition-colors ${
-                      selectedFaults.has(f.key)
-                        ? "border-primary bg-primary-2 text-primary ring-1 ring-ring"
-                        : "border-border bg-surface-2 hover:bg-muted"
-                    }`}
-                    onClick={() => toggleFault(f.key)}
-                    type="button"
-                  >
-                    {f.icon}
-                    <span>{f.label}</span>
-                  </button>
-                ))}
-              </div>
+              <FaultSelector selected={selectedFaults} onChange={setSelectedFaults} />
               <Lbl label="问题描述 / 补充">
                 <textarea className="ui-input min-h-[70px] w-full py-2" onChange={(e) => setIssue(e.target.value)} value={issue} />
               </Lbl>

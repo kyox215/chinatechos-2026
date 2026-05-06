@@ -4,29 +4,22 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
-  IconScreen, IconBattery, IconCharging, IconCamera, IconWater,
-  IconMotherboard, IconSystem, IconBackcover, IconFaceId, IconSpeaker,
-  IconMic, IconButtons, IconUser, IconDevice, IconSearch, IconMoney, IconPackage,
+  IconUser, IconDevice, IconSearch, IconMoney, IconPackage,
+  IconSim, IconPhoneCase, IconBox, IconPlug, IconCable, IconHeadphones,
 } from "@/components/icons";
+import { FaultSelector } from "@/components/orders/FaultSelector";
+import { buildIssueFromFaults } from "@/lib/domain/fault-types";
 
 const BRANDS = ["Apple", "Samsung", "Huawei", "Xiaomi", "OnePlus", "OPPO", "vivo", "Google", "其他"];
 
-const FAULT_TYPES: { key: string; label: string; icon: ReactNode }[] = [
-  { key: "screen", label: "屏幕", icon: <IconScreen /> },
-  { key: "battery", label: "电池", icon: <IconBattery /> },
-  { key: "charging", label: "尾插", icon: <IconCharging /> },
-  { key: "camera", label: "摄像头", icon: <IconCamera /> },
-  { key: "water", label: "进水", icon: <IconWater /> },
-  { key: "motherboard", label: "主板", icon: <IconMotherboard /> },
-  { key: "system", label: "系统", icon: <IconSystem /> },
-  { key: "backcover", label: "后盖", icon: <IconBackcover /> },
-  { key: "faceid", label: "面容/指纹", icon: <IconFaceId /> },
-  { key: "speaker", label: "听筒/扬声器", icon: <IconSpeaker /> },
-  { key: "mic", label: "麦克风", icon: <IconMic /> },
-  { key: "buttons", label: "按键", icon: <IconButtons /> },
+const ACCESSORY_OPTIONS: { key: string; label: string; icon: ReactNode }[] = [
+  { key: "sim", label: "SIM卡", icon: <IconSim /> },
+  { key: "case", label: "手机壳", icon: <IconPhoneCase /> },
+  { key: "box", label: "包装盒", icon: <IconBox /> },
+  { key: "charger", label: "充电头", icon: <IconPlug /> },
+  { key: "cable", label: "数据线", icon: <IconCable /> },
+  { key: "earphone", label: "耳机", icon: <IconHeadphones /> },
 ];
-
-const ACCESSORY_OPTIONS = ["SIM卡", "手机壳", "包装盒", "充电头", "数据线", "耳机"];
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -39,7 +32,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
   const [customBrand, setCustomBrand] = useState("");
   const [model, setModel] = useState("");
   const [serialOrImei, setSerialOrImei] = useState("");
-  const [selectedFaults, setSelectedFaults] = useState<Set<string>>(new Set());
+  const [selectedFaults, setSelectedFaults] = useState<Map<string, string[]>>(new Map());
   const [faultNote, setFaultNote] = useState("");
   const [quotation, setQuotation] = useState("");
   const [deposit, setDeposit] = useState("");
@@ -57,23 +50,14 @@ export function CreateOrderModal({ open, onClose }: Props) {
     return () => { document.body.style.overflow = orig; };
   }, [open]);
 
-  function toggleFault(key: string) {
-    setSelectedFaults((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
-  }
-  function toggleAccessory(label: string) {
-    setAccessories((prev) => { const n = new Set(prev); if (n.has(label)) n.delete(label); else n.add(label); return n; });
-  }
-
-  function buildIssueDescription() {
-    const parts = FAULT_TYPES.filter((f) => selectedFaults.has(f.key)).map((f) => f.label);
-    if (faultNote.trim()) parts.push(faultNote.trim());
-    return parts.join("; ") || "未填写问题描述";
+  function toggleAccessory(key: string) {
+    setAccessories((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
   }
 
   function buildInternalTag() {
-    const tags = [...accessories];
-    if (customAccessory.trim()) tags.push(customAccessory.trim());
-    return tags.join(", ");
+    const labels = ACCESSORY_OPTIONS.filter((a) => accessories.has(a.key)).map((a) => a.label);
+    if (customAccessory.trim()) labels.push(customAccessory.trim());
+    return labels.join(", ");
   }
 
   async function handleSubmit() {
@@ -82,6 +66,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
     if (!finalBrand) { setError("设备品牌不能为空"); return; }
     if (!model.trim()) { setError("设备型号不能为空"); return; }
     if (selectedFaults.size === 0 && !faultNote.trim()) { setError("请至少选择一个故障类型或填写故障描述"); return; }
+
 
     setPending(true);
     setError(null);
@@ -96,7 +81,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
           brand: finalBrand,
           model: model.trim(),
           serialOrImei: serialOrImei.trim() || undefined,
-          issueDescription: buildIssueDescription(),
+          issueDescription: buildIssueFromFaults(selectedFaults, faultNote),
           quotationAmount: quotation ? Number(quotation) : undefined,
           depositAmount: deposit ? Number(deposit) : undefined,
           technicianName: technician.trim() || undefined,
@@ -164,23 +149,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
             {/* Col 2: Fault diagnosis */}
             <div className="space-y-4">
               <SectionTitle icon={<IconSearch />} title="故障诊断" />
-              <div className="grid grid-cols-3 gap-2">
-                {FAULT_TYPES.map((f) => (
-                  <button
-                    key={f.key}
-                    className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-xs transition-colors ${
-                      selectedFaults.has(f.key)
-                        ? "border-primary bg-primary-2 text-primary ring-1 ring-ring"
-                        : "border-border bg-surface-2 hover:bg-muted"
-                    }`}
-                    onClick={() => toggleFault(f.key)}
-                    type="button"
-                  >
-                    {f.icon}
-                    <span>{f.label}</span>
-                  </button>
-                ))}
-              </div>
+              <FaultSelector selected={selectedFaults} onChange={setSelectedFaults} />
               <Lbl label="故障备注 / 其他问题">
                 <textarea className="ui-input min-h-[80px] w-full py-2" onChange={(e) => setFaultNote(e.target.value)} placeholder="详细描述故障情况..." value={faultNote} />
               </Lbl>
@@ -210,19 +179,20 @@ export function CreateOrderModal({ open, onClose }: Props) {
               </div>
 
               <SectionTitle icon={<IconPackage />} title="留下的配件" />
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 {ACCESSORY_OPTIONS.map((acc) => (
                   <button
-                    key={acc}
-                    className={`rounded-xl border px-3 py-1.5 text-xs transition-colors ${
-                      accessories.has(acc)
+                    key={acc.key}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors ${
+                      accessories.has(acc.key)
                         ? "border-primary bg-primary-2 text-primary"
                         : "border-border bg-surface-2 text-neutral-600 hover:bg-muted"
                     }`}
-                    onClick={() => toggleAccessory(acc)}
+                    onClick={() => toggleAccessory(acc.key)}
                     type="button"
                   >
-                    {acc}
+                    <span className="shrink-0">{acc.icon}</span>
+                    <span>{acc.label}</span>
                   </button>
                 ))}
               </div>

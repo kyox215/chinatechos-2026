@@ -207,3 +207,53 @@ export function IconTruck({ className = "h-3.5 w-3.5" }: IconProps) {
     </svg>
   );
 }
+
+// Accessory icons
+export function IconSim({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25h12A2.25 2.25 0 0020.25 18V8.25l-4.5-4.5H7.5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 10.5h4.5v6h-4.5v-6z" />
+    </svg>
+  );
+}
+
+export function IconPhoneCase({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 2.25h9A2.25 2.25 0 0118.75 4.5v15a2.25 2.25 0 01-2.25 2.25h-9A2.25 2.25 0 015.25 19.5v-15A2.25 2.25 0 017.5 2.25zM10.5 18.75h3" />
+    </svg>
+  );
+}
+
+export function IconBox({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+    </svg>
+  );
+}
+
+export function IconPlug({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+    </svg>
+  );
+}
+
+export function IconCable({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.914 0l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    </svg>
+  );
+}
+
+export function IconHeadphones({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12a8.25 8.25 0 1116.5 0v2.25a2.25 2.25 0 01-2.25 2.25h-.75a2.25 2.25 0 01-2.25-2.25V12a2.25 2.25 0 012.25-2.25h.75m-9 0h.75A2.25 2.25 0 019 12v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V12" />
+    </svg>
+  );
+}
