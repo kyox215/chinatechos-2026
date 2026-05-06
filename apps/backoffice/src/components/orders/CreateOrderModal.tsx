@@ -39,7 +39,6 @@ export function CreateOrderModal({ open, onClose }: Props) {
   const [faultNote, setFaultNote] = useState("");
   const [quotation, setQuotation] = useState("");
   const [deposit, setDeposit] = useState("");
-  const [isDropoff, setIsDropoff] = useState(true);
   const [accessories, setAccessories] = useState<Set<string>>(new Set());
   const [customAccessory, setCustomAccessory] = useState("");
   const [technician, setTechnician] = useState("");
@@ -93,7 +92,7 @@ export function CreateOrderModal({ open, onClose }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderType: isDropoff ? "dropoff_repair" : "quick_repair",
+          orderType: "dropoff_repair",
           customerPhone: customerPhone.trim(),
           customerName: customerName.trim() || undefined,
           brand: finalBrand,
@@ -223,17 +222,6 @@ export function CreateOrderModal({ open, onClose }: Props) {
                 <Lbl label="定金 (€)">
                   <input className="ui-input w-full" onChange={(e) => setDeposit(e.target.value)} placeholder="0" type="number" value={deposit} />
                 </Lbl>
-              </div>
-
-              <div className="flex items-center justify-between rounded-xl border border-border bg-surface-2 px-3 py-2.5">
-                <span className="text-sm text-neutral-700">客户留机维修</span>
-                <button
-                  className={`relative h-6 w-11 rounded-full transition-colors ${isDropoff ? "bg-primary" : "bg-neutral-300"}`}
-                  onClick={() => setIsDropoff((v) => !v)}
-                  type="button"
-                >
-                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${isDropoff ? "left-[22px]" : "left-0.5"}`} />
-                </button>
               </div>
 
               <SectionTitle icon={<IconPackage />} title="留下的配件" />

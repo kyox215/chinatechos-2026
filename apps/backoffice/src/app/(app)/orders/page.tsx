@@ -14,9 +14,9 @@ export default async function OrdersPage(props: {
   const searchParams = (await props.searchParams) ?? {};
   const q = normalizeQuery(searchParams.q);
   const status = normalizeQuery(searchParams.status) ?? "all";
-  const orderType = normalizeQuery(searchParams.orderType) ?? "all";
   const technician = normalizeQuery(searchParams.technician) ?? "all";
   const paid = normalizePaid(normalizeQuery(searchParams.paid));
+  const supplier = normalizeQuery(searchParams.supplier);
   const approvalOverdue = normalizeBool(searchParams.approvalOverdue);
   const pickupOverdue = normalizeBool(searchParams.pickupOverdue);
   const dateFrom = normalizeQuery(searchParams.dateFrom);
@@ -25,9 +25,10 @@ export default async function OrdersPage(props: {
   const { items } = await listOrders({
     q,
     status,
-    orderType,
+    orderType: "all",
     technician,
     paid,
+    supplier,
     approvalOverdue,
     pickupOverdue,
     dateFrom,
@@ -48,11 +49,11 @@ export default async function OrdersPage(props: {
           approvalOverdue={approvalOverdue}
           dateFrom={dateFrom}
           dateTo={dateTo}
-          orderType={orderType}
           paid={paid}
           pickupOverdue={pickupOverdue}
           q={q}
           status={status}
+          supplier={supplier}
           technician={technician}
         />
 
@@ -108,12 +109,12 @@ function OrderActions(props: {
     orderType: string;
   };
 }) {
-  const actions = getNextActions(props.it.status, props.it.orderType);
-  if (actions.length === 0) return null;
+  const { primary } = getNextActions(props.it.status);
+  if (primary.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
-      {actions.map((action) => (
+      {primary.map((action) => (
         <OrderTransitionButton
           key={action.toStatus}
           confirmText={action.confirmText}
@@ -121,9 +122,6 @@ function OrderActions(props: {
           orderId={props.it.id}
           toStatus={action.toStatus}
           variant={action.variant}
-          {...(action.toStatus === "cancelled"
-            ? { reasonField: "cancelReason", reasonPrompt: "请输入取消原因" }
-            : {})}
         />
       ))}
     </div>

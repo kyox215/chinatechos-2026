@@ -51,10 +51,11 @@ begin
   if not exists (select 1 from pg_type where typname = 'repair_order_status') then
     create type public.repair_order_status as enum (
       'new',
+      'diagnosing',
+      'quoted',
+      'waiting_approval',
       'parts_ordered',
       'parts_arrived',
-      'diagnosing',
-      'waiting_approval',
       'repairing',
       'repaired',
       'notified',
@@ -67,6 +68,17 @@ begin
     create type public.approval_status as enum ('pending', 'approved', 'rejected');
   end if;
 end$$;
+
+create table if not exists public.suppliers (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  name text not null,
+  short_name text not null,
+  color text not null default 'blue',
+  contact text,
+  notes text,
+  created_at timestamptz not null default now()
+);
 
 create table if not exists public.repair_orders (
   id uuid primary key default gen_random_uuid(),
@@ -96,6 +108,7 @@ create table if not exists public.repair_orders (
   deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  supplier_id uuid references public.suppliers(id) on delete set null,
   unique (store_id, public_no)
 );
 

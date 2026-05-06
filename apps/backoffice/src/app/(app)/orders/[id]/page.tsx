@@ -8,6 +8,7 @@ import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { PaymentCard } from "@/components/orders/PaymentCard";
 import { NotifyCustomerButton } from "@/components/orders/NotifyCustomerButton";
 import { QuoteForm } from "@/components/orders/QuoteForm";
+import { StatusDropdown } from "@/components/orders/StatusDropdown";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
 import { getNextActions } from "@/lib/domain/order-status";
@@ -20,7 +21,7 @@ export default async function OrderDetailPage(props: {
   if (!order) notFound();
 
   const events = await getOrderEvents(id);
-  const actions = getNextActions(order.status, order.orderType);
+  const { primary, secondary } = getNextActions(order.status);
 
   const isTerminal = order.status === "completed" || order.status === "cancelled";
 
@@ -40,18 +41,15 @@ export default async function OrderDetailPage(props: {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-semibold tracking-tight">{order.publicNo}</h1>
               <OrderStatusBadge status={order.status} />
-              <span className="rounded-lg border border-border bg-muted px-2 py-0.5 text-xs text-neutral-600">
-                {order.orderType === "quick_repair" ? "快速维修" : "留机维修"}
-              </span>
             </div>
             <div className="mt-1 text-sm text-neutral-600">
               {order.customer?.name ?? "未命名客户"} · {order.customer?.phoneE164 ?? "-"}
             </div>
           </div>
 
-          {!isTerminal && actions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {actions.map((action) => (
+          {!isTerminal && (primary.length > 0 || secondary.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {primary.map((action) => (
                 <OrderTransitionButton
                   key={action.toStatus}
                   confirmText={action.confirmText}
@@ -59,11 +57,11 @@ export default async function OrderDetailPage(props: {
                   orderId={order.id}
                   toStatus={action.toStatus}
                   variant={action.variant}
-                  {...(action.toStatus === "cancelled"
-                    ? { reasonField: "cancelReason", reasonPrompt: "请输入取消原因" }
-                    : {})}
                 />
               ))}
+              {secondary.length > 0 && (
+                <StatusDropdown orderId={order.id} actions={secondary} />
+              )}
             </div>
           )}
         </div>
@@ -172,7 +170,7 @@ export default async function OrderDetailPage(props: {
           />
 
           {/* Delivery */}
-          {order.status === "waiting_pickup" && (
+          {order.status === "notified" && (
             <DetailCard title="交付">
               <DeliverButton orderId={order.id} deliveredAt={order.deliveredAt} />
             </DetailCard>
@@ -204,17 +202,11 @@ export default async function OrderDetailPage(props: {
           </DetailCard>
 
           {/* Approval status */}
-          {order.orderType === "dropoff_repair" && (
+          {order.approvalStatus && order.approvalStatus !== "pending" && (
             <DetailCard title="审批状态">
               <DetailRow
                 label="状态"
-                value={
-                  order.approvalStatus === "approved"
-                    ? "已批准"
-                    : order.approvalStatus === "rejected"
-                      ? "已拒绝"
-                      : "待确认"
-                }
+                value={order.approvalStatus === "approved" ? "已批准" : "已拒绝"}
               />
             </DetailCard>
           )}

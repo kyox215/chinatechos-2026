@@ -1,10 +1,11 @@
 import { getOrderStatusPresentation } from "@/lib/order-status";
 
 export function OrderStatusBadge(props: { status: string }) {
-  const status = getOrderStatusPresentation(props.status);
+  const p = getOrderStatusPresentation(props.status);
   return (
-    <span className={["inline-flex rounded-full border px-2 py-1 text-xs font-semibold", status.className].join(" ")}>
-      {status.label}
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2 w-2 shrink-0 rounded-full ${p.dotColor}`} />
+      <span className={`text-xs font-medium ${p.textColor}`}>{p.label}</span>
     </span>
   );
 }

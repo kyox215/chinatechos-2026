@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     orderIds: string[];
     toStatus: string;
     operatorName?: string;
+    supplierId?: string;
   };
 
   if (!Array.isArray(body.orderIds) || body.orderIds.length === 0) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
   for (const orderId of body.orderIds) {
     const current = await supabase
       .from("repair_orders")
-      .select("id, status, order_type, quotation_amount, delivered_at, is_paid")
+      .select("id, status")
       .eq("id", orderId)
       .eq("store_id", storeId)
       .is("deleted_at", null)
@@ -41,12 +42,7 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    const validation = validateOrderTransition(current.data.status, body.toStatus, {
-      orderType: current.data.order_type,
-      quotationAmount: current.data.quotation_amount,
-      deliveredAt: current.data.delivered_at,
-      isPaid: current.data.is_paid,
-    });
+    const validation = validateOrderTransition(current.data.status, body.toStatus);
 
     if (!validation.ok) {
       results.push({ id: orderId, ok: false, error: validation.reason });
@@ -58,18 +54,15 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    if (body.toStatus === "waiting_approval") {
+    if (body.toStatus === "quoted" || body.toStatus === "waiting_approval") {
       patch.approval_sent_at = new Date().toISOString();
     }
-    if (body.toStatus === "waiting_pickup") {
+    if (body.toStatus === "completed") {
+      patch.delivered_at = new Date().toISOString();
       patch.completed_at = new Date().toISOString();
     }
-    if (body.toStatus === "repairing" && current.data.status === "waiting_approval") {
-      patch.approval_status = "approved";
-      patch.approval_confirmed_at = new Date().toISOString();
-    }
-    if (body.toStatus === "completed" && !current.data.delivered_at) {
-      patch.delivered_at = new Date().toISOString();
+    if (body.toStatus === "parts_ordered" && body.supplierId) {
+      patch.supplier_id = body.supplierId;
     }
 
     const updateRes = await supabase

@@ -12,12 +12,19 @@ type Suggestion = {
   lastOrderAt: string | null;
 };
 
+type SupplierOption = {
+  id: string;
+  short_name: string;
+  color: string;
+};
+
 type Props = {
   q?: string;
   status: string;
-  orderType: string;
+  orderType?: string;
   technician: string;
   paid: string;
+  supplier?: string;
   dateFrom?: string;
   dateTo?: string;
   approvalOverdue: boolean;
@@ -28,9 +35,9 @@ export function OrdersSearchControls(props: Props) {
   const router = useRouter();
   const [q, setQ] = useState(props.q ?? "");
   const [status, setStatus] = useState(props.status);
-  const [orderType, setOrderType] = useState(props.orderType);
   const [technician, setTechnician] = useState(props.technician === "all" ? "" : props.technician);
   const [paid, setPaid] = useState(props.paid);
+  const [supplier, setSupplier] = useState(props.supplier ?? "all");
   const [dateFrom, setDateFrom] = useState(props.dateFrom ?? "");
   const [dateTo, setDateTo] = useState(props.dateTo ?? "");
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -39,17 +46,25 @@ export function OrdersSearchControls(props: Props) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [searchFocused, setSearchFocused] = useState(false);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
+  const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/suppliers")
+      .then((r) => r.json())
+      .then((d: { items?: SupplierOption[] }) => setSupplierOptions(d.items ?? []))
+      .catch(() => {});
+  }, []);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (status !== "all") count += 1;
-    if (orderType !== "all") count += 1;
     if (paid !== "all") count += 1;
+    if (supplier !== "all") count += 1;
     if (technician.trim()) count += 1;
     if (dateFrom) count += 1;
     if (dateTo) count += 1;
     return count;
-  }, [status, orderType, paid, technician, dateFrom, dateTo]);
+  }, [status, paid, supplier, technician, dateFrom, dateTo]);
 
   useEffect(() => {
     const keyword = q.trim();
@@ -68,8 +83,8 @@ export function OrdersSearchControls(props: Props) {
   }, [q]);
 
   function applyFilters(next: {
-    q?: string; status?: string; orderType?: string; technician?: string;
-    paid?: string; dateFrom?: string; dateTo?: string;
+    q?: string; status?: string; technician?: string;
+    paid?: string; supplier?: string; dateFrom?: string; dateTo?: string;
     approvalOverdue?: boolean; pickupOverdue?: boolean;
   }) {
     const params = new URLSearchParams();
@@ -77,10 +92,10 @@ export function OrdersSearchControls(props: Props) {
     if (qValue.trim()) params.set("q", qValue.trim());
     const statusValue = next.status ?? status;
     if (statusValue !== "all") params.set("status", statusValue);
-    const orderTypeValue = next.orderType ?? orderType;
-    if (orderTypeValue !== "all") params.set("orderType", orderTypeValue);
     const paidValue = next.paid ?? paid;
     if (paidValue !== "all") params.set("paid", paidValue);
+    const supplierValue = next.supplier ?? supplier;
+    if (supplierValue !== "all") params.set("supplier", supplierValue);
     const technicianValue = (next.technician ?? technician).trim();
     if (technicianValue) params.set("technician", technicianValue);
     const dateFromValue = next.dateFrom ?? dateFrom;
@@ -155,18 +170,22 @@ export function OrdersSearchControls(props: Props) {
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
               <select className="ui-input" onChange={(e) => setStatus(e.target.value)} value={status}>
                 <option value="all">状态：全部</option>
-                <option value="new">新建</option>
+                <option value="new">接单</option>
                 <option value="diagnosing">检测中</option>
-                <option value="waiting_approval">待客户确认报价</option>
-                <option value="repairing">维修中</option>
-                <option value="waiting_pickup">待取件 / 待付款</option>
+                <option value="quoted">已报价</option>
+                <option value="waiting_approval">等回复</option>
+                <option value="parts_ordered">等配件</option>
+                <option value="parts_arrived">到货</option>
+                <option value="repaired">修好</option>
+                <option value="notified">已通知</option>
                 <option value="completed">已完成</option>
                 <option value="cancelled">已取消</option>
               </select>
-              <select className="ui-input" onChange={(e) => setOrderType(e.target.value)} value={orderType}>
-                <option value="all">类型：全部</option>
-                <option value="quick_repair">快速维修</option>
-                <option value="dropoff_repair">留机维修</option>
+              <select className="ui-input" onChange={(e) => setSupplier(e.target.value)} value={supplier}>
+                <option value="all">供应商：全部</option>
+                {supplierOptions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.short_name}</option>
+                ))}
               </select>
               <select className="ui-input" onChange={(e) => setPaid(e.target.value)} value={paid}>
                 <option value="all">结清：全部</option>
@@ -178,10 +197,10 @@ export function OrdersSearchControls(props: Props) {
               <input className="ui-input" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
             </div>
             <div className="mt-3 flex gap-2">
-              <button className="ui-btn ui-btn-primary h-10 px-3 md:h-9" onClick={() => applyFilters({ status, orderType, paid, technician, dateFrom, dateTo })} type="button">应用筛选</button>
+              <button className="ui-btn ui-btn-primary h-10 px-3 md:h-9" onClick={() => applyFilters({ status, paid, supplier, technician, dateFrom, dateTo })} type="button">应用筛选</button>
               <button className="ui-btn ui-btn-secondary h-10 px-3 md:h-9" onClick={() => {
-                setStatus("all"); setOrderType("all"); setPaid("all"); setTechnician(""); setDateFrom(""); setDateTo("");
-                applyFilters({ status: "all", orderType: "all", paid: "all", technician: "", dateFrom: "", dateTo: "" });
+                setStatus("all"); setPaid("all"); setSupplier("all"); setTechnician(""); setDateFrom(""); setDateTo("");
+                applyFilters({ status: "all", paid: "all", supplier: "all", technician: "", dateFrom: "", dateTo: "" });
               }} type="button">重置</button>
             </div>
           </div>

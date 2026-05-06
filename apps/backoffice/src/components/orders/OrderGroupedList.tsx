@@ -20,6 +20,8 @@ type OrderItem = {
   isPaid: boolean;
   createdAt: string;
   technicianName: string | null;
+  supplierShortName?: string | null;
+  supplierColor?: string | null;
 };
 
 type StatusGroup = {
@@ -27,30 +29,36 @@ type StatusGroup = {
   label: string;
   items: OrderItem[];
   defaultOpen: boolean;
+  titleColor: string;
+  bgColor: string;
 };
 
-const PENDING_STATUSES = new Set(["new", "parts_ordered", "parts_arrived"]);
-const REPAIRING_STATUSES = new Set(["diagnosing", "waiting_approval", "repairing"]);
-const PICKUP_STATUSES = new Set(["repaired", "notified", "waiting_pickup"]);
+const NEW_STATUSES = new Set(["new"]);
+const PROCESSING_STATUSES = new Set(["diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
+const PICKUP_STATUSES = new Set(["repaired", "notified"]);
 
 function groupOrders(items: OrderItem[]): StatusGroup[] {
-  const pending: OrderItem[] = [];
-  const repairing: OrderItem[] = [];
+  const newOrders: OrderItem[] = [];
+  const processing: OrderItem[] = [];
   const pickup: OrderItem[] = [];
   const ended: OrderItem[] = [];
 
   for (const item of items) {
-    if (PENDING_STATUSES.has(item.status)) pending.push(item);
-    else if (REPAIRING_STATUSES.has(item.status)) repairing.push(item);
+    if (NEW_STATUSES.has(item.status)) newOrders.push(item);
+    else if (PROCESSING_STATUSES.has(item.status)) processing.push(item);
     else if (PICKUP_STATUSES.has(item.status)) pickup.push(item);
     else ended.push(item);
   }
 
   const groups: StatusGroup[] = [];
-  if (pending.length > 0) groups.push({ key: "pending", label: "待处理", items: pending, defaultOpen: true });
-  if (repairing.length > 0) groups.push({ key: "repairing", label: "维修中", items: repairing, defaultOpen: true });
-  if (pickup.length > 0) groups.push({ key: "pickup", label: "待取件", items: pickup, defaultOpen: true });
-  if (ended.length > 0) groups.push({ key: "ended", label: "已结束", items: ended, defaultOpen: false });
+  if (newOrders.length > 0)
+    groups.push({ key: "new", label: "新单", items: newOrders, defaultOpen: true, titleColor: "text-blue-700", bgColor: "bg-blue-50" });
+  if (processing.length > 0)
+    groups.push({ key: "processing", label: "处理中", items: processing, defaultOpen: true, titleColor: "text-amber-700", bgColor: "bg-amber-50" });
+  if (pickup.length > 0)
+    groups.push({ key: "pickup", label: "待取件", items: pickup, defaultOpen: true, titleColor: "text-teal-700", bgColor: "bg-teal-50" });
+  if (ended.length > 0)
+    groups.push({ key: "ended", label: "已结束", items: ended, defaultOpen: false, titleColor: "text-neutral-500", bgColor: "bg-neutral-50" });
   return groups;
 }
 
@@ -119,7 +127,6 @@ export function OrderGroupedList({ items }: { items: OrderItem[] }) {
         />
       ))}
 
-      {/* Batch action bar */}
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg">
           <span className="text-sm font-medium text-neutral-900">已选 {selected.size} 个</span>
@@ -130,9 +137,12 @@ export function OrderGroupedList({ items }: { items: OrderItem[] }) {
           >
             <option value="">选择目标状态</option>
             <option value="diagnosing">检测中</option>
-            <option value="waiting_approval">待客户确认报价</option>
-            <option value="repairing">维修中</option>
-            <option value="waiting_pickup">待取件</option>
+            <option value="quoted">已报价</option>
+            <option value="waiting_approval">等回复</option>
+            <option value="parts_ordered">等配件</option>
+            <option value="parts_arrived">到货</option>
+            <option value="repaired">修好</option>
+            <option value="notified">已通知</option>
             <option value="completed">已完成</option>
             <option value="cancelled">已取消</option>
           </select>
@@ -173,7 +183,7 @@ function GroupSection({
 
   return (
     <div className="overflow-hidden rounded-xl border border-border">
-      <div className="flex items-center bg-surface-2 px-3 py-2">
+      <div className={`flex items-center px-3 py-2 ${group.bgColor}`}>
         <input
           checked={allSelected}
           className="mr-3 h-4 w-4 rounded border-neutral-300"
@@ -186,8 +196,8 @@ function GroupSection({
           type="button"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-900">{group.label}</span>
-            <span className="rounded-lg bg-muted px-2 py-0.5 text-xs font-medium text-neutral-600">
+            <span className={`text-sm font-semibold ${group.titleColor}`}>{group.label}</span>
+            <span className="rounded-lg bg-white/60 px-2 py-0.5 text-xs font-medium text-neutral-600">
               {group.items.length}
             </span>
           </div>
@@ -234,7 +244,12 @@ function GroupSection({
                     {it.customerName ?? "未命名客户"}
                     {it.deviceLabel ? <span className="font-normal text-neutral-500"> · {it.deviceLabel}</span> : null}
                   </div>
-                  <div className="truncate text-xs text-neutral-400">{it.issue || "-"}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-xs text-neutral-400">{it.issue || "-"}</span>
+                    {it.supplierShortName && (
+                      <SupplierTag name={it.supplierShortName} color={it.supplierColor} />
+                    )}
+                  </div>
                 </div>
                 <div className="text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
                 <div className="text-xs font-semibold text-neutral-900">{fmtEUR(it.total)}</div>
@@ -246,7 +261,7 @@ function GroupSection({
                   >
                     详情
                   </Link>
-                  <PrimaryAction it={it} />
+                  <PrimaryAction status={it.status} orderId={it.id} />
                 </div>
               </div>
             ))}
@@ -257,18 +272,40 @@ function GroupSection({
   );
 }
 
-function PrimaryAction({ it }: { it: OrderItem }) {
-  const actions = getNextActions(it.status, it.orderType);
-  const primary = actions.find((a) => a.toStatus !== "cancelled");
-  if (!primary) return null;
+const SUPPLIER_COLORS: Record<string, { bg: string; text: string }> = {
+  red: { bg: "bg-red-100", text: "text-red-700" },
+  orange: { bg: "bg-orange-100", text: "text-orange-700" },
+  amber: { bg: "bg-amber-100", text: "text-amber-700" },
+  green: { bg: "bg-green-100", text: "text-green-700" },
+  teal: { bg: "bg-teal-100", text: "text-teal-700" },
+  blue: { bg: "bg-blue-100", text: "text-blue-700" },
+  indigo: { bg: "bg-indigo-100", text: "text-indigo-700" },
+  violet: { bg: "bg-violet-100", text: "text-violet-700" },
+  pink: { bg: "bg-pink-100", text: "text-pink-700" },
+  slate: { bg: "bg-slate-100", text: "text-slate-700" },
+};
+
+function SupplierTag({ name, color }: { name: string; color?: string | null }) {
+  const c = SUPPLIER_COLORS[color ?? "blue"] ?? SUPPLIER_COLORS.blue;
+  return (
+    <span className={`inline-flex shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${c.bg} ${c.text}`}>
+      {name}
+    </span>
+  );
+}
+
+function PrimaryAction({ status, orderId }: { status: string; orderId: string }) {
+  const { primary } = getNextActions(status);
+  const action = primary[0];
+  if (!action) return null;
 
   return (
     <OrderTransitionButton
-      confirmText={primary.confirmText}
-      label={primary.label}
-      orderId={it.id}
-      toStatus={primary.toStatus}
-      variant={primary.variant}
+      confirmText={action.confirmText}
+      label={action.label}
+      orderId={orderId}
+      toStatus={action.toStatus}
+      variant={action.variant}
     />
   );
 }

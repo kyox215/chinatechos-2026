@@ -1,9 +1,10 @@
 export type RepairOrderStatus =
   | "new"
+  | "diagnosing"
+  | "quoted"
+  | "waiting_approval"
   | "parts_ordered"
   | "parts_arrived"
-  | "diagnosing"
-  | "waiting_approval"
   | "repairing"
   | "repaired"
   | "notified"
@@ -13,60 +14,92 @@ export type RepairOrderStatus =
 
 type StatusPresentation = {
   label: string;
-  className: string;
+  dotColor: string;
+  textColor: string;
+  rowBg: string;
 };
 
 const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
   new: {
-    label: "新建",
-    className: "border-neutral-200 bg-neutral-100 text-neutral-700",
-  },
-  parts_ordered: {
-    label: "配件已下单",
-    className: "border-orange-100 bg-orange-50 text-orange-700",
-  },
-  parts_arrived: {
-    label: "配件到货",
-    className: "border-orange-200 bg-orange-100 text-orange-800",
+    label: "接单",
+    dotColor: "bg-neutral-400",
+    textColor: "text-neutral-700",
+    rowBg: "bg-neutral-50",
   },
   diagnosing: {
     label: "检测中",
-    className: "border-sky-100 bg-sky-50 text-sky-700",
+    dotColor: "bg-sky-500",
+    textColor: "text-sky-700",
+    rowBg: "bg-sky-50",
+  },
+  quoted: {
+    label: "已报价",
+    dotColor: "bg-violet-500",
+    textColor: "text-violet-700",
+    rowBg: "bg-violet-50",
   },
   waiting_approval: {
-    label: "待客户确认报价",
-    className: "border-amber-100 bg-amber-50 text-amber-700",
+    label: "等回复",
+    dotColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    rowBg: "bg-amber-50",
+  },
+  parts_ordered: {
+    label: "等配件",
+    dotColor: "bg-orange-500",
+    textColor: "text-orange-700",
+    rowBg: "bg-orange-50",
+  },
+  parts_arrived: {
+    label: "到货",
+    dotColor: "bg-orange-600",
+    textColor: "text-orange-800",
+    rowBg: "bg-orange-50",
   },
   repairing: {
-    label: "维修中",
-    className: "border-indigo-100 bg-indigo-50 text-indigo-700",
+    label: "维修中(旧)",
+    dotColor: "bg-indigo-400",
+    textColor: "text-indigo-600",
+    rowBg: "bg-indigo-50",
   },
   repaired: {
-    label: "修好待通知",
-    className: "border-teal-100 bg-teal-50 text-teal-700",
+    label: "修好",
+    dotColor: "bg-teal-500",
+    textColor: "text-teal-700",
+    rowBg: "bg-teal-50",
   },
   notified: {
-    label: "已通知待取件",
-    className: "border-cyan-100 bg-cyan-50 text-cyan-700",
+    label: "已通知",
+    dotColor: "bg-cyan-500",
+    textColor: "text-cyan-700",
+    rowBg: "bg-cyan-50",
   },
   waiting_pickup: {
-    label: "待取件 / 待付款",
-    className: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    label: "待取件(旧)",
+    dotColor: "bg-emerald-400",
+    textColor: "text-emerald-600",
+    rowBg: "bg-emerald-50",
   },
   completed: {
     label: "已完成",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-800",
+    dotColor: "bg-emerald-500",
+    textColor: "text-emerald-700",
+    rowBg: "bg-emerald-50",
   },
   cancelled: {
     label: "已取消",
-    className: "border-rose-100 bg-rose-50 text-rose-700",
+    dotColor: "bg-neutral-300",
+    textColor: "text-neutral-500",
+    rowBg: "bg-neutral-50",
   },
 };
 
 export function getOrderStatusPresentation(status: string): StatusPresentation {
   const fallback: StatusPresentation = {
     label: status,
-    className: "border-neutral-200 bg-neutral-100 text-neutral-700",
+    dotColor: "bg-neutral-400",
+    textColor: "text-neutral-700",
+    rowBg: "bg-neutral-50",
   };
   return PRESENTATION[status as RepairOrderStatus] ?? fallback;
 }

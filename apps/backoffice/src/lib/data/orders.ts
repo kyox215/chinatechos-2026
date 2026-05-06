@@ -15,6 +15,8 @@ export type OrderListItem = {
   isPaid: boolean;
   createdAt: string;
   technicianName: string | null;
+  supplierShortName: string | null;
+  supplierColor: string | null;
 };
 
 export type OrderListFilters = {
@@ -23,6 +25,7 @@ export type OrderListFilters = {
   orderType?: string;
   technician?: string;
   paid?: "all" | "yes" | "no";
+  supplier?: string;
   approvalOverdue?: boolean;
   pickupOverdue?: boolean;
   dateFrom?: string;
@@ -52,8 +55,10 @@ export async function listOrders(filters: OrderListFilters = {}) {
       approval_sent_at,
       completed_at,
       technician_name,
+      supplier_id,
       customers:customer_id ( name, phone_e164 ),
-      devices:device_id ( brand, model, serial_or_imei )
+      devices:device_id ( brand, model, serial_or_imei ),
+      suppliers:supplier_id ( short_name, color )
     `,
     )
     .eq("store_id", storeId)
@@ -76,6 +81,10 @@ export async function listOrders(filters: OrderListFilters = {}) {
     query = query.eq("is_paid", true);
   } else if (filters.paid === "no") {
     query = query.eq("is_paid", false);
+  }
+
+  if (filters.supplier && filters.supplier !== "all") {
+    query = query.eq("supplier_id", filters.supplier);
   }
 
   if (filters.dateFrom) {
@@ -121,6 +130,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
   const items: OrderListItem[] = (res.data ?? []).map((row) => {
     const customer = Array.isArray(row.customers) ? row.customers[0] : row.customers;
     const device = Array.isArray(row.devices) ? row.devices[0] : row.devices;
+    const supplier = Array.isArray(row.suppliers) ? row.suppliers[0] : row.suppliers;
 
     const brand = device?.brand ?? "";
     const model = device?.model ?? "";
@@ -139,6 +149,8 @@ export async function listOrders(filters: OrderListFilters = {}) {
       isPaid: row.is_paid ?? false,
       createdAt: row.created_at,
       technicianName: row.technician_name ?? null,
+      supplierShortName: supplier?.short_name ?? null,
+      supplierColor: supplier?.color ?? null,
     };
   });
 

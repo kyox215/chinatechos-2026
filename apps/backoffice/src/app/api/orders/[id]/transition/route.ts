@@ -18,20 +18,24 @@ export async function POST(
   let toStatus = "";
   let operatorName = "frontdesk";
   let cancelReason = "";
+  let supplierId = "";
   if (contentType.includes("application/json")) {
     const body = (await request.json()) as {
       toStatus?: string;
       operatorName?: string;
       cancelReason?: string;
+      supplierId?: string;
     };
     toStatus = String(body.toStatus ?? "");
     operatorName = String(body.operatorName ?? "frontdesk");
     cancelReason = String(body.cancelReason ?? "");
+    supplierId = String(body.supplierId ?? "");
   } else {
     const formData = await request.formData();
     toStatus = String(formData.get("toStatus") ?? "");
     operatorName = String(formData.get("operatorName") ?? "frontdesk");
     cancelReason = String(formData.get("cancelReason") ?? "");
+    supplierId = String(formData.get("supplierId") ?? "");
   }
 
   if (!toStatus) {
@@ -41,7 +45,7 @@ export async function POST(
   const supabase = createSupabaseServerClient();
   const current = await supabase
     .from("repair_orders")
-    .select("id, store_id, status, order_type, quotation_amount, delivered_at, is_paid")
+    .select("id, store_id, status, quotation_amount, delivered_at, is_paid")
     .eq("id", params.id)
     .eq("store_id", storeId)
     .is("deleted_at", null)
@@ -51,12 +55,7 @@ export async function POST(
     return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
   }
 
-  const validation = validateOrderTransition(current.data.status, toStatus, {
-    orderType: current.data.order_type,
-    quotationAmount: current.data.quotation_amount,
-    deliveredAt: current.data.delivered_at,
-    isPaid: current.data.is_paid,
-  });
+  const validation = validateOrderTransition(current.data.status, toStatus);
   if (!validation.ok) {
     return NextResponse.json({ error: validation.reason }, { status: 400 });
   }
@@ -66,26 +65,23 @@ export async function POST(
     updated_at: new Date().toISOString(),
   };
 
-  if (toStatus === "waiting_approval") {
+  if (toStatus === "quoted" || toStatus === "waiting_approval") {
     patch.approval_sent_at = new Date().toISOString();
   }
-  if (toStatus === "waiting_pickup") {
-    patch.completed_at = new Date().toISOString();
-  }
-  if (toStatus === "repairing" && current.data.status === "waiting_approval") {
-    patch.approval_status = "approved";
-    patch.approval_confirmed_at = new Date().toISOString();
-  }
   if (toStatus === "cancelled") {
-    if (current.data.status === "waiting_approval") {
+    if (current.data.status === "waiting_approval" || current.data.status === "quoted") {
       patch.approval_status = "rejected";
     }
-    patch.cancel_reason = cancelReason || "客户拒绝报价";
+    patch.cancel_reason = cancelReason || "已取消";
   }
   if (toStatus === "completed") {
     if (!current.data.delivered_at) {
       patch.delivered_at = new Date().toISOString();
     }
+    patch.completed_at = new Date().toISOString();
+  }
+  if (toStatus === "parts_ordered" && supplierId) {
+    patch.supplier_id = supplierId;
   }
 
   const updateRes = await supabase

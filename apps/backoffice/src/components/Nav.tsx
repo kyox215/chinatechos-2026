@@ -11,6 +11,7 @@ const items: NavItem[] = [
   { href: "/customers", label: "客户" },
   { href: "/messages/templates", label: "消息中心 · 模板" },
   { href: "/messages/logs", label: "消息中心 · 记录" },
+  { href: "/settings/suppliers", label: "供应商" },
   { href: "/settings", label: "设置" },
 ];
 
