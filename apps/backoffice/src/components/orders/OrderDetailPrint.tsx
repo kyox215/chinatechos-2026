@@ -23,6 +23,7 @@ export type OrderDetailPrintProps = {
   technicianName: string | null;
   warrantyText: string | null;
   internalTag: string | null;
+  customerSignature?: string | null;
 };
 
 export function OrderDetailPrint(props: OrderDetailPrintProps) {
@@ -53,6 +54,7 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     warrantyTextCn: props.warrantyText,
     internalTag: props.internalTag,
     faultPriceLines: faultPriceLines.length > 0 ? faultPriceLines : undefined,
+    customerSignature: props.customerSignature,
   };
 
   return <PrintOrderButton payload={payload} />;

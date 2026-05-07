@@ -7,6 +7,7 @@ import { OrderInfoCard } from "@/components/orders/OrderInfoCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
+import { SignatureSection } from "@/components/orders/SignatureSection";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
 
@@ -20,6 +21,7 @@ export default async function OrderDetailPage(props: {
   const events = await getOrderEvents(id);
 
   const isTerminal = order.status === "completed" || order.status === "cancelled";
+  const showSignature = ["repaired", "notified", "completed"].includes(order.status);
 
   const showCancelBanner = order.status === "cancelled" && Boolean(order.cancelReason);
   const showPauseBanner = Boolean(order.pauseReason);
@@ -49,6 +51,7 @@ export default async function OrderDetailPage(props: {
                 brand={order.device?.brand ?? "—"}
                 customerName={order.customer?.name ?? null}
                 customerPhone={order.customer?.phoneE164 ?? "—"}
+                customerSignature={order.customerSignature}
                 depositAmount={order.depositAmount}
                 diagnosisResult={order.diagnosisResult}
                 internalTag={order.internalTag}
@@ -149,6 +152,14 @@ export default async function OrderDetailPage(props: {
                   />
                 )}
               </div>
+            </section>
+          )}
+
+          {/* Signature */}
+          {showSignature && (
+            <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
+              <h2 className="mb-3 text-sm font-semibold text-neutral-900">Firma cliente</h2>
+              <SignatureSection orderId={order.id} customerSignature={order.customerSignature} />
             </section>
           )}
 

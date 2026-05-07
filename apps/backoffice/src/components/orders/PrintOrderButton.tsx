@@ -9,7 +9,7 @@ export function PrintOrderButton(props: {
   label?: string;
   className?: string;
 }) {
-  const label = props.label ?? "打印";
+  const label = props.label ?? "Stampa";
 
   function handlePrint() {
     triggerOrderSheetPrint();

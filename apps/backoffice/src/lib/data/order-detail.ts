@@ -21,6 +21,7 @@ export type OrderDetail = {
   warrantyText: string | null;
   pauseReason: string | null;
   cancelReason: string | null;
+  customerSignature: string | null;
   completedAt: string | null;
   deliveredAt: string | null;
   createdAt: string;
@@ -80,6 +81,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       warranty_text,
       pause_reason,
       cancel_reason,
+      customer_signature,
       completed_at,
       delivered_at,
       created_at,
@@ -118,6 +120,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     warrantyText: data.warranty_text,
     pauseReason: data.pause_reason,
     cancelReason: data.cancel_reason,
+    customerSignature: data.customer_signature ?? null,
     completedAt: data.completed_at,
     deliveredAt: data.delivered_at,
     createdAt: data.created_at,

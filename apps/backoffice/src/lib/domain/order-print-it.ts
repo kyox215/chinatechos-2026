@@ -27,6 +27,7 @@ export type OrderPrintPayload = {
   warrantyTextCn: string | null;
   internalTag: string | null;
   faultPriceLines?: FaultPriceLinePrint[];
+  customerSignature?: string | null;
 };
 
 export function formatEURPrint(value: number | null): string {

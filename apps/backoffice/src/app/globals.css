@@ -184,11 +184,20 @@ body {
     display: block !important;
     position: static !important;
     width: 138mm !important;
-    height: auto !important;
+    height: 200mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     overflow: visible !important;
     page-break-inside: avoid;
     break-inside: avoid-page;
+  }
+
+  body.printing-order-sheet .order-print-sheet > article {
+    width: 200mm !important;
+    height: 138mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+    transform-origin: top left !important;
+    transform: translateX(138mm) rotate(-90deg) !important;
   }
 }

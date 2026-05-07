@@ -13,6 +13,7 @@ const ORDER_FIELDS = [
   "warranty_text",
   "pause_reason",
   "issue_description",
+  "customer_signature",
 ] as const;
 
 function parseMoney(value: unknown): number | null {
@@ -45,6 +46,7 @@ export async function PATCH(
   if (rawBody.customerName !== undefined) body.customer_name = rawBody.customerName;
   if (rawBody.customerPhone !== undefined) body.customer_phone = rawBody.customerPhone;
   if (rawBody.serialOrImei !== undefined) body.serial_or_imei = rawBody.serialOrImei;
+  if (rawBody.customerSignature !== undefined) body.customer_signature = rawBody.customerSignature;
   if (rawBody.supplierId !== undefined) body.supplier_id = rawBody.supplierId;
 
   const supabase = createSupabaseServerClient();
@@ -61,7 +63,11 @@ export async function PATCH(
     return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
   }
 
-  if (current.data.status === "completed" || current.data.status === "cancelled") {
+  const isSignatureOnly =
+    body.customer_signature !== undefined &&
+    Object.keys(rawBody).every((k) => k === "customerSignature" || k === "operatorName");
+
+  if ((current.data.status === "completed" || current.data.status === "cancelled") && !isSignatureOnly) {
     return NextResponse.json({ error: "已完成或已取消的工单不可编辑" }, { status: 400 });
   }
 
@@ -175,13 +181,18 @@ export async function PATCH(
   }
 
   if (Object.keys(patch).length > 1) {
-    const updateRes = await supabase
+    let query = supabase
       .from("repair_orders")
       .update(patch)
       .eq("id", params.id)
       .eq("store_id", storeId)
-      .not("status", "in", "(completed,cancelled)")
-      .is("deleted_at", null)
+      .is("deleted_at", null);
+
+    if (!isSignatureOnly) {
+      query = query.not("status", "in", "(completed,cancelled)");
+    }
+
+    const updateRes = await query
       .select("id, status")
       .single();
 

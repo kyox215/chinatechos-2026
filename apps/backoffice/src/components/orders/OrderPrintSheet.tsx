@@ -113,7 +113,15 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
 
             <section className="border-b border-neutral-200 pb-1">
               <h2 className="mb-0.5 text-[9px] font-semibold">Firma cliente</h2>
-              <div className="mt-2 h-8 border-b border-neutral-400" />
+              {p.customerSignature ? (
+                <img
+                  src={p.customerSignature}
+                  alt="Firma"
+                  className="mt-1 h-[12mm] w-auto object-contain"
+                />
+              ) : (
+                <div className="mt-2 h-8 border-b border-neutral-400" />
+              )}
             </section>
 
             <footer className="pt-1 text-[8px] text-neutral-600">
