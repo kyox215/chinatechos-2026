@@ -34,7 +34,7 @@ export function OrderFormCustomerDevice(props: {
     <div className="space-y-4">
       <fieldset className="space-y-2">
         <legend className="text-xs font-semibold text-neutral-500">客户信息</legend>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div className="relative">
             <label className="mb-0.5 block text-[11px] text-neutral-400">电话</label>
             <input
@@ -79,7 +79,7 @@ export function OrderFormCustomerDevice(props: {
 
       <fieldset className="space-y-2">
         <legend className="text-xs font-semibold text-neutral-500">设备信息</legend>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label className="mb-0.5 block text-[11px] text-neutral-400">品牌</label>
             <select className={`ui-input w-full ${ic}`} value={props.brand} onChange={(e) => props.setBrand(e.target.value)}>
@@ -142,7 +142,7 @@ export function OrderFormFaultSection(props: {
 }) {
   const ic = props.inputClass ?? "";
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-x-hidden">
       {!props.hideHeading && props.title ? (
         <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
           {props.titleIcon}
@@ -181,7 +181,7 @@ export function OrderFormServiceMeta(props: {
   const ic = props.inputClass ?? "";
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
           <label className="mb-0.5 block text-[11px] text-neutral-400">技术员</label>
           <input className={`ui-input w-full ${ic}`} value={props.technician} onChange={(e) => props.setTechnician(e.target.value)} placeholder="可选" />
