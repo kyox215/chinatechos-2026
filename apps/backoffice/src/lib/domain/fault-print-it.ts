@@ -181,11 +181,22 @@ export function issueSummaryForPrintIt(issue: string): {
   if (!trimmed) return { summaryIt: "—" };
 
   const map = parseFaultsFromIssue(trimmed);
-  const extra = extractFaultExtraNote(trimmed);
-  const rebuiltCn = buildIssueFromFaults(map, extra);
+  let extra = extractFaultExtraNote(trimmed);
+
+  // Secondary translation: if leftover extra still contains Chinese fault patterns, translate them
+  if (extra && /[\u4e00-\u9fff]/.test(extra)) {
+    const extraMap = parseFaultsFromIssue(extra);
+    if (extraMap.size > 0) {
+      const translatedPart = buildIssueItalianFromFaults(extraMap, "");
+      const remainingExtra = extractFaultExtraNote(extra);
+      extra = [translatedPart, remainingExtra].filter(Boolean).join("; ");
+    }
+  }
+
   const summaryIt = buildIssueItalianFromFaults(map, extra);
 
-  if (rebuiltCn !== trimmed) {
+  // Only flag as unparsed if genuinely untranslatable Chinese remains
+  if (extra && /[\u4e00-\u9fff]/.test(extra)) {
     return { summaryIt, originalUnparsed: trimmed };
   }
   return { summaryIt };

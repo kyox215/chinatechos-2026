@@ -19,14 +19,14 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
 
   return (
     <div className="order-print-sheet">
-      <article className="w-full border border-neutral-300 p-2 text-[9px] leading-tight text-neutral-900 print:border-neutral-300">
-        <div className="grid h-full grid-cols-[1.2fr_auto_1fr] gap-2">
-          <section className="min-w-0 space-y-1.5 pr-1">
-            <header className="border-b border-neutral-300 pb-1.5">
+      <article className="w-full border border-neutral-300 p-2 text-[8.5px] leading-tight text-neutral-900 print:border-neutral-300">
+        <div className="grid h-full grid-cols-[1fr_auto_1fr] gap-2">
+          <section className="min-w-0 space-y-1 pr-1">
+            <header className="border-b border-neutral-300 pb-1">
               <div className="text-[11px] font-bold">{STORE_NAME}</div>
-              <div className="text-[8px] text-neutral-700">{STORE_ADDRESS}</div>
+              <div className="text-[7.5px] text-neutral-700">{STORE_ADDRESS}</div>
               <h1 className="mt-1 text-[10px] font-semibold uppercase tracking-wide">{title}</h1>
-              <p className="text-[8px] text-neutral-600">Documento per il cliente</p>
+              <p className="text-[7.5px] text-neutral-600">Documento per il cliente</p>
             </header>
 
             <section className="grid grid-cols-2 gap-x-2 gap-y-0.5">
@@ -95,16 +95,16 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
 
           <div className="h-full border-l border-dashed border-neutral-400" />
 
-          <section className="min-w-0 space-y-1.5 pl-1">
-            <header className="border-b border-neutral-300 pb-1.5">
+          <section className="flex min-w-0 flex-col space-y-1 pl-1">
+            <header className="border-b border-neutral-300 pb-1">
               <div className="text-[10px] font-semibold uppercase tracking-wide">Garanzia e informazioni negozio</div>
-              <div className="mt-0.5 text-[8px] text-neutral-700">{STORE_NAME}</div>
-              <div className="text-[8px] text-neutral-700">{STORE_ADDRESS}</div>
+              <div className="mt-0.5 text-[7.5px] text-neutral-700">{STORE_NAME}</div>
+              <div className="text-[7.5px] text-neutral-700">{STORE_ADDRESS}</div>
             </header>
 
-            <section className="border-b border-neutral-200 pb-1">
+            <section className="flex-1 border-b border-neutral-200 pb-1">
               <h2 className="mb-0.5 text-[9px] font-semibold">Termini di garanzia</h2>
-              <ul className="list-inside list-disc space-y-0.5 text-[8px] text-neutral-700">
+              <ul className="list-inside list-disc space-y-0.5 text-[7.5px] leading-snug text-neutral-700">
                 {WARRANTY_TERMS_IT.map((line, i) => (
                   <li key={i}>{line}</li>
                 ))}
@@ -124,7 +124,7 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
               )}
             </section>
 
-            <footer className="pt-1 text-[8px] text-neutral-600">
+            <footer className="pt-1 text-[7.5px] text-neutral-600">
               Conservare questo documento per eventuali garanzie. I dati personali sono trattati secondo la normativa vigente.
             </footer>
           </section>

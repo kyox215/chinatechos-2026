@@ -29,12 +29,24 @@ export type OrderDetailPrintProps = {
 };
 
 export function OrderDetailPrint(props: OrderDetailPrintProps) {
-  const { summaryIt, originalUnparsed } = issueSummaryForPrintIt(props.issueDescription);
+  const { summaryIt } = issueSummaryForPrintIt(props.issueDescription);
   const faultPriceLines = buildFaultPriceLinesFromStoredIssue(
     props.issueDescription,
     props.quotationAmount,
   );
-  const interventionFreeNote = extractFaultExtraNote(props.issueDescription).trim() || null;
+  let interventionFreeNote: string | null =
+    extractFaultExtraNote(props.issueDescription).trim() || null;
+
+  // Double guard: when price lines already cover structured faults,
+  // strip any remaining Chinese structured patterns from the free note
+  if (faultPriceLines.length > 0 && interventionFreeNote) {
+    const stripped = interventionFreeNote
+      .replace(/[\u4e00-\u9fff]+\s*\([^)]*\)/g, "")
+      .replace(/^[;；\s,]+/, "")
+      .replace(/[;；\s,]+$/, "")
+      .trim();
+    interventionFreeNote = stripped || null;
+  }
 
   const payload: OrderPrintPayload = {
     variant: "saved",
@@ -47,7 +59,6 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     serialOrImei: props.serialOrImei,
     issueSummaryIt: summaryIt,
     interventionFreeNote,
-    issueOriginalUnparsed: originalUnparsed,
     diagnosisResult: props.diagnosisResult,
     quotationAmount: props.quotationAmount,
     depositAmount: props.depositAmount,

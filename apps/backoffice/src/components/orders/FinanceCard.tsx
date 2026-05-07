@@ -22,7 +22,7 @@ type Props = {
 
 function pricesFromIssueAndQuotation(
   issueDescription: string,
-  quotationAmount: number | null,
+  _quotationAmount: number | null,
 ): Record<string, string> {
   const faultMap = parseFaultsFromIssue(issueDescription);
   const lines = Array.from(faultMap.entries()).map(([key, subs]) => {
@@ -34,12 +34,7 @@ function pricesFromIssueAndQuotation(
     return { key, label: subLabels.length > 0 ? `${label}(${subLabels.join(", ")})` : label };
   });
   const init: Record<string, string> = {};
-  if (lines.length > 0 && quotationAmount) {
-    const perItem = quotationAmount / lines.length;
-    lines.forEach((f) => { init[f.key] = perItem.toFixed(2); });
-  } else {
-    lines.forEach((f) => { init[f.key] = ""; });
-  }
+  lines.forEach((f) => { init[f.key] = ""; });
   return init;
 }
 

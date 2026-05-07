@@ -162,16 +162,31 @@ export function parseFaultsFromIssue(issue: string): Map<string, string[]> {
 }
 
 
-/** Text in issue_description that is not represented by structured fault labels (best-effort). */
+/**
+ * Text in issue_description that is not represented by structured fault labels (best-effort).
+ * Uses pattern-stripping instead of exact string comparison so sub-fault ordering differences
+ * (user selection order vs FAULT_TYPES definition order) don't cause Chinese leakage.
+ */
 export function extractFaultExtraNote(issue: string): string {
   const trimmed = issue.trim();
   if (!trimmed) return "";
   const map = parseFaultsFromIssue(trimmed);
-  const structured = buildIssueFromFaults(map, "");
-  if (trimmed === structured) return "";
-  const sep = structured + "; ";
-  const idx = trimmed.indexOf(sep);
-  if (idx >= 0) return trimmed.slice(idx + sep.length).trim();
   if (map.size === 0) return trimmed;
-  return trimmed.replace(structured, "").replace(/^;\s*/, "").trim();
+
+  let remaining = trimmed;
+  for (const ft of FAULT_TYPES) {
+    const selected = map.get(ft.key);
+    if (!selected || selected.length === 0) continue;
+    if (ft.subTypes && !selected.includes("_self")) {
+      const escaped = ft.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      remaining = remaining.replace(new RegExp(escaped + "\\s*\\([^)]*\\)"), "");
+    } else {
+      remaining = remaining.replace(ft.label, "");
+    }
+  }
+  return remaining
+    .replace(/^[;；\s,]+/, "")
+    .replace(/[;；\s,]+$/, "")
+    .replace(/[;；]\s*[;；]/g, ";")
+    .trim();
 }
