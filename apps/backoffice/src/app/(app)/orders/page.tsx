@@ -1,6 +1,5 @@
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
 import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
-import { OrderPagination } from "@/components/orders/OrderPagination";
 import { listOrders } from "@/lib/data/orders";
 
 type QueryValue = string | string[] | undefined;
@@ -18,9 +17,8 @@ export default async function OrdersPage(props: {
   const pickupOverdue = normalizeBool(searchParams.pickupOverdue);
   const dateFrom = normalizeQuery(searchParams.dateFrom);
   const dateTo = normalizeQuery(searchParams.dateTo);
-  const page = normalizeInt(searchParams.page, 1);
 
-  const { items, totalCount, pageSize } = await listOrders({
+  const { items } = await listOrders({
     q,
     status,
     orderType: "all",
@@ -31,16 +29,13 @@ export default async function OrdersPage(props: {
     pickupOverdue,
     dateFrom,
     dateTo,
-    page,
   });
-
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
         <h1 className="text-xl font-semibold tracking-tight">工单</h1>
-        <span className="text-sm text-neutral-500">共 {totalCount} 条</span>
+        <span className="text-sm text-neutral-500">共 {items.length} 条</span>
       </div>
 
       <div className="space-y-3">
@@ -57,10 +52,6 @@ export default async function OrdersPage(props: {
         />
 
         <OrderGroupedList items={items} />
-
-        {totalPages > 1 && (
-          <OrderPagination page={page} totalPages={totalPages} />
-        )}
       </div>
     </div>
   );
@@ -79,11 +70,4 @@ function normalizePaid(value?: string): "all" | "yes" | "no" {
 function normalizeBool(value: QueryValue) {
   const normalized = normalizeQuery(value);
   return normalized === "1" || normalized === "true";
-}
-
-function normalizeInt(value: QueryValue, fallback: number): number {
-  const s = normalizeQuery(value);
-  if (!s) return fallback;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 1 ? n : fallback;
 }
