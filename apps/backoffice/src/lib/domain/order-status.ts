@@ -17,6 +17,14 @@ const STATUS_ORDER = [
   "completed",
 ] as const;
 
+/** Workflow sequence for list ordering (primary sort), then by `updated_at` desc. */
+const LIST_STATUS_SEQUENCE = [...STATUS_ORDER, "cancelled"] as const;
+
+export function getStatusListSortIndex(status: string): number {
+  const idx = (LIST_STATUS_SEQUENCE as readonly string[]).indexOf(status);
+  return idx === -1 ? LIST_STATUS_SEQUENCE.length + 100 : idx;
+}
+
 /** Previously-terminal statuses — exported for UI styling only, no longer blocks transitions. */
 export const TERMINAL_STATUSES = new Set(["completed", "cancelled"]);
 

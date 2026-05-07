@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { getStoreSettings } from "@/lib/data/store-settings";
+import { getStatusListSortIndex } from "@/lib/domain/order-status";
 
 export type OrderListItem = {
   id: string;
@@ -18,6 +19,8 @@ export type OrderListItem = {
   balanceAmount: number | null;
   isPaid: boolean;
   createdAt: string;
+  /** Last row update — drives list secondary sort */
+  updatedAt: string;
   technicianName: string | null;
   supplierId: string | null;
   supplierShortName: string | null;
@@ -66,6 +69,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       balance_amount,
       is_paid,
       created_at,
+      updated_at,
       approval_sent_at,
       completed_at,
       technician_name,
@@ -77,9 +81,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
     `,
     )
     .eq("store_id", storeId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false });
+    .is("deleted_at", null);
 
   if (filters.status && filters.status !== "all") {
     query = query.eq("status", filters.status);
@@ -117,7 +119,8 @@ export async function listOrders(filters: OrderListFilters = {}) {
 
   if (filters.pickupOverdue) {
     const cutoff = new Date(Date.now() - pickupOverdueDays * 24 * 3600 * 1000).toISOString();
-    query = query.eq("status", "waiting_pickup").lte("completed_at", cutoff);
+    // Unified flow: pickup-facing statuses are repaired / notified (legacy waiting_pickup migrated).
+    query = query.in("status", ["repaired", "notified"]).lte("completed_at", cutoff);
   }
 
   if (filters.q) {
@@ -194,6 +197,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       balanceAmount: row.balance_amount ?? null,
       isPaid: row.is_paid ?? false,
       createdAt: row.created_at,
+      updatedAt: row.updated_at,
       technicianName: row.technician_name ?? null,
       supplierId: row.supplier_id ?? null,
       supplierShortName: supplier?.short_name ?? null,
@@ -202,6 +206,14 @@ export async function listOrders(filters: OrderListFilters = {}) {
       originalOrderCompletedAt: orig?.completed_at ?? null,
       originalOrderWarrantyText: orig?.warranty_text ?? null,
     };
+  });
+
+  items.sort((a, b) => {
+    const rankDiff = getStatusListSortIndex(a.status) - getStatusListSortIndex(b.status);
+    if (rankDiff !== 0) return rankDiff;
+    const tu = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    if (tu !== 0) return tu;
+    return b.id.localeCompare(a.id);
   });
 
   return { items };

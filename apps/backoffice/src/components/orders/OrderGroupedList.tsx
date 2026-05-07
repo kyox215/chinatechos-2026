@@ -23,7 +23,15 @@ const DESKTOP_GRID =
   "grid grid-cols-[32px_76px_minmax(90px,130px)_minmax(140px,1fr)_120px_68px_56px_minmax(120px,160px)] gap-x-1.5";
 
 const NEW_STATUSES = new Set(["new"]);
-const PROCESSING_STATUSES = new Set(["rework", "diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
+const PROCESSING_STATUSES = new Set([
+  "rework",
+  "diagnosing",
+  "quoted",
+  "waiting_approval",
+  "repairing",
+  "parts_ordered",
+  "parts_arrived",
+]);
 const PICKUP_STATUSES = new Set(["repaired", "notified"]);
 
 function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {

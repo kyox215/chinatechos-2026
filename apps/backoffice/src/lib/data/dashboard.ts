@@ -33,7 +33,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
 
   const pickupOverdue = await countOrdersByFilter(supabase, {
     storeId,
-    status: "waiting_pickup",
+    statusIn: ["repaired", "notified"],
     olderThanHoursField: { field: "completed_at", hours: 24 * pickupDays },
   });
 
@@ -56,6 +56,7 @@ async function countOrdersByFilter(
   input: {
     storeId: string;
     status?: string;
+    statusIn?: string[];
     createdAfter?: string;
     olderThanHoursField?: { field: "approval_sent_at" | "completed_at"; hours: number };
   },
@@ -66,7 +67,9 @@ async function countOrdersByFilter(
     .eq("store_id", input.storeId)
     .is("deleted_at", null);
 
-  if (input.status) {
+  if (input.statusIn && input.statusIn.length > 0) {
+    q = q.in("status", input.statusIn);
+  } else if (input.status) {
     q = q.eq("status", input.status);
   }
 

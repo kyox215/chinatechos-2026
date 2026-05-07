@@ -49,6 +49,24 @@ export function OrdersSearchControls(props: Props) {
   const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
 
   useEffect(() => {
+    setQ(props.q ?? "");
+    setStatus(props.status);
+    setTechnician(props.technician === "all" ? "" : props.technician);
+    setPaid(props.paid);
+    setSupplier(props.supplier ?? "all");
+    setDateFrom(props.dateFrom ?? "");
+    setDateTo(props.dateTo ?? "");
+  }, [
+    props.q,
+    props.status,
+    props.technician,
+    props.paid,
+    props.supplier,
+    props.dateFrom,
+    props.dateTo,
+  ]);
+
+  useEffect(() => {
     fetch("/api/suppliers")
       .then((r) => r.json())
       .then((d: { items?: SupplierOption[] }) => setSupplierOptions(d.items ?? []))
@@ -83,9 +101,15 @@ export function OrdersSearchControls(props: Props) {
   }, [q]);
 
   function applyFilters(next: {
-    q?: string; status?: string; technician?: string;
-    paid?: string; supplier?: string; dateFrom?: string; dateTo?: string;
-    approvalOverdue?: boolean; pickupOverdue?: boolean;
+    q?: string;
+    status?: string;
+    technician?: string;
+    paid?: string;
+    supplier?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    approvalOverdue?: boolean;
+    pickupOverdue?: boolean;
   }) {
     const params = new URLSearchParams();
     const qValue = next.q ?? q;
@@ -102,21 +126,24 @@ export function OrdersSearchControls(props: Props) {
     if (dateFromValue) params.set("dateFrom", dateFromValue);
     const dateToValue = next.dateTo ?? dateTo;
     if (dateToValue) params.set("dateTo", dateToValue);
-    const aOverdue = next.approvalOverdue ?? props.approvalOverdue;
-    const pOverdue = next.pickupOverdue ?? props.pickupOverdue;
+    const aOverdue = next.approvalOverdue !== undefined ? next.approvalOverdue : props.approvalOverdue;
+    const pOverdue = next.pickupOverdue !== undefined ? next.pickupOverdue : props.pickupOverdue;
     if (aOverdue) params.set("approvalOverdue", "1");
     if (pOverdue) params.set("pickupOverdue", "1");
     const query = params.toString();
     router.push(query ? `/orders?${query}` : "/orders");
   }
 
+  const compactInput = "ui-input h-9 w-full rounded-lg text-sm";
+  const compactBtn = "ui-btn h-8 shrink-0 rounded-lg px-2.5 text-xs font-semibold";
+
   return (
     <>
-      <div className="ui-panel flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
+      <div className="ui-panel flex flex-col gap-2 md:gap-3 !p-2.5 md:!p-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
             <input
-              className="ui-input h-10 w-full pl-3 pr-3 md:h-9"
+              className={`${compactInput} max-md:text-[13px]`}
               onChange={(e) => setQ(e.target.value)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 100)}
               onFocus={() => setSearchFocused(true)}
@@ -124,7 +151,7 @@ export function OrdersSearchControls(props: Props) {
               value={q}
             />
             {searchFocused && q.trim().length >= 2 ? (
-              <div className="absolute z-30 mt-1 w-full rounded-xl border border-border bg-surface p-2 shadow-sm">
+              <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-surface p-1.5 shadow-sm">
                 {loadingSuggest ? (
                   <div className="px-2 py-2 text-xs text-neutral-500">搜索中...</div>
                 ) : suggestions.length === 0 ? (
@@ -133,7 +160,7 @@ export function OrdersSearchControls(props: Props) {
                   suggestions.map((it) => (
                     <button
                       key={it.id}
-                      className="block w-full rounded-lg px-2 py-2 text-left hover:bg-muted"
+                      className="block w-full rounded-md px-2 py-1.5 text-left hover:bg-muted"
                       onClick={() => {
                         const keyword = it.phoneE164 || it.name || "";
                         setQ(keyword);
@@ -150,25 +177,87 @@ export function OrdersSearchControls(props: Props) {
               </div>
             ) : null}
           </div>
-          <div className="flex gap-2">
-            <button className="ui-btn ui-btn-primary h-10 px-3 md:h-9" onClick={() => applyFilters({ q })} type="button">搜索</button>
-            <button className="ui-btn ui-btn-secondary h-10 px-3 md:h-9" onClick={() => setAdvancedOpen((v) => !v)} type="button">
+          <div className="flex flex-wrap gap-1.5">
+            <button className={`${compactBtn} ui-btn-primary`} onClick={() => applyFilters({ q })} type="button">
+              搜索
+            </button>
+            <button className={`${compactBtn} ui-btn-secondary`} onClick={() => setAdvancedOpen((v) => !v)} type="button">
               高级筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
             </button>
-            <button className="ui-btn ui-btn-primary h-10 px-4 md:h-9" onClick={() => setCreateOpen(true)} type="button">新建工单</button>
+            <button className={`${compactBtn} ui-btn-primary`} onClick={() => setCreateOpen(true)} type="button">
+              新建工单
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <ChipToggle active={props.approvalOverdue} label="待确认超时" onClick={() => applyFilters({ approvalOverdue: !props.approvalOverdue })} />
-          <ChipToggle active={props.pickupOverdue} label="超期未取件" onClick={() => applyFilters({ pickupOverdue: !props.pickupOverdue })} />
-          <Link className="ui-btn ui-btn-secondary h-10 px-3 leading-10 md:h-9 md:leading-9" href="/orders">清空全部</Link>
+        <div className="space-y-2 border-t border-border/70 pt-2 md:pt-2.5">
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+            <div className="min-w-0">
+              <div className="mb-1 text-[11px] font-medium text-neutral-400">风险</div>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterChip
+                  active={props.approvalOverdue}
+                  label="待确认超时"
+                  variant="risk"
+                  onClick={() => applyFilters({ approvalOverdue: !props.approvalOverdue })}
+                />
+                <FilterChip
+                  active={props.pickupOverdue}
+                  label="超期未取件"
+                  variant="risk"
+                  onClick={() => applyFilters({ pickupOverdue: !props.pickupOverdue })}
+                />
+              </div>
+            </div>
+            <div className="min-w-0">
+              <div className="mb-1 text-[11px] font-medium text-neutral-400">账款</div>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterChip
+                  active={props.paid === "no"}
+                  label="未结清"
+                  variant="accent"
+                  onClick={() => applyFilters({ paid: props.paid === "no" ? "all" : "no" })}
+                />
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 text-[11px] font-medium text-neutral-400">状态捷径</div>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterChip
+                  active={props.status === "waiting_approval"}
+                  label="等回复"
+                  variant="accent"
+                  onClick={() =>
+                    applyFilters({
+                      status: props.status === "waiting_approval" ? "all" : "waiting_approval",
+                    })
+                  }
+                />
+                <FilterChip
+                  active={props.status === "parts_ordered"}
+                  label="待到货"
+                  variant="accent"
+                  onClick={() =>
+                    applyFilters({
+                      status: props.status === "parts_ordered" ? "all" : "parts_ordered",
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <Link
+              className="ml-auto text-xs font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+              href="/orders"
+            >
+              清空筛选
+            </Link>
+          </div>
         </div>
 
         {advancedOpen ? (
-          <div className="rounded-xl border border-border bg-surface-2 p-3">
+          <div className="rounded-lg border border-border bg-surface-2 p-2.5 md:p-3">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-              <select className="ui-input" onChange={(e) => setStatus(e.target.value)} value={status}>
+              <select className={compactInput} onChange={(e) => setStatus(e.target.value)} value={status}>
                 <option value="all">状态：全部</option>
                 <option value="rework">返修</option>
                 <option value="new">接单</option>
@@ -183,27 +272,53 @@ export function OrdersSearchControls(props: Props) {
                 <option value="completed">已完成</option>
                 <option value="cancelled">已取消</option>
               </select>
-              <select className="ui-input" onChange={(e) => setSupplier(e.target.value)} value={supplier}>
-                <option value="all">供应商：全部</option>
-                {supplierOptions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.short_name}</option>
-                ))}
-              </select>
-              <select className="ui-input" onChange={(e) => setPaid(e.target.value)} value={paid}>
+              <select className={compactInput} onChange={(e) => setPaid(e.target.value)} value={paid}>
                 <option value="all">结清：全部</option>
                 <option value="yes">已结清</option>
                 <option value="no">未结清</option>
               </select>
-              <input className="ui-input" onChange={(e) => setTechnician(e.target.value)} placeholder="技师" value={technician} />
-              <input className="ui-input" onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
-              <input className="ui-input" onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
+              <select className={compactInput} onChange={(e) => setSupplier(e.target.value)} value={supplier}>
+                <option value="all">供应商：全部</option>
+                {supplierOptions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.short_name}
+                  </option>
+                ))}
+              </select>
+              <input className={compactInput} onChange={(e) => setTechnician(e.target.value)} placeholder="技师" value={technician} />
+              <input className={compactInput} onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
+              <input className={compactInput} onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
             </div>
-            <div className="mt-3 flex gap-2">
-              <button className="ui-btn ui-btn-primary h-10 px-3 md:h-9" onClick={() => applyFilters({ status, paid, supplier, technician, dateFrom, dateTo })} type="button">应用筛选</button>
-              <button className="ui-btn ui-btn-secondary h-10 px-3 md:h-9" onClick={() => {
-                setStatus("all"); setPaid("all"); setSupplier("all"); setTechnician(""); setDateFrom(""); setDateTo("");
-                applyFilters({ status: "all", paid: "all", supplier: "all", technician: "", dateFrom: "", dateTo: "" });
-              }} type="button">重置</button>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <button
+                className={`${compactBtn} ui-btn-primary`}
+                onClick={() => applyFilters({ status, paid, supplier, technician, dateFrom, dateTo })}
+                type="button"
+              >
+                应用筛选
+              </button>
+              <button
+                className={`${compactBtn} ui-btn-secondary`}
+                onClick={() => {
+                  setStatus("all");
+                  setPaid("all");
+                  setSupplier("all");
+                  setTechnician("");
+                  setDateFrom("");
+                  setDateTo("");
+                  applyFilters({
+                    status: "all",
+                    paid: "all",
+                    supplier: "all",
+                    technician: "",
+                    dateFrom: "",
+                    dateTo: "",
+                  });
+                }}
+                type="button"
+              >
+                重置
+              </button>
             </div>
           </div>
         ) : null}
@@ -214,12 +329,22 @@ export function OrdersSearchControls(props: Props) {
   );
 }
 
-function ChipToggle(props: { label: string; active: boolean; onClick: () => void }) {
+function FilterChip(props: {
+  label: string;
+  active: boolean;
+  variant: "risk" | "accent";
+  onClick: () => void;
+}) {
+  const activeRisk = "border-amber-200 bg-amber-50 text-amber-800";
+  const activeAccent = "border-indigo-200 bg-indigo-50 text-indigo-900";
+  const inactive = "border-border bg-muted/80 text-neutral-700 hover:bg-muted";
+  const activeCls = props.variant === "risk" ? activeRisk : activeAccent;
   return (
     <button
       className={[
-        "ui-btn h-10 rounded-xl border px-3 text-sm font-medium md:h-9",
-        props.active ? "border-amber-100 bg-amber-50 text-amber-700" : "border-border bg-muted text-neutral-700",
+        "inline-flex h-7 max-w-full shrink-0 items-center rounded-full border px-2.5 text-xs font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
+        props.active ? activeCls : inactive,
       ].join(" ")}
       onClick={props.onClick}
       type="button"
