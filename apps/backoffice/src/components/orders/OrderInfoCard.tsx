@@ -10,6 +10,7 @@ import {
   OrderFormServiceMeta,
   ORDER_FORM_BRANDS,
 } from "@/components/orders/OrderFormFields";
+import { adjustQuotationAfterFaultRemoval } from "@/lib/domain/adjust-quotation-for-issue";
 import { buildIssueFromFaults, extractFaultExtraNote, parseFaultsFromIssue } from "@/lib/domain/fault-types";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
@@ -23,6 +24,7 @@ type Props = {
   device: { id: string; brand: string; model: string; serialOrImei: string | null } | null;
   supplier: SupplierInfo;
   issueDescription: string;
+  quotationAmount: number | null;
   diagnosisResult: string | null;
   technicianName: string | null;
   internalTag: string | null;
@@ -119,22 +121,32 @@ export function OrderInfoCard(props: Props) {
     setPending(true);
     setError(null);
     try {
+      const newIssue = buildIssueFromFaults(selectedFaults, faultNote);
+      const nextQuotation = adjustQuotationAfterFaultRemoval(
+        props.issueDescription,
+        newIssue,
+        props.quotationAmount,
+      );
+      const patchBody: Record<string, unknown> = {
+        customer_name: customerName.trim() || null,
+        customer_phone: customerPhone.trim() || null,
+        brand: finalBrand.trim() || null,
+        model: model.trim() || null,
+        serial_or_imei: serialOrImei.trim() || null,
+        issue_description: newIssue,
+        technician_name: technician.trim() || null,
+        internal_tag: tag.trim() || null,
+        warranty_text: warranty.trim() || null,
+        pause_reason: pause.trim() || null,
+        supplier_id: supplierId.trim() || null,
+      };
+      if (nextQuotation !== props.quotationAmount) {
+        patchBody.quotation_amount = nextQuotation;
+      }
       const res = await fetch(`/api/orders/${props.orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_name: customerName.trim() || null,
-          customer_phone: customerPhone.trim() || null,
-          brand: finalBrand.trim() || null,
-          model: model.trim() || null,
-          serial_or_imei: serialOrImei.trim() || null,
-          issue_description: buildIssueFromFaults(selectedFaults, faultNote),
-          technician_name: technician.trim() || null,
-          internal_tag: tag.trim() || null,
-          warranty_text: warranty.trim() || null,
-          pause_reason: pause.trim() || null,
-          supplier_id: supplierId.trim() || null,
-        }),
+        body: JSON.stringify(patchBody),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "保存失败");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { faultLineLabelItalian } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, parseFaultsFromIssue } from "@/lib/domain/fault-types";
 import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
@@ -20,6 +20,29 @@ type Props = {
   deviceLabel: string;
 };
 
+function pricesFromIssueAndQuotation(
+  issueDescription: string,
+  quotationAmount: number | null,
+): Record<string, string> {
+  const faultMap = parseFaultsFromIssue(issueDescription);
+  const lines = Array.from(faultMap.entries()).map(([key, subs]) => {
+    const ft = FAULT_TYPES.find((f) => f.key === key);
+    const label = ft?.label ?? key;
+    const subLabels = subs
+      .filter((s) => s !== "_self")
+      .map((sk) => ft?.subTypes?.find((st) => st.key === sk)?.label ?? sk);
+    return { key, label: subLabels.length > 0 ? `${label}(${subLabels.join(", ")})` : label };
+  });
+  const init: Record<string, string> = {};
+  if (lines.length > 0 && quotationAmount) {
+    const perItem = quotationAmount / lines.length;
+    lines.forEach((f) => { init[f.key] = perItem.toFixed(2); });
+  } else {
+    lines.forEach((f) => { init[f.key] = ""; });
+  }
+  return init;
+}
+
 export function FinanceCard(props: Props) {
   const router = useRouter();
   const faultMap = parseFaultsFromIssue(props.issueDescription);
@@ -32,19 +55,17 @@ export function FinanceCard(props: Props) {
     return { key, label: subLabels.length > 0 ? `${label}(${subLabels.join(", ")})` : label };
   });
 
-  const [prices, setPrices] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
-    if (faultItems.length > 0 && props.quotationAmount) {
-      const perItem = props.quotationAmount / faultItems.length;
-      faultItems.forEach((f) => { init[f.key] = perItem.toFixed(2); });
-    } else {
-      faultItems.forEach((f) => { init[f.key] = ""; });
-    }
-    return init;
-  });
+  const [prices, setPrices] = useState<Record<string, string>>(() =>
+    pricesFromIssueAndQuotation(props.issueDescription, props.quotationAmount),
+  );
   const [deposit, setDeposit] = useState(props.depositAmount != null ? String(props.depositAmount) : "");
   const [isPaid, setIsPaid] = useState(props.isPaid);
   const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (editing) return;
+    setPrices(pricesFromIssueAndQuotation(props.issueDescription, props.quotationAmount));
+  }, [props.issueDescription, props.quotationAmount, editing]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSendModal, setShowSendModal] = useState(false);

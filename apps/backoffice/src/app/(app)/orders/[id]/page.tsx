@@ -96,6 +96,7 @@ export default async function OrderDetailPage(props: {
           device={order.device}
           supplier={order.supplier}
           issueDescription={order.issueDescription}
+          quotationAmount={order.quotationAmount}
           diagnosisResult={order.diagnosisResult}
           technicianName={order.technicianName}
           internalTag={order.internalTag}
