@@ -137,11 +137,11 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4">
-      <div className="flex w-full max-w-md flex-col rounded-t-2xl bg-surface md:rounded-2xl">
+      <div className="flex w-full max-w-md flex-col rounded-t-2xl bg-surface pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <span className="text-sm font-semibold text-neutral-900">扫描 IMEI / 条形码</span>
           <button
-            className="ui-btn ui-btn-secondary flex h-8 w-8 items-center justify-center text-xs"
+            className="ui-btn ui-btn-secondary flex h-9 w-9 items-center justify-center text-xs"
             onClick={() => {
               stopCamera();
               onClose();

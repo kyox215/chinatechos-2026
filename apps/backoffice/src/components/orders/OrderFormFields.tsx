@@ -1,8 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { BarcodeScanner } from "@/components/orders/BarcodeScanner";
 import { FaultSelector } from "@/components/orders/FaultSelector";
+import { ImeiImageRecognizer } from "@/components/orders/ImeiImageRecognizer";
+import { ImeiRecognizerPicker } from "@/components/orders/ImeiRecognizerPicker";
 
 export const ORDER_FORM_BRANDS = ["Apple", "Samsung", "Huawei", "Xiaomi", "OnePlus", "OPPO", "vivo", "Google", "其他"];
 
@@ -30,6 +32,8 @@ export function OrderFormCustomerDevice(props: {
   phonePlaceholder?: string;
 }) {
   const ic = props.inputClass ?? "";
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
   return (
     <div className="space-y-4">
       <fieldset className="space-y-2">
@@ -109,21 +113,32 @@ export function OrderFormCustomerDevice(props: {
         </div>
         <div>
           <label className="mb-0.5 block text-[11px] text-neutral-400">IMEI / 序列号</label>
-          <div className="flex gap-1">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input className={`ui-input flex-1 ${ic}`} value={props.serialOrImei} onChange={(e) => props.setSerialOrImei(e.target.value)} placeholder="可选" />
             <button
-              className="ui-btn ui-btn-secondary flex h-9 w-9 shrink-0 items-center justify-center md:h-10"
+              className="ui-btn ui-btn-secondary flex h-11 shrink-0 items-center justify-center gap-1 px-3 text-xs md:h-10 md:px-2"
               onClick={() => props.setScannerOpen(true)}
-              title="扫码录入"
+              title="识别 IMEI"
               type="button"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h3.375v1.5H5.25v3H3.75v-3.375zM3.75 15.75v3.375c0 .621.504 1.125 1.125 1.125h3.375v-1.5H5.25v-3H3.75zm16.5-10.875v3.375h-1.5v-3h-3v-1.5h3.375c.621 0 1.125.504 1.125 1.125zm-1.5 10.875v3h-3v1.5h3.375c.621 0 1.125-.504 1.125-1.125V15.75h-1.5zM7.5 9v6h1.5V9H7.5zm3 0v6h3V9h-3zm4.5 0v6h1.5V9H15z" />
               </svg>
+              <span className="md:hidden">识别 IMEI</span>
             </button>
           </div>
         </div>
-        <BarcodeScanner open={props.scannerOpen} onScan={(v) => props.setSerialOrImei(v)} onClose={() => props.setScannerOpen(false)} />
+        <ImeiRecognizerPicker
+          open={props.scannerOpen}
+          onClose={() => props.setScannerOpen(false)}
+          onPickMode={(mode) => {
+            props.setScannerOpen(false);
+            if (mode === "barcode") setBarcodeOpen(true);
+            else setOcrOpen(true);
+          }}
+        />
+        <BarcodeScanner open={barcodeOpen} onScan={(v) => props.setSerialOrImei(v)} onClose={() => setBarcodeOpen(false)} />
+        <ImeiImageRecognizer open={ocrOpen} onPick={(v) => props.setSerialOrImei(v)} onClose={() => setOcrOpen(false)} />
       </fieldset>
     </div>
   );
