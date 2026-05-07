@@ -1,4 +1,5 @@
 import { env } from "@/lib/env/server";
+import { postgrestQuoted, sanitizePostgrestSearchTerm } from "@/lib/domain/order-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 
@@ -21,15 +22,18 @@ export async function suggestCustomers(input: {
   }
 
   const supabase = createSupabaseServerClient();
-  const escaped = q.replace(/[,%]/g, "");
-  const like = `%${escaped}%`;
+  const qSafe = sanitizePostgrestSearchTerm(q);
+  if (qSafe.length === 0) {
+    return [];
+  }
+  const qv = postgrestQuoted(`%${qSafe}%`);
 
   const customerRes = await supabase
     .from("customers")
     .select("id,name,phone_e164")
     .eq("store_id", storeId)
     .is("deleted_at", null)
-    .or(`phone_e164.ilike.${like},name.ilike.${like}`)
+    .or(`phone_e164.ilike.${qv},name.ilike.${qv}`)
     .order("created_at", { ascending: false })
     .limit(limit);
 

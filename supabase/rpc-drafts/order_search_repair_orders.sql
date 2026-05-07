@@ -1,0 +1,40 @@
+-- DRAFT — not applied by migrations. Optional future replacement for PostgREST `.or(ilike…)`
+-- when ILIKE wildcards / parser limits become unacceptable.
+--
+-- Idea: single RPC returning matching repair_orders.id for a store + normalized search text,
+-- then application uses `.in('id', ids)` with existing rich select.
+--
+-- Example sketch (requires tuning columns, indexes, RLS, grants):
+--
+-- create or replace function public.search_repair_order_ids(
+--   p_store_id uuid,
+--   p_q text,
+--   p_limit int default 5000
+-- )
+-- returns table (id uuid)
+-- language sql
+-- stable
+-- as $$
+--   select ro.id
+--   from public.repair_orders ro
+--   left join public.customers c on c.id = ro.customer_id
+--   left join public.devices d on d.id = ro.device_id
+--   where ro.store_id = p_store_id
+--     and ro.deleted_at is null
+--     and p_q is not null
+--     and p_q <> ''
+--     and (
+--       ro.public_no ilike '%' || p_q || '%'
+--       or ro.issue_description ilike '%' || p_q || '%'
+--       or ro.technician_name ilike '%' || p_q || '%'
+--       or c.name ilike '%' || p_q || '%'
+--       or c.phone_e164 ilike '%' || p_q || '%'
+--       or d.brand ilike '%' || p_q || '%'
+--       or d.model ilike '%' || p_q || '%'
+--       or d.serial_or_imei ilike '%' || p_q || '%'
+--     )
+--   limit p_limit;
+-- $$;
+--
+-- Sanitize p_q in application (same as sanitizePostgrestSearchTerm) or use
+-- replace(…, '%', '\%') with escape in raw SQL for literal match if needed.

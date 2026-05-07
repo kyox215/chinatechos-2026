@@ -3,9 +3,15 @@ import { env } from "@/lib/env/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { getStoreSettings } from "@/lib/data/store-settings";
 import {
+  postgrestQuoted,
+  sanitizePostgrestSearchTerm,
+} from "@/lib/domain/order-search";
+import {
   defaultResolvedOrderUi,
   getStatusListSortIndexResolved,
 } from "@/lib/domain/order-ui-config";
+
+export { sanitizeOrderSearchQ, sanitizePostgrestSearchTerm } from "@/lib/domain/order-search";
 
 export type OrderListItem = {
   id: string;
@@ -46,31 +52,6 @@ export type OrderListFilters = {
   dateFrom?: string;
   dateTo?: string;
 };
-
-const ORDER_SEARCH_Q_MAX_LEN = 200;
-
-/**
- * Safe fragment for PostgREST `.or(...)` ilike patterns.
- * - Strip `,` `%` `\` `"` `()` — break CSV-like filter syntax or user-injected wildcards.
- * - Strip `+` — PostgREST logic tree treats `+` as boolean OR (breaks phone `+39…` searches).
- * - Keep `_` — needed for IMEI 等；在 SQL ILIKE 中 `_` 为单字符通配符，属可接受的模糊匹配。
- */
-export function sanitizeOrderSearchQ(raw: string): string {
-  return raw
-    .trim()
-    .slice(0, ORDER_SEARCH_Q_MAX_LEN)
-    .replace(/\\/g, "")
-    .replace(/,/g, "")
-    .replace(/%/g, "")
-    .replace(/\+/g, "")
-    .replace(/[()]/g, "")
-    .replace(/"/g, "");
-}
-
-/** PostgREST filter value: quote so `.` and other chars in search text do not break `col.op.value` parsing. */
-function postgrestQuoted(value: string): string {
-  return `"${value.replace(/"/g, '""')}"`;
-}
 
 export type ListOrdersResult = {
   items: OrderListItem[];
@@ -117,7 +98,9 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
     .eq("store_id", storeId)
     .is("deleted_at", null);
 
-  if (filters.status && filters.status !== "all") {
+  /** 风险筛选已限定 status，忽略 URL 中的 status，避免互斥条件导致 0 条 */
+  const riskActive = Boolean(filters.approvalOverdue || filters.pickupOverdue);
+  if (!riskActive && filters.status && filters.status !== "all") {
     query = query.eq("status", filters.status);
   }
 
@@ -149,15 +132,13 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
   if (filters.approvalOverdue) {
     const cutoff = new Date(Date.now() - approvalOverdueHours * 3600 * 1000).toISOString();
     query = query.eq("status", "waiting_approval").lte("approval_sent_at", cutoff);
-  }
-
-  if (filters.pickupOverdue) {
+  } else if (filters.pickupOverdue) {
     const cutoff = new Date(Date.now() - pickupOverdueDays * 24 * 3600 * 1000).toISOString();
     // Unified flow: pickup-facing statuses are repaired / notified (legacy waiting_pickup migrated).
     query = query.in("status", ["repaired", "notified", "unfixed_pickup"]).lte("completed_at", cutoff);
   }
 
-  const qSafe = filters.q ? sanitizeOrderSearchQ(filters.q) : "";
+  const qSafe = filters.q ? sanitizePostgrestSearchTerm(filters.q) : "";
   if (qSafe.length > 0) {
     const like = `%${qSafe}%`;
     const qv = postgrestQuoted(like);

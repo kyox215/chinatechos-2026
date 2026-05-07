@@ -51,6 +51,8 @@ export function OrdersSearchControls(props: Props) {
   const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
 
+  // Keep local fields in sync when URL changes (浏览器前进/后退、分享链接).
+  /* eslint-disable react-hooks/set-state-in-effect -- controlled sync from server props */
   useEffect(() => {
     setQ(props.q ?? "");
     setStatus(props.status);
@@ -68,12 +70,16 @@ export function OrdersSearchControls(props: Props) {
     props.dateFrom,
     props.dateTo,
   ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     fetch("/api/suppliers")
-      .then((r) => r.json())
-      .then((d: { items?: SupplierOption[] }) => setSupplierOptions(d.items ?? []))
-      .catch(() => {});
+      .then(async (r) => {
+        if (!r.ok) return;
+        const d = (await r.json()) as { items?: SupplierOption[] };
+        setSupplierOptions(d.items ?? []);
+      })
+      .catch(() => setSupplierOptions([]));
   }, []);
 
   const activeFiltersCount = useMemo(() => {
@@ -140,8 +146,12 @@ export function OrdersSearchControls(props: Props) {
     if (dateToValue) params.set("dateTo", dateToValue);
     const aOverdue = next.approvalOverdue !== undefined ? next.approvalOverdue : props.approvalOverdue;
     const pOverdue = next.pickupOverdue !== undefined ? next.pickupOverdue : props.pickupOverdue;
-    if (aOverdue) params.set("approvalOverdue", "1");
-    if (pOverdue) params.set("pickupOverdue", "1");
+    /** 指定「状态」筛选时不再附带风险参数（与 listOrders 逻辑一致，避免 URL 误导） */
+    const riskAllowed = statusValue === "all";
+    if (riskAllowed) {
+      if (aOverdue) params.set("approvalOverdue", "1");
+      if (pOverdue) params.set("pickupOverdue", "1");
+    }
     const query = params.toString();
     router.push(query ? `/orders?${query}` : "/orders");
   }
@@ -159,6 +169,12 @@ export function OrdersSearchControls(props: Props) {
               onChange={(e) => setQ(e.target.value)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 100)}
               onFocus={() => setSearchFocused(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyFilters({ q });
+                }
+              }}
               placeholder="实时搜索：电话 / 客户名 / 工单号 / IMEI"
               value={q}
             />
@@ -211,13 +227,27 @@ export function OrdersSearchControls(props: Props) {
                   active={props.approvalOverdue}
                   label="待确认超时"
                   variant="risk"
-                  onClick={() => applyFilters({ approvalOverdue: !props.approvalOverdue })}
+                  onClick={() => {
+                    const on = !props.approvalOverdue;
+                    applyFilters({
+                      approvalOverdue: on,
+                      pickupOverdue: on ? false : props.pickupOverdue,
+                      ...(on ? { status: "all" } : {}),
+                    });
+                  }}
                 />
                 <FilterChip
                   active={props.pickupOverdue}
                   label="超期未取件"
                   variant="risk"
-                  onClick={() => applyFilters({ pickupOverdue: !props.pickupOverdue })}
+                  onClick={() => {
+                    const on = !props.pickupOverdue;
+                    applyFilters({
+                      pickupOverdue: on,
+                      approvalOverdue: on ? false : props.approvalOverdue,
+                      ...(on ? { status: "all" } : {}),
+                    });
+                  }}
                 />
               </div>
             </div>
@@ -242,6 +272,8 @@ export function OrdersSearchControls(props: Props) {
                   onClick={() =>
                     applyFilters({
                       status: props.status === "waiting_approval" ? "all" : "waiting_approval",
+                      approvalOverdue: false,
+                      pickupOverdue: false,
                     })
                   }
                 />
@@ -252,6 +284,8 @@ export function OrdersSearchControls(props: Props) {
                   onClick={() =>
                     applyFilters({
                       status: props.status === "parts_ordered" ? "all" : "parts_ordered",
+                      approvalOverdue: false,
+                      pickupOverdue: false,
                     })
                   }
                 />
@@ -318,6 +352,8 @@ export function OrdersSearchControls(props: Props) {
                     technician: "",
                     dateFrom: "",
                     dateTo: "",
+                    approvalOverdue: false,
+                    pickupOverdue: false,
                   });
                 }}
                 type="button"
