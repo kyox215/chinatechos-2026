@@ -2,6 +2,8 @@
 
 面向门店后台（backoffice）的库存台账与回收合规能力，代码主要在 `apps/backoffice` 与 `supabase/migrations`。
 
+若部署时出现 **`Could not find the table 'public.inventory_items'`**，请在 Supabase 按文档顺序执行迁移：参见 [Vercel + Supabase 部署指南（§1.1 起）](../deploy/vercel-supabase.md)。
+
 ## 生命周期状态 `lifecycle_status`
 
 | 值 | 含义 |
