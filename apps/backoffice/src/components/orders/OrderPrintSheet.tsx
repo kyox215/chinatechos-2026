@@ -19,7 +19,7 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
 
   return (
     <div className="order-print-sheet">
-      <article className="mx-auto h-[138mm] max-w-[200mm] border border-neutral-300 p-2 text-[9px] leading-tight text-neutral-900 print:border-neutral-300">
+      <article className="w-full border border-neutral-300 p-2 text-[9px] leading-tight text-neutral-900 print:border-neutral-300">
         <div className="grid h-full grid-cols-[1.2fr_auto_1fr] gap-2">
           <section className="min-w-0 space-y-1.5 pr-1">
             <header className="border-b border-neutral-300 pb-1.5">

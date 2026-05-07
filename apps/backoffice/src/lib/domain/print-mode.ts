@@ -42,11 +42,18 @@ export function triggerOrderSheetPrint(onAfter?: () => void) {
     onAfter?.();
   };
 
-  window.addEventListener("afterprint", () => finalize(), { once: true });
+  // Wait for the browser to paint the DOM changes before printing.
+  // rAF schedules work before the next repaint; the nested setTimeout
+  // ensures the frame has actually been committed to the screen.
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      window.addEventListener("afterprint", () => finalize(), { once: true });
 
-  try {
-    window.print();
-  } finally {
-    window.setTimeout(() => finalize(), 0);
-  }
+      try {
+        window.print();
+      } finally {
+        setTimeout(() => finalize(), 0);
+      }
+    }, 0);
+  });
 }
