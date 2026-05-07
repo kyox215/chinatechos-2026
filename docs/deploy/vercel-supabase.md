@@ -56,6 +56,19 @@ export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
 端口以 `supabase/config.toml` 中 `[db] port` 为准；密码以 `supabase status` 为准。未安装 `psql` 时（macOS）：`brew install libpq && brew link --force libpq`。
 
+**E. 在 backoffice 目录用 npm（推荐：Supabase CLI + 本地库）**
+
+需先安装并启动 **Docker Desktop**，然后在仓库根目录执行 `npx supabase start`（或 `supabase start`），再：
+
+```bash
+cd apps/backoffice
+npm run db:apply-inventory
+```
+
+该命令使用 `npx supabase db query --local` 依次执行三份库存 migration，**无需**单独安装 `psql`。
+
+若你使用远程数据库连接串，可设置 `DATABASE_URL` 后执行 `npm run db:apply-inventory:psql`。
+
 ### 1.2 环境变量与 Supabase 项目必须一致
 
 库存 API 使用服务端 Supabase 客户端；以下变量必须来自 **同一 Supabase 项目**（Dashboard → Project Settings → API）：

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:apply-inventory": "env USE_NPX_SUPABASE=1 bash ../../scripts/apply-inventory-migrations-local.sh",
+    "db:apply-inventory:psql": "bash ../../scripts/apply-inventory-migrations-local.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",

@@ -24,22 +24,15 @@
 # 也可覆盖脚本使用的 SQL 目录（默认使用仓库内 migration 文件）：
 #   USE_DOCS_PARTS=1 ./scripts/apply-inventory-migrations-local.sh
 #   将改用 docs/deploy/apply-inventory-tables-part{1,2,3}*.sql（与分段文档一致）
+#
+# 若已安装 Docker 且希望用 Supabase CLI（无需安装 psql）：
+#   supabase start
+#   USE_NPX_SUPABASE=1 ./scripts/apply-inventory-migrations-local.sh
+#   将使用 npx supabase db query --local -f 依次执行（需本机 Docker 运行中）。
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-
-if [[ -z "${DATABASE_URL:-}" ]]; then
-  echo "请先设置 DATABASE_URL（Postgres 连接串），例如：" >&2
-  echo "  export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'" >&2
-  echo "本地请先运行: supabase start，并用 supabase status 核对端口与密码。" >&2
-  exit 1
-fi
-
-if ! command -v psql >/dev/null 2>&1; then
-  echo "未找到 psql。macOS 可执行: brew install libpq && brew link --force libpq" >&2
-  exit 1
-fi
 
 if [[ "${USE_DOCS_PARTS:-}" == "1" ]]; then
   FILES=(
@@ -60,6 +53,33 @@ for sql in "${FILES[@]}"; do
     echo "缺少文件: $sql" >&2
     exit 1
   fi
+done
+
+if [[ "${USE_NPX_SUPABASE:-}" == "1" ]]; then
+  cd "$ROOT"
+  for sql in "${FILES[@]}"; do
+    echo ">>> npx supabase db query --local -f $sql"
+    npx --yes supabase@latest db query --local --agent no -f "$sql"
+  done
+  echo ""
+  echo "完成（Supabase CLI / 本地库）。检查: SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'inventory%';"
+  exit 0
+fi
+
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  echo "请先设置 DATABASE_URL（Postgres 连接串），或使用 USE_NPX_SUPABASE=1（需 supabase start + Docker）。" >&2
+  echo "  export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'" >&2
+  echo "或: USE_NPX_SUPABASE=1 ./scripts/apply-inventory-migrations-local.sh" >&2
+  exit 1
+fi
+
+if ! command -v psql >/dev/null 2>&1; then
+  echo "未找到 psql。macOS 可执行: brew install libpq && brew link --force libpq" >&2
+  echo "或改用: USE_NPX_SUPABASE=1 ./scripts/apply-inventory-migrations-local.sh（依赖 Docker）" >&2
+  exit 1
+fi
+
+for sql in "${FILES[@]}"; do
   echo ">>> Applying: $sql"
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$sql"
 done
