@@ -73,6 +73,17 @@ function macroGroups(items: OrderListItem[], resolved: ResolvedOrderUi): StatusG
   return groups;
 }
 
+/** 列表行内寄修/到店标识（与设置中 sectionTitles + mailInOrderType 一致） */
+function OrderChannelPill({ item, ui }: { item: OrderListItem; ui: ResolvedOrderUi }) {
+  const label =
+    item.orderType === ui.mailInOrderType ? ui.sectionTitles.mail : ui.sectionTitles.shop;
+  return (
+    <span className="shrink-0 rounded-full border border-border/80 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600">
+      {label}
+    </span>
+  );
+}
+
 function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
   if (!item.originalOrderId) return null;
   const w = calcWarranty(item.originalOrderCompletedAt, item.originalOrderWarrantyText);
@@ -101,10 +112,7 @@ function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
 export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const router = useRouter();
   const ui = useResolvedOrderUi();
-  const mailItems = items.filter((it) => it.orderType === ui.mailInOrderType);
-  const shopItems = items.filter((it) => it.orderType !== ui.mailInOrderType);
-  const mailGroups = macroGroups(mailItems, ui);
-  const shopGroups = macroGroups(shopItems, ui);
+  const groups = macroGroups(items, ui);
   const statusOptions = getOrderStatusSelectOptionsResolved(ui);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
@@ -165,41 +173,17 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
 
   return (
     <div className="space-y-3">
-      {mailGroups.length > 0 ? (
-        <div className="space-y-3">
-          <div className="px-1 pt-1">
-            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">{ui.sectionTitles.mail}</h2>
-          </div>
-          {mailGroups.map((group) => (
-            <GroupSection
-              key={`mail-${group.key}`}
-              group={group}
-              selected={selected}
-              onOpenSupplierPicker={openSupplierPicker}
-              onToggleSelect={toggleSelect}
-              onToggleGroup={() => toggleGroup(group.items)}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {shopGroups.length > 0 ? (
-        <div className="space-y-3">
-          <div className="px-1 pt-1">
-            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">{ui.sectionTitles.shop}</h2>
-          </div>
-          {shopGroups.map((group) => (
-            <GroupSection
-              key={`shop-${group.key}`}
-              group={group}
-              selected={selected}
-              onOpenSupplierPicker={openSupplierPicker}
-              onToggleSelect={toggleSelect}
-              onToggleGroup={() => toggleGroup(group.items)}
-            />
-          ))}
-        </div>
-      ) : null}
+      {groups.map((group) => (
+        <GroupSection
+          key={group.key}
+          group={group}
+          orderUi={ui}
+          selected={selected}
+          onOpenSupplierPicker={openSupplierPicker}
+          onToggleSelect={toggleSelect}
+          onToggleGroup={() => toggleGroup(group.items)}
+        />
+      ))}
 
       {selected.size > 0 && (
         <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg sm:gap-3">
@@ -249,12 +233,14 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
 
 const GroupSection = memo(function GroupSection({
   group,
+  orderUi,
   selected,
   onToggleSelect,
   onToggleGroup,
   onOpenSupplierPicker,
 }: {
   group: StatusGroup;
+  orderUi: ResolvedOrderUi;
   selected: Set<string>;
   onToggleSelect: (id: string) => void;
   onToggleGroup: () => void;
@@ -330,7 +316,10 @@ const GroupSection = memo(function GroupSection({
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="border-b border-border pb-2">
                       <div className="flex items-start justify-between gap-3">
-                        <StatusPopover orderId={it.id} status={it.status} />
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                          <StatusPopover orderId={it.id} status={it.status} />
+                          <OrderChannelPill item={it} ui={orderUi} />
+                        </div>
                         <div className="min-w-0 flex-1">
                           {phoneHref ? (
                             <a
@@ -440,8 +429,9 @@ const GroupSection = memo(function GroupSection({
                       type="checkbox"
                     />
                   </div>
-                  <div className="flex items-start pt-1">
+                  <div className="flex flex-wrap items-start gap-1.5 pt-1">
                     <StatusPopover orderId={it.id} status={it.status} />
+                    <OrderChannelPill item={it} ui={orderUi} />
                   </div>
                   <div className="min-w-0 truncate pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
                   <div className="min-w-0 space-y-0.5 pr-2 pt-1">

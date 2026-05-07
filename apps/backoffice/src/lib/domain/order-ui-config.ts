@@ -43,6 +43,7 @@ export type ResolvedOrderUi = {
   statusOrder: readonly string[];
   macroGroups: ResolvedMacroGroup[];
   mailInOrderType: "quick_repair" | "dropoff_repair";
+  /** 列表行寄修/到店 pill 文案 */
   sectionTitles: { mail: string; shop: string };
 };
 
@@ -117,6 +118,7 @@ const DEFAULT_MACRO_DEF: Record<
 };
 
 const DEFAULT_MAIL_TYPE = "quick_repair" as const;
+/** 列表行寄修/到店标识文案（非顶层分段标题） */
 const DEFAULT_SECTION_TITLES = { mail: "寄修", shop: "到店" };
 
 function isMacroId(s: string): s is MacroId {

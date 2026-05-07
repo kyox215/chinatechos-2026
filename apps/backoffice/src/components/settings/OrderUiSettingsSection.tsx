@@ -86,10 +86,10 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
         门店维度配置：列表大分组标题与顺序、状态下拉顺序、徽标旁文案等；保存后立即作用于工单列表与导出。
       </p>
 
-      {/* 分段与寄修判定 */}
+      {/* 列表行寄修/到店标识 */}
       <div className="mb-6 grid gap-3 md:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs text-neutral-500">寄修分段标题</label>
+          <label className="mb-1 block text-xs text-neutral-500">寄修标识文案</label>
           <input
             className="ui-input w-full text-sm"
             value={draft.sectionTitles?.mail ?? ""}
@@ -102,7 +102,7 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-neutral-500">到店分段标题</label>
+          <label className="mb-1 block text-xs text-neutral-500">到店标识文案</label>
           <input
             className="ui-input w-full text-sm"
             value={draft.sectionTitles?.shop ?? ""}
@@ -115,7 +115,7 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-neutral-500">置顶分段所用的工单类型</label>
+          <label className="mb-1 block text-xs text-neutral-500">寄修判定的工单类型（order_type）</label>
           <select
             className="ui-input w-full text-sm"
             value={draft.mailInOrderType ?? "quick_repair"}
@@ -130,7 +130,7 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
             <option value="dropoff_repair">dropoff_repair</option>
           </select>
           <p className="mt-1 text-[11px] text-neutral-400">
-            与该类型匹配的工单进入「{draft.sectionTitles?.mail ?? "寄修"}」区块，其余进入「{draft.sectionTitles?.shop ?? "到店"}」。
+            与该类型一致的工单在列表行显示「{draft.sectionTitles?.mail ?? "寄修"}」，其余显示「{draft.sectionTitles?.shop ?? "到店"}」。
           </p>
         </div>
       </div>
