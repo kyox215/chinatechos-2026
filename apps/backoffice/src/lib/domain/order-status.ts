@@ -7,6 +7,7 @@ export type TransitionResult = {
 const STATUS_ORDER = [
   "rework",
   "new",
+  "mail_in_progress",
   "diagnosing",
   "quoted",
   "waiting_approval",
@@ -35,6 +36,7 @@ const ALL_STATUSES = [...STATUS_ORDER, "waiting_pickup", "cancelled"] as const;
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   rework: "返修",
   new: "接单",
+  mail_in_progress: "寄修中",
   diagnosing: "检测中",
   quoted: "报价",
   waiting_approval: "报价",
@@ -52,6 +54,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
 export const ORDER_STATUS_SELECT_SEQUENCE = [
   "rework",
   "new",
+  "mail_in_progress",
   "diagnosing",
   "quoted",
   "waiting_approval",

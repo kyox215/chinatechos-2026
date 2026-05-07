@@ -23,6 +23,7 @@ const LEGACY_STATUS_MAP: Record<string, string> = {
   "作废": "cancelled",
   "作废已通知": "cancelled",
   "IN CORSO": "repairing",
+  "寄修中": "mail_in_progress",
   "寄修": "repairing",
   "下单": "parts_ordered",
   "久等 未答复": "waiting_approval",

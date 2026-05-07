@@ -54,6 +54,7 @@ begin
   if not exists (select 1 from pg_type where typname = 'repair_order_status') then
     create type public.repair_order_status as enum (
       'new',
+      'mail_in_progress',
       'diagnosing',
       'quoted',
       'waiting_approval',

@@ -1,6 +1,7 @@
 export type RepairOrderStatus =
   | "rework"
   | "new"
+  | "mail_in_progress"
   | "diagnosing"
   | "quoted"
   | "waiting_approval"
@@ -35,6 +36,13 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
     dotColor: "bg-neutral-400",
     textColor: "text-neutral-700",
     rowBg: "bg-neutral-50",
+  },
+  mail_in_progress: {
+    label: "寄修中",
+    badgeTitle: "寄修运输/仓储中",
+    dotColor: "bg-blue-500",
+    textColor: "text-blue-800",
+    rowBg: "bg-blue-50",
   },
   diagnosing: {
     label: "检测中",

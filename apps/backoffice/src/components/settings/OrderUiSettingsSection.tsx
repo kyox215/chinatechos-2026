@@ -86,55 +86,6 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
         门店维度配置：列表大分组标题与顺序、状态下拉顺序、徽标旁文案等；保存后立即作用于工单列表与导出。
       </p>
 
-      {/* 列表行寄修/到店标识 */}
-      <div className="mb-6 grid gap-3 md:grid-cols-3">
-        <div>
-          <label className="mb-1 block text-xs text-neutral-500">寄修标识文案</label>
-          <input
-            className="ui-input w-full text-sm"
-            value={draft.sectionTitles?.mail ?? ""}
-            onChange={(e) =>
-              setDraft((d) => ({
-                ...d,
-                sectionTitles: { ...d.sectionTitles, mail: e.target.value, shop: d.sectionTitles?.shop ?? "" },
-              }))
-            }
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-neutral-500">到店标识文案</label>
-          <input
-            className="ui-input w-full text-sm"
-            value={draft.sectionTitles?.shop ?? ""}
-            onChange={(e) =>
-              setDraft((d) => ({
-                ...d,
-                sectionTitles: { ...d.sectionTitles, mail: d.sectionTitles?.mail ?? "", shop: e.target.value },
-              }))
-            }
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-neutral-500">寄修判定的工单类型（order_type）</label>
-          <select
-            className="ui-input w-full text-sm"
-            value={draft.mailInOrderType ?? "quick_repair"}
-            onChange={(e) =>
-              setDraft((d) => ({
-                ...d,
-                mailInOrderType: e.target.value as "quick_repair" | "dropoff_repair",
-              }))
-            }
-          >
-            <option value="quick_repair">quick_repair（默认寄修）</option>
-            <option value="dropoff_repair">dropoff_repair</option>
-          </select>
-          <p className="mt-1 text-[11px] text-neutral-400">
-            与该类型一致的工单在列表行显示「{draft.sectionTitles?.mail ?? "寄修"}」，其余显示「{draft.sectionTitles?.shop ?? "到店"}」。
-          </p>
-        </div>
-      </div>
-
       {/* 状态文案 */}
       <div className="mb-6">
         <h3 className="mb-2 text-xs font-semibold text-neutral-800">状态文案</h3>

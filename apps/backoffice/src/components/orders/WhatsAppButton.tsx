@@ -27,6 +27,7 @@ export function buildStatusMessage(props: Props): string {
 
   switch (props.status) {
     case "new":
+    case "mail_in_progress":
     case "diagnosing":
       return `Buongiorno ${name}, il suo ${device} è stato preso in carico.${faults ? ` Problemi riscontrati: ${faults}.` : ""} La contatteremo appena avremo il preventivo. Grazie, ${STORE_NAME}`;
     case "quoted":

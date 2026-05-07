@@ -43,7 +43,7 @@ export type ResolvedOrderUi = {
   statusOrder: readonly string[];
   macroGroups: ResolvedMacroGroup[];
   mailInOrderType: "quick_repair" | "dropoff_repair";
-  /** 列表行寄修/到店 pill 文案 */
+  /** 兼容旧配置；列表已不再展示渠道 pill */
   sectionTitles: { mail: string; shop: string };
 };
 
@@ -59,7 +59,7 @@ const PALETTE_STYLES: Record<
   neutral: { titleColor: "text-neutral-600", bgColor: "bg-neutral-50" },
 };
 
-const MACRO_IDS = ["rework", "new", "processing", "pickup", "completed", "cancelled"] as const;
+const MACRO_IDS = ["mail_in", "rework", "new", "processing", "pickup", "completed", "cancelled"] as const;
 
 type MacroId = (typeof MACRO_IDS)[number];
 
@@ -72,6 +72,12 @@ const DEFAULT_MACRO_DEF: Record<
     defaultOpenDesktop: boolean;
   }
 > = {
+  mail_in: {
+    label: "寄修",
+    statuses: ["mail_in_progress"],
+    palette: "blue",
+    defaultOpenDesktop: true,
+  },
   rework: {
     label: "返修",
     statuses: ["rework"],
@@ -118,7 +124,7 @@ const DEFAULT_MACRO_DEF: Record<
 };
 
 const DEFAULT_MAIL_TYPE = "quick_repair" as const;
-/** 列表行寄修/到店标识文案（非顶层分段标题） */
+/** 兼容旧 order_ui_config；列表不再展示 */
 const DEFAULT_SECTION_TITLES = { mail: "寄修", shop: "到店" };
 
 function isMacroId(s: string): s is MacroId {
@@ -202,6 +208,7 @@ function mergeMacroMemberships(
 
 function macroSortOrder(dbMacros: OrderUiConfigV1["macroGroups"]): MacroId[] {
   if (!dbMacros?.length) return [...MACRO_IDS];
+  const hadMailInInSaved = dbMacros.some((m) => m.id === "mail_in");
   const ordered: MacroId[] = [];
   const seen = new Set<string>();
   for (const m of dbMacros) {
@@ -212,6 +219,9 @@ function macroSortOrder(dbMacros: OrderUiConfigV1["macroGroups"]): MacroId[] {
   }
   for (const id of MACRO_IDS) {
     if (!seen.has(id)) ordered.push(id);
+  }
+  if (!hadMailInInSaved && ordered.includes("mail_in")) {
+    return ["mail_in", ...ordered.filter((id) => id !== "mail_in")];
   }
   return ordered;
 }

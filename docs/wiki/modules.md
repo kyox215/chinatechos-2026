@@ -10,6 +10,7 @@
   - OrderCreateDrawer：建单抽屉（必填最少化）
   - OrderDetail：摘要/维修/付款/消息/时间线
 - Customers
+  - 核心文件索引：[customers-core-files.md](./customers-core-files.md)
   - CustomerList：电话优先搜索
   - CustomerDetail：设备管理、工单历史、消息聚合入口
 - Messages
