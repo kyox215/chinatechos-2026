@@ -1,3 +1,5 @@
+"use client";
+
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { resolveStatusLabel } from "@/lib/domain/order-ui-config";
 import { getOrderStatusPresentation } from "@/lib/order-status";

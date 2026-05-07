@@ -8,6 +8,7 @@ type NavItem = { href: string; label: string };
 const items: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/orders", label: "工单" },
+  { href: "/inventory", label: "商品管理" },
   { href: "/customers", label: "客户" },
   { href: "/messages/templates", label: "消息中心 · 模板" },
   { href: "/messages/logs", label: "消息中心 · 记录" },
