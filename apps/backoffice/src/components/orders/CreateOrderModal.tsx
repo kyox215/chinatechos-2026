@@ -13,6 +13,7 @@ import { OrderPrintSheet } from "@/components/orders/OrderPrintSheet";
 import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
 import { buildFaultPriceLinesItalian, buildIssueItalianFromFaults } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, buildIssueFromFaults } from "@/lib/domain/fault-types";
+import type { PrintOptions } from "@/lib/domain/print-mode";
 import { triggerOrderSheetPrint } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 
@@ -61,6 +62,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [printedPublicNo, setPrintedPublicNo] = useState<string | null>(null);
+  const [defaultPrintOptions, setDefaultPrintOptions] = useState<PrintOptions | undefined>(undefined);
 
   const faultLines = useMemo(() => faultLinesFromMap(selectedFaults), [selectedFaults]);
   const orderTotal = Object.values(faultPrices).reduce((s, v) => s + (Number(v) || 0), 0);
@@ -135,16 +137,38 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   }, [customerPhone]);
 
   useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch("/api/stores/settings")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (cancelled || !data) return;
+        setDefaultPrintOptions({
+          paperSize: data.printPaper,
+          orientation: data.printOrientation,
+          density: data.printDensity,
+          marginMm: data.printMarginMm,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setDefaultPrintOptions(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!printedPublicNo) return;
     const id = requestAnimationFrame(() => {
-      triggerOrderSheetPrint(() => {
+      triggerOrderSheetPrint(defaultPrintOptions, () => {
         setPrintedPublicNo(null);
         onClose();
         router.refresh();
       });
     });
     return () => cancelAnimationFrame(id);
-  }, [printedPublicNo, onClose, router]);
+  }, [printedPublicNo, defaultPrintOptions, onClose, router]);
 
   function validateForSubmit(): boolean {
     if (!customerPhone.trim()) {
@@ -170,7 +194,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     setError(null);
     if (!validateForSubmit()) return;
     requestAnimationFrame(() => {
-      triggerOrderSheetPrint();
+      triggerOrderSheetPrint(defaultPrintOptions);
     });
   }
 

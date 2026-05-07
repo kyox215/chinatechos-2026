@@ -10,6 +10,7 @@ import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
 import { SignatureSection } from "@/components/orders/SignatureSection";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
+import { getStoreSettings } from "@/lib/data/store-settings";
 
 export default async function OrderDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -19,6 +20,15 @@ export default async function OrderDetailPage(props: {
   if (!order) notFound();
 
   const events = await getOrderEvents(id);
+  const storeSettings = await getStoreSettings();
+  const defaultPrintOptions = storeSettings
+    ? {
+        paperSize: storeSettings.printPaper,
+        orientation: storeSettings.printOrientation,
+        density: storeSettings.printDensity,
+        marginMm: storeSettings.printMarginMm,
+      }
+    : undefined;
 
   const isTerminal = order.status === "completed" || order.status === "cancelled";
   const showSignature = ["repaired", "notified", "completed"].includes(order.status);
@@ -62,6 +72,7 @@ export default async function OrderDetailPage(props: {
                 serialOrImei={order.device?.serialOrImei ?? null}
                 technicianName={order.technicianName}
                 warrantyText={order.warrantyText}
+                defaultPrintOptions={defaultPrintOptions}
               />
             </div>
             <div className="mt-2 text-sm">

@@ -11,6 +11,10 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
   const [timezone, setTimezone] = useState(settings.timezone);
   const [approvalHours, setApprovalHours] = useState(String(settings.approvalOverdueHours));
   const [pickupDays, setPickupDays] = useState(String(settings.pickupOverdueDays));
+  const [printPaper, setPrintPaper] = useState<"A5" | "A4">(settings.printPaper);
+  const [printOrientation, setPrintOrientation] = useState<"landscape" | "portrait">(settings.printOrientation);
+  const [printDensity, setPrintDensity] = useState<"compact" | "normal" | "relaxed">(settings.printDensity);
+  const [printMarginMm, setPrintMarginMm] = useState<3 | 5 | 8>(settings.printMarginMm);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -27,6 +31,10 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
           timezone: timezone.trim(),
           approvalOverdueHours: Number(approvalHours),
           pickupOverdueDays: Number(pickupDays),
+          printPaper,
+          printOrientation,
+          printDensity,
+          printMarginMm,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -121,6 +129,59 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             <div className="mt-1 text-xs text-neutral-400">
               完工后超过此天数未取件，Dashboard 高亮显示
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Print defaults */}
+      <section className="rounded-2xl border border-border bg-surface p-4">
+        <h2 className="mb-3 text-sm font-semibold text-neutral-900">打印默认参数</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs text-neutral-500">纸张</label>
+            <select
+              className="ui-input w-full"
+              onChange={(e) => setPrintPaper(e.target.value as "A5" | "A4")}
+              value={printPaper}
+            >
+              <option value="A5">A5</option>
+              <option value="A4">A4</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-neutral-500">方向</label>
+            <select
+              className="ui-input w-full"
+              onChange={(e) => setPrintOrientation(e.target.value as "landscape" | "portrait")}
+              value={printOrientation}
+            >
+              <option value="landscape">横向</option>
+              <option value="portrait">竖向</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-neutral-500">密度</label>
+            <select
+              className="ui-input w-full"
+              onChange={(e) => setPrintDensity(e.target.value as "compact" | "normal" | "relaxed")}
+              value={printDensity}
+            >
+              <option value="compact">紧凑</option>
+              <option value="normal">标准</option>
+              <option value="relaxed">宽松</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-neutral-500">边距</label>
+            <select
+              className="ui-input w-full"
+              onChange={(e) => setPrintMarginMm(Number(e.target.value) as 3 | 5 | 8)}
+              value={String(printMarginMm)}
+            >
+              <option value="3">3 mm</option>
+              <option value="5">5 mm</option>
+              <option value="8">8 mm</option>
+            </select>
           </div>
         </div>
       </section>

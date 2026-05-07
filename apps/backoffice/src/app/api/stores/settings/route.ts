@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getStoreSettings } from "@/lib/data/store-settings";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export async function GET() {
+  const settings = await getStoreSettings();
+  if (!settings) {
+    return NextResponse.json({ error: "无法加载门店设置" }, { status: 404 });
+  }
+  return NextResponse.json(settings);
+}
 
 export async function PATCH(request: NextRequest) {
   const storeId = await resolveStoreId();
@@ -14,6 +23,10 @@ export async function PATCH(request: NextRequest) {
     timezone?: string;
     approvalOverdueHours?: number;
     pickupOverdueDays?: number;
+    printPaper?: "A5" | "A4";
+    printOrientation?: "landscape" | "portrait";
+    printDensity?: "compact" | "normal" | "relaxed";
+    printMarginMm?: 3 | 5 | 8;
   };
 
   const patch: Record<string, unknown> = {};
@@ -35,6 +48,31 @@ export async function PATCH(request: NextRequest) {
     }
     patch.pickup_overdue_days = val;
   }
+  if (body.printPaper !== undefined) {
+    if (body.printPaper !== "A5" && body.printPaper !== "A4") {
+      return NextResponse.json({ error: "打印纸张仅支持 A5/A4" }, { status: 400 });
+    }
+    patch.print_paper = body.printPaper;
+  }
+  if (body.printOrientation !== undefined) {
+    if (body.printOrientation !== "landscape" && body.printOrientation !== "portrait") {
+      return NextResponse.json({ error: "打印方向无效" }, { status: 400 });
+    }
+    patch.print_orientation = body.printOrientation;
+  }
+  if (body.printDensity !== undefined) {
+    if (!["compact", "normal", "relaxed"].includes(body.printDensity)) {
+      return NextResponse.json({ error: "打印密度无效" }, { status: 400 });
+    }
+    patch.print_density = body.printDensity;
+  }
+  if (body.printMarginMm !== undefined) {
+    const val = Number(body.printMarginMm);
+    if (![3, 5, 8].includes(val)) {
+      return NextResponse.json({ error: "打印边距仅支持 3/5/8 mm" }, { status: 400 });
+    }
+    patch.print_margin_mm = val;
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "没有可更新的字段" }, { status: 400 });
@@ -45,7 +83,7 @@ export async function PATCH(request: NextRequest) {
     .from("stores")
     .update(patch)
     .eq("id", storeId)
-    .select("id, name, store_code, timezone, approval_overdue_hours, pickup_overdue_days")
+    .select("id, name, store_code, timezone, approval_overdue_hours, pickup_overdue_days, print_paper, print_orientation, print_density, print_margin_mm")
     .single();
 
   if (result.error) {

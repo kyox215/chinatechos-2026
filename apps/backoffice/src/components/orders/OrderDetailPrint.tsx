@@ -1,6 +1,7 @@
 "use client";
 
 import { PrintOrderButton } from "@/components/orders/PrintOrderButton";
+import type { PrintOptions } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 import {
   buildFaultPriceLinesFromStoredIssue,
@@ -24,6 +25,7 @@ export type OrderDetailPrintProps = {
   warrantyText: string | null;
   internalTag: string | null;
   customerSignature?: string | null;
+  defaultPrintOptions?: PrintOptions;
 };
 
 export function OrderDetailPrint(props: OrderDetailPrintProps) {
@@ -57,5 +59,5 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     customerSignature: props.customerSignature,
   };
 
-  return <PrintOrderButton payload={payload} />;
+  return <PrintOrderButton payload={payload} defaultPrintOptions={props.defaultPrintOptions} />;
 }
