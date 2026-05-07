@@ -18,6 +18,7 @@ export default function NewInventoryPage() {
   const [purchaseCost, setPurchaseCost] = useState("");
   const [listPrice, setListPrice] = useState("");
   const [notes, setNotes] = useState("");
+  const [conflictId, setConflictId] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +40,17 @@ export default function NewInventoryPage() {
           notes,
         }),
       });
-      const data = (await res.json()) as { error?: string; id?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        id?: string;
+        existingId?: string;
+        existingPublicNo?: string;
+      };
+      if (res.status === 409 && data.existingId) {
+        setConflictId(data.existingId);
+        throw new Error(data.error || "IMEI 与库存冲突");
+      }
+      setConflictId(null);
       if (!res.ok) throw new Error(data.error || "创建失败");
       if (data.id) router.push(`/inventory/${data.id}`);
       else router.push("/inventory");
@@ -61,7 +72,16 @@ export default function NewInventoryPage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{error}</div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+          <span>{error}</span>
+          {conflictId ? (
+            <div className="mt-2">
+              <Link className="font-medium text-primary underline" href={`/inventory/${conflictId}`}>
+                打开已有记录
+              </Link>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <form className="space-y-4 rounded-2xl border border-border bg-surface p-3 md:p-4" onSubmit={onSubmit}>

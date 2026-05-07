@@ -19,7 +19,7 @@ function Row(props: { label: string; value: string }) {
 export function InventorySalePrintSheet(props: { payload: InventorySalePrintPayload }) {
   const p = props.payload;
   return (
-    <div className="order-print-sheet">
+    <div className="order-print-sheet" id="inventory-sale-print-sheet">
       <article className="w-full border border-neutral-300 p-2 text-[8.5px] leading-tight text-neutral-900 print:border-neutral-300">
         <header className="border-b border-neutral-300 pb-1">
           <div className="text-[11px] font-bold">{STORE_NAME}</div>

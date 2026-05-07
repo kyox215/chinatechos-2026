@@ -18,7 +18,12 @@ export function InventoryPrintButton(props: {
       <InventorySalePrintSheet payload={props.payload} />
       <button
         className={props.className ?? "ui-btn ui-btn-secondary h-9 px-3 text-xs"}
-        onClick={() => triggerOrderSheetPrint(props.defaultPrintOptions)}
+        onClick={() =>
+          triggerOrderSheetPrint({
+            ...props.defaultPrintOptions,
+            sheetSelector: "#inventory-sale-print-sheet",
+          })
+        }
         type="button"
       >
         {label}

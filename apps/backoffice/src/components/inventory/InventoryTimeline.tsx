@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { IconPlus, IconArrowPath, IconCheck, IconPencil } from "@/components/icons";
+import { IconPlus, IconArrowPath, IconCheck, IconEnvelope, IconFlag, IconPencil } from "@/components/icons";
 import { presentInventoryChannel, presentInventoryStatus } from "@/lib/domain/inventory-presentation";
 
 export type InventoryEventVM = {
@@ -17,6 +17,8 @@ const EVENT_ICONS: Record<string, ReactNode> = {
   status_changed: <IconArrowPath />,
   qa_saved: <IconCheck />,
   imei_check_updated: <IconCheck />,
+  attachment_added: <IconEnvelope />,
+  print_trade_in_agreement: <IconFlag />,
 };
 
 const EVENT_ICON_WRAP: Record<string, string> = {
@@ -24,6 +26,8 @@ const EVENT_ICON_WRAP: Record<string, string> = {
   status_changed: "border-blue-200 bg-blue-50 text-blue-700",
   qa_saved: "border-emerald-200 bg-emerald-50 text-emerald-800",
   imei_check_updated: "border-violet-200 bg-violet-50 text-violet-800",
+  attachment_added: "border-amber-200 bg-amber-50 text-amber-900",
+  print_trade_in_agreement: "border-slate-200 bg-slate-50 text-slate-800",
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -31,6 +35,8 @@ const EVENT_LABELS: Record<string, string> = {
   status_changed: "状态变更",
   qa_saved: "质检保存",
   imei_check_updated: "IMEI 对照更新",
+  attachment_added: "附件上传",
+  print_trade_in_agreement: "打印回收协议",
 };
 
 export function InventoryTimeline({ events }: { events: InventoryEventVM[] }) {
@@ -89,6 +95,26 @@ function formatPayload(type: string, payload: Record<string, unknown>): string {
   }
   if (type === "imei_check_updated") {
     return payload.imei_check_done ? "IMEI 对照已完成" : "IMEI 对照未勾选";
+  }
+  if (type === "attachment_added") {
+    const kindRaw = String(payload.kind ?? "");
+    const kindLabel =
+      (
+        {
+          id_front: "证件正面",
+          id_back: "证件反面",
+          invoice: "发票/票据",
+          box: "包装附件",
+          other: "其他",
+        } as Record<string, string>
+      )[kindRaw] ?? kindRaw;
+    const file = String(payload.file_name ?? "");
+    const bits = [kindLabel, file].filter(Boolean);
+    return bits.join(" · ") || "已添加附件";
+  }
+  if (type === "print_trade_in_agreement") {
+    const ver = String(payload.legal_template_version ?? "");
+    return ver ? `模板版本 ${ver}` : "已记录打印";
   }
   const entries = Object.entries(payload).filter(([, v]) => v != null);
   if (entries.length === 0) return "";
