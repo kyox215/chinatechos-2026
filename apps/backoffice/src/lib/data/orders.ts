@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
+import { getStoreSettings } from "@/lib/data/store-settings";
 
 export type OrderListItem = {
   id: string;
@@ -43,6 +44,9 @@ export async function listOrders(filters: OrderListFilters = {}) {
   }
 
   const supabase = createSupabaseServerClient();
+  const settings = await getStoreSettings();
+  const approvalOverdueHours = settings?.approvalOverdueHours ?? 48;
+  const pickupOverdueDays = settings?.pickupOverdueDays ?? 5;
 
   let query = supabase
     .from("repair_orders")
@@ -101,12 +105,12 @@ export async function listOrders(filters: OrderListFilters = {}) {
   }
 
   if (filters.approvalOverdue) {
-    const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - approvalOverdueHours * 3600 * 1000).toISOString();
     query = query.eq("status", "waiting_approval").lte("approval_sent_at", cutoff);
   }
 
   if (filters.pickupOverdue) {
-    const cutoff = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - pickupOverdueDays * 24 * 3600 * 1000).toISOString();
     query = query.eq("status", "waiting_pickup").lte("completed_at", cutoff);
   }
 

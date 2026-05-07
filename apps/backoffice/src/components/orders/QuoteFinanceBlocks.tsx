@@ -49,6 +49,7 @@ export function FinancialSummaryThree(props: {
         <span className="text-xs font-semibold text-neutral-900">应收金额</span>
         <span className="text-sm font-semibold text-neutral-900">&euro;{props.receivable.toFixed(2)}</span>
       </div>
+      <p className="text-[10px] text-neutral-500">保存时由服务端按总金额与定金自动写入余额</p>
     </div>
   );
 }

@@ -16,7 +16,6 @@ export function PaymentCard(props: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [deposit, setDeposit] = useState(String(props.depositAmount ?? ""));
-  const [balance, setBalance] = useState(String(props.balanceAmount ?? ""));
   const [isPaid, setIsPaid] = useState(props.isPaid);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +29,6 @@ export function PaymentCard(props: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           depositAmount: deposit ? Number(deposit) : null,
-          balanceAmount: balance ? Number(balance) : null,
           isPaid,
         }),
       });
@@ -71,14 +69,11 @@ export function PaymentCard(props: Props) {
               value={deposit}
             />
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <label className="w-16 text-neutral-500">余额</label>
-            <input
-              className="ui-input flex-1"
-              onChange={(e) => setBalance(e.target.value)}
-              type="number"
-              value={balance}
-            />
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-neutral-500">余额（自动）</span>
+            <span className="font-medium tabular-nums text-neutral-900">
+              {formatEUR(Math.max(0, (props.quotationAmount ?? 0) - (Number(deposit) || 0)))}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <label className="w-16 text-neutral-500">结清</label>

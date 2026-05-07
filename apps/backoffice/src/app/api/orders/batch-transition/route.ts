@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeOrderEvent } from "@/lib/data/order-events";
 import { validateOrderTransition } from "@/lib/domain/order-status";
+import { assertSupplierBelongsToStore } from "@/lib/api/supplier-validation";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
     toStatus: string;
     operatorName?: string;
     supplierId?: string;
+    cancelReason?: string;
   };
 
   if (!Array.isArray(body.orderIds) || body.orderIds.length === 0) {
@@ -26,7 +28,15 @@ export async function POST(request: NextRequest) {
 
   const supabase = createSupabaseServerClient();
   const operatorName = body.operatorName ?? "frontdesk";
+  const cancelReasonDefault = String(body.cancelReason ?? "").trim();
   const results: { id: string; ok: boolean; error?: string }[] = [];
+
+  if (body.toStatus === "parts_ordered" && body.supplierId) {
+    const sup = await assertSupplierBelongsToStore(supabase, storeId, body.supplierId);
+    if (!sup.ok) {
+      return NextResponse.json({ error: sup.error }, { status: 400 });
+    }
+  }
 
   for (const orderId of body.orderIds) {
     const current = await supabase
@@ -61,6 +71,12 @@ export async function POST(request: NextRequest) {
       patch.delivered_at = new Date().toISOString();
       patch.completed_at = new Date().toISOString();
     }
+    if (body.toStatus === "cancelled") {
+      if (current.data.status === "waiting_approval" || current.data.status === "quoted") {
+        patch.approval_status = "rejected";
+      }
+      patch.cancel_reason = cancelReasonDefault || "已取消";
+    }
     if (body.toStatus === "parts_ordered" && body.supplierId) {
       patch.supplier_id = body.supplierId;
     }
@@ -83,7 +99,14 @@ export async function POST(request: NextRequest) {
       storeId,
       orderId,
       eventType: "status_changed",
-      payload: { fromStatus: current.data.status, toStatus: body.toStatus, batch: true },
+      payload: {
+        fromStatus: current.data.status,
+        toStatus: body.toStatus,
+        batch: true,
+        ...(body.toStatus === "cancelled"
+          ? { cancelReason: cancelReasonDefault || "已取消" }
+          : {}),
+      },
       operatorName,
     });
 

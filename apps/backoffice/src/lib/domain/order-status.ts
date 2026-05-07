@@ -15,7 +15,10 @@ const STATUS_ORDER = [
   "completed",
 ] as const;
 
-const TERMINAL = new Set(["completed", "cancelled"]);
+/** Terminal statuses: order cannot transition away from these (exported for UI parity). */
+export const TERMINAL_STATUSES = new Set(["completed", "cancelled"]);
+
+const TERMINAL = TERMINAL_STATUSES;
 
 const ALL_STATUSES = [...STATUS_ORDER, "cancelled"] as const;
 

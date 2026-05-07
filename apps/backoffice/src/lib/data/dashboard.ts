@@ -1,6 +1,7 @@
 import { env } from "@/lib/env/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
+import { getStoreSettings } from "@/lib/data/store-settings";
 
 export type DashboardMetrics = {
   approvalOverdue: number;
@@ -16,6 +17,9 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   }
 
   const supabase = createSupabaseServerClient();
+  const settings = await getStoreSettings();
+  const approvalHours = settings?.approvalOverdueHours ?? 48;
+  const pickupDays = settings?.pickupOverdueDays ?? 5;
 
   const now = new Date();
   const startOfDay = new Date(now);
@@ -24,13 +28,13 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const approvalOverdue = await countOrdersByFilter(supabase, {
     storeId,
     status: "waiting_approval",
-    olderThanHoursField: { field: "approval_sent_at", hours: 48 },
+    olderThanHoursField: { field: "approval_sent_at", hours: approvalHours },
   });
 
   const pickupOverdue = await countOrdersByFilter(supabase, {
     storeId,
     status: "waiting_pickup",
-    olderThanHoursField: { field: "completed_at", hours: 24 * 5 },
+    olderThanHoursField: { field: "completed_at", hours: 24 * pickupDays },
   });
 
   const todayCreated = await countOrdersByFilter(supabase, {

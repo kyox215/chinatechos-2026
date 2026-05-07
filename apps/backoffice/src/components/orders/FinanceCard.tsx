@@ -65,7 +65,6 @@ export function FinanceCard(props: Props) {
         body: JSON.stringify({
           quotationAmount: quotation || null,
           depositAmount: depositNum || null,
-          balanceAmount: remaining || null,
           isPaid,
         }),
       });

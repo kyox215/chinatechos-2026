@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeOrderEvent } from "@/lib/data/order-events";
 import { validateOrderTransition } from "@/lib/domain/order-status";
+import { assertSupplierBelongsToStore } from "@/lib/api/supplier-validation";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -58,6 +59,13 @@ export async function POST(
   const validation = validateOrderTransition(current.data.status, toStatus);
   if (!validation.ok) {
     return NextResponse.json({ error: validation.reason }, { status: 400 });
+  }
+
+  if (toStatus === "parts_ordered" && supplierId) {
+    const sup = await assertSupplierBelongsToStore(supabase, storeId, supplierId);
+    if (!sup.ok) {
+      return NextResponse.json({ error: sup.error }, { status: 400 });
+    }
   }
 
   const patch: Record<string, unknown> = {

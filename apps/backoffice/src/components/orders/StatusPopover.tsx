@@ -4,12 +4,11 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
-import { getNextActions } from "@/lib/domain/order-status";
+import { getNextActions, TERMINAL_STATUSES } from "@/lib/domain/order-status";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
 
 type SupplierOption = { id: string; short_name: string; color: string };
 
-const TERMINAL = new Set(["completed", "cancelled"]);
 const MENU_W = 176;
 const GAP = 4;
 const EDGE = 8;
@@ -118,7 +117,7 @@ export function StatusPopover({
     handleTransition(action.toStatus, action.confirmText, selectedSupplier || undefined);
   }
 
-  if (TERMINAL.has(status)) {
+  if (TERMINAL_STATUSES.has(status)) {
     return <OrderStatusBadge status={status} />;
   }
 

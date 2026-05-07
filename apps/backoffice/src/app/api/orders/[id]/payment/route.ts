@@ -16,7 +16,6 @@ export async function PATCH(
   const body = (await request.json()) as {
     quotationAmount?: number | null;
     depositAmount?: number | null;
-    balanceAmount?: number | null;
     isPaid?: boolean;
     operatorName?: string;
   };
