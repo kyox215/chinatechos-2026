@@ -43,6 +43,19 @@ supabase db push
 
 需保证远程迁移历史与仓库一致。
 
+**D. 本机终端 + psql（本地 Docker Supabase 或任意 Postgres URL）**
+
+仓库脚本 [`scripts/apply-inventory-migrations-local.sh`](../../scripts/apply-inventory-migrations-local.sh) 会按顺序用 `psql -f` 执行三份 migration（一次一条文件，避免 prepared statement 问题）。
+
+```bash
+cd /path/to/repo
+supabase start   # 若使用本地 Supabase
+export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+./scripts/apply-inventory-migrations-local.sh
+```
+
+端口以 `supabase/config.toml` 中 `[db] port` 为准；密码以 `supabase status` 为准。未安装 `psql` 时（macOS）：`brew install libpq && brew link --force libpq`。
+
 ### 1.2 环境变量与 Supabase 项目必须一致
 
 库存 API 使用服务端 Supabase 客户端；以下变量必须来自 **同一 Supabase 项目**（Dashboard → Project Settings → API）：
