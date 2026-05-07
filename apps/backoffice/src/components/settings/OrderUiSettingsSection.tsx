@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { OrderUiConfigV1, PaletteKey, ResolvedOrderUi } from "@/lib/domain/order-ui-config";
+import { IconChevronDown, IconChevronUp } from "@/components/icons";
 import {
   defaultResolvedOrderUi,
-  KNOWN_ORDER_STATUSES,
   PALETTE_OPTIONS,
   resolvedOrderUiToStored,
 } from "@/lib/domain/order-ui-config";
@@ -34,18 +34,18 @@ function moveArray<T>(arr: T[], index: number, delta: -1 | 1): T[] {
 }
 
 export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
-  const router = useRouter();
-  const resolvedFingerprint = useMemo(
+  const fingerprint = useMemo(
     () => JSON.stringify(resolvedOrderUiToStored(props.resolved)),
     [props.resolved],
   );
+  return <OrderUiSettingsSectionInner key={fingerprint} resolved={props.resolved} />;
+}
+
+function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
+  const router = useRouter();
   const [draft, setDraft] = useState<OrderUiConfigV1>(() =>
     cloneOrderUi(resolvedOrderUiToStored(props.resolved)),
   );
-
-  useEffect(() => {
-    setDraft(cloneOrderUi(JSON.parse(resolvedFingerprint) as OrderUiConfigV1));
-  }, [resolvedFingerprint]);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -86,24 +86,90 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
         门店维度配置：列表大分组标题与顺序、状态下拉顺序、徽标旁文案等；保存后立即作用于工单列表与导出。
       </p>
 
-      {/* 状态文案 */}
-      <div className="mb-6">
-        <h3 className="mb-2 text-xs font-semibold text-neutral-800">状态文案</h3>
-        <div className="max-h-56 overflow-auto rounded-lg border border-border">
+      {/* 状态与排序（合并） */}
+      <div className="mb-6 rounded-xl border border-border bg-surface-2 p-3 md:p-4">
+        <h3 className="text-xs font-semibold text-neutral-900">状态与排序</h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-neutral-600">
+          列表与下拉的先后顺序以下方顺序为准；允许多个枚举值共用同一展示名（例如不同阶段都显示「报价」）。
+        </p>
+
+        {/* 移动端：卡片列表 */}
+        <div className="mt-3 space-y-3 md:hidden">
+          {statusOrder.map((key, i) => (
+            <div
+              key={key}
+              className="rounded-xl border border-border bg-surface p-3"
+            >
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <span className="break-all font-mono text-xs font-medium text-neutral-800">{key}</span>
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] tabular-nums text-neutral-600">
+                  {i + 1}/{statusOrder.length}
+                </span>
+              </div>
+              <label className="mb-1 block text-[11px] text-neutral-500">展示名</label>
+              <input
+                className="ui-input h-10 w-full text-sm md:h-9"
+                value={draft.statusLabels?.[key] ?? ""}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    statusLabels: { ...d.statusLabels, [key]: e.target.value },
+                  }))
+                }
+              />
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  aria-label="上移"
+                  className="ui-btn ui-btn-secondary flex min-h-10 min-w-10 items-center justify-center p-0 md:min-h-9 md:min-w-9"
+                  disabled={i === 0}
+                  onClick={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      statusOrder: moveArray(d.statusOrder ?? [], i, -1),
+                    }))
+                  }
+                  type="button"
+                >
+                  <IconChevronUp className="h-4 w-4" />
+                </button>
+                <button
+                  aria-label="下移"
+                  className="ui-btn ui-btn-secondary flex min-h-10 min-w-10 items-center justify-center p-0 md:min-h-9 md:min-w-9"
+                  disabled={i >= statusOrder.length - 1}
+                  onClick={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      statusOrder: moveArray(d.statusOrder ?? [], i, 1),
+                    }))
+                  }
+                  type="button"
+                >
+                  <IconChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 桌面端：表格 */}
+        <div className="mt-3 hidden max-h-[min(28rem,65vh)] overflow-auto rounded-lg border border-border md:block">
           <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-muted/80">
-              <tr className="text-left text-neutral-500">
-                <th className="px-2 py-1.5 font-medium">枚举值</th>
-                <th className="px-2 py-1.5 font-medium">展示名</th>
+            <thead className="sticky top-0 z-[1] bg-muted/90 backdrop-blur-sm">
+              <tr className="text-left text-neutral-600">
+                <th className="w-10 whitespace-nowrap px-2 py-2 font-medium">#</th>
+                <th className="min-w-[6rem] px-2 py-2 font-medium">枚举键</th>
+                <th className="min-w-[10rem] px-2 py-2 font-medium">展示名</th>
+                <th className="w-[5.5rem] px-2 py-2 text-right font-medium">调整</th>
               </tr>
             </thead>
             <tbody>
-              {KNOWN_ORDER_STATUSES.map((key) => (
+              {statusOrder.map((key, i) => (
                 <tr key={key} className="border-t border-border">
-                  <td className="px-2 py-1 font-mono text-neutral-600">{key}</td>
+                  <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-neutral-500">{i + 1}</td>
+                  <td className="break-all px-2 py-1.5 font-mono text-neutral-700">{key}</td>
                   <td className="px-2 py-1">
                     <input
-                      className="ui-input h-7 w-full text-xs"
+                      className="ui-input h-9 w-full text-xs"
                       value={draft.statusLabels?.[key] ?? ""}
                       onChange={(e) =>
                         setDraft((d) => ({
@@ -113,6 +179,38 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
                       }
                     />
                   </td>
+                  <td className="px-1 py-1">
+                    <div className="flex justify-end gap-1">
+                      <button
+                        aria-label="上移"
+                        className="ui-btn ui-btn-secondary inline-flex h-9 w-9 shrink-0 items-center justify-center p-0"
+                        disabled={i === 0}
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            statusOrder: moveArray(d.statusOrder ?? [], i, -1),
+                          }))
+                        }
+                        type="button"
+                      >
+                        <IconChevronUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        aria-label="下移"
+                        className="ui-btn ui-btn-secondary inline-flex h-9 w-9 shrink-0 items-center justify-center p-0"
+                        disabled={i >= statusOrder.length - 1}
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            statusOrder: moveArray(d.statusOrder ?? [], i, 1),
+                          }))
+                        }
+                        type="button"
+                      >
+                        <IconChevronDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -120,47 +218,8 @@ export function OrderUiSettingsSection(props: { resolved: ResolvedOrderUi }) {
         </div>
       </div>
 
-      {/* 排序 */}
-      <div className="mb-6">
-        <h3 className="mb-2 text-xs font-semibold text-neutral-800">列表 / 下拉排序（上移优先）</h3>
-        <ul className="divide-y divide-border rounded-lg border border-border">
-          {statusOrder.map((key, i) => (
-            <li key={key} className="flex items-center gap-2 px-2 py-1.5 text-xs">
-              <span className="min-w-0 flex-1 font-mono text-neutral-700">{key}</span>
-              <span className="shrink-0 text-neutral-500">{draft.statusLabels?.[key] ?? ""}</span>
-              <button
-                className="ui-btn ui-btn-secondary h-7 px-2 text-[11px]"
-                disabled={i === 0}
-                onClick={() =>
-                  setDraft((d) => ({
-                    ...d,
-                    statusOrder: moveArray(d.statusOrder ?? [], i, -1),
-                  }))
-                }
-                type="button"
-              >
-                上移
-              </button>
-              <button
-                className="ui-btn ui-btn-secondary h-7 px-2 text-[11px]"
-                disabled={i >= statusOrder.length - 1}
-                onClick={() =>
-                  setDraft((d) => ({
-                    ...d,
-                    statusOrder: moveArray(d.statusOrder ?? [], i, 1),
-                  }))
-                }
-                type="button"
-              >
-                下移
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
       {/* 大分组 */}
-      <div className="mb-6 space-y-3">
+      <div className="mb-6 space-y-3 border-t border-border pt-6">
         <h3 className="text-xs font-semibold text-neutral-800">列表大分组</h3>
         {macros.map((mg, mi) => (
           <div key={mg.id} className="rounded-lg border border-border bg-surface-2 p-3">
