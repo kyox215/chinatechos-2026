@@ -34,7 +34,10 @@ export function inventoryStatusClass(st: string): string {
   return STATUS_CLASS[st as InventoryLifecycle] ?? "bg-surface-2 text-neutral-700 ring-border";
 }
 
-export function formatInventoryBadgesFromQa(qa: Record<string, unknown>): string[] {
+export function formatInventoryBadgesFromQa(qa: Record<string, unknown> | null | undefined): string[] {
+  if (qa == null || typeof qa !== "object" || Array.isArray(qa)) {
+    return [];
+  }
   const badges: string[] = [];
   const LABEL_CN: Record<string, string> = {
     screen_crack: "屏幕裂",

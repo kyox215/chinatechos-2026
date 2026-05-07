@@ -58,6 +58,9 @@ export function buildInventorySalePrintPayload(input: {
 }
 
 function summarizeQaForPrintIt(qa: Record<string, unknown>): string | null {
+  if (qa == null || typeof qa !== "object" || Array.isArray(qa)) {
+    return null;
+  }
   const parts: string[] = [];
   for (const [k, v] of Object.entries(qa)) {
     if (v && typeof v === "object" && !Array.isArray(v)) {
