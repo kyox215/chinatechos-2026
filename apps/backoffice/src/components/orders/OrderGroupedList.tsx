@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { memo, useState } from "react";
+import { memo, useLayoutEffect, useState } from "react";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
 import { SupplierPickerModal } from "@/components/orders/SupplierPickerModal";
 import type { OrderListItem } from "@/lib/data/orders";
-import { getOrderStatusSelectOptions } from "@/lib/domain/order-status";
+import { getOrderStatusSelectOptions, getStatusListSortIndex } from "@/lib/domain/order-status";
 import { calcWarranty } from "@/lib/domain/warranty-calc";
 
 type StatusGroup = {
@@ -35,58 +35,31 @@ type GroupSpec = {
   defaultOpen: boolean;
 };
 
-const GROUP_SPECS: GroupSpec[] = [
-  { key: "new", label: "接单", statuses: new Set(["new"]), titleColor: "text-blue-700", bgColor: "bg-blue-50", defaultOpen: true },
+/** 大分组：小状态仍在行内徽标展示 */
+const MACRO_GROUP_SPECS: GroupSpec[] = [
   { key: "rework", label: "返修", statuses: new Set(["rework"]), titleColor: "text-rose-700", bgColor: "bg-rose-50", defaultOpen: true },
-  { key: "diagnosing", label: "检测中", statuses: new Set(["diagnosing"]), titleColor: "text-sky-700", bgColor: "bg-sky-50", defaultOpen: true },
+  { key: "new", label: "接单", statuses: new Set(["new"]), titleColor: "text-blue-700", bgColor: "bg-blue-50", defaultOpen: true },
   {
-    key: "quote",
-    label: "报价",
-    statuses: new Set(["quoted", "waiting_approval"]),
-    titleColor: "text-violet-700",
-    bgColor: "bg-violet-50",
-    defaultOpen: true,
-  },
-  {
-    key: "quote_ok",
-    label: "报价已确认",
-    statuses: new Set(["repairing"]),
-    titleColor: "text-indigo-700",
-    bgColor: "bg-indigo-50",
-    defaultOpen: true,
-  },
-  {
-    key: "parts_ordered",
-    label: "等配件",
-    statuses: new Set(["parts_ordered"]),
-    titleColor: "text-orange-700",
-    bgColor: "bg-orange-50",
-    defaultOpen: true,
-  },
-  {
-    key: "parts_arrived",
-    label: "配件到货 · 到货已通知",
-    statuses: new Set(["parts_arrived"]),
-    titleColor: "text-orange-800",
-    bgColor: "bg-orange-50",
-    defaultOpen: true,
-  },
-  { key: "repaired", label: "修好未通知", statuses: new Set(["repaired"]), titleColor: "text-teal-700", bgColor: "bg-teal-50", defaultOpen: true },
-  { key: "notified", label: "修好已通知", statuses: new Set(["notified"]), titleColor: "text-cyan-700", bgColor: "bg-cyan-50", defaultOpen: true },
-  {
-    key: "unfixed_pickup",
-    label: "未修待取件",
-    statuses: new Set(["unfixed_pickup"]),
+    key: "processing",
+    label: "处理中",
+    statuses: new Set([
+      "diagnosing",
+      "quoted",
+      "waiting_approval",
+      "repairing",
+      "parts_ordered",
+      "parts_arrived",
+    ]),
     titleColor: "text-amber-800",
     bgColor: "bg-amber-50",
     defaultOpen: true,
   },
   {
-    key: "waiting_pickup",
-    label: "待取件（旧）",
-    statuses: new Set(["waiting_pickup"]),
-    titleColor: "text-emerald-700",
-    bgColor: "bg-emerald-50",
+    key: "pickup",
+    label: "待取件",
+    statuses: new Set(["repaired", "notified", "unfixed_pickup", "waiting_pickup"]),
+    titleColor: "text-teal-800",
+    bgColor: "bg-teal-50",
     defaultOpen: true,
   },
   {
@@ -107,17 +80,27 @@ const GROUP_SPECS: GroupSpec[] = [
   },
 ];
 
-function fineGrainedGroups(items: OrderListItem[]): StatusGroup[] {
+function sortOrderItemsInGroup(bucket: OrderListItem[]): OrderListItem[] {
+  return [...bucket].sort((a, b) => {
+    const rankDiff = getStatusListSortIndex(a.status) - getStatusListSortIndex(b.status);
+    if (rankDiff !== 0) return rankDiff;
+    const tu = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    if (tu !== 0) return tu;
+    return b.id.localeCompare(a.id);
+  });
+}
+
+function macroGroups(items: OrderListItem[]): StatusGroup[] {
   const groups: StatusGroup[] = [];
   const assigned = new Set<string>();
-  for (const spec of GROUP_SPECS) {
-    const bucket = items.filter((it) => spec.statuses.has(it.status));
-    for (const it of bucket) assigned.add(it.id);
-    if (bucket.length > 0) {
+  for (const spec of MACRO_GROUP_SPECS) {
+    const raw = items.filter((it) => spec.statuses.has(it.status));
+    for (const it of raw) assigned.add(it.id);
+    if (raw.length > 0) {
       groups.push({
         key: spec.key,
         label: spec.label,
-        items: bucket,
+        items: sortOrderItemsInGroup(raw),
         defaultOpen: spec.defaultOpen,
         titleColor: spec.titleColor,
         bgColor: spec.bgColor,
@@ -129,7 +112,7 @@ function fineGrainedGroups(items: OrderListItem[]): StatusGroup[] {
     groups.push({
       key: "other",
       label: "其他",
-      items: misc,
+      items: sortOrderItemsInGroup(misc),
       defaultOpen: true,
       titleColor: "text-neutral-700",
       bgColor: "bg-neutral-100",
@@ -167,8 +150,8 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const router = useRouter();
   const mailItems = items.filter((it) => it.orderType === MAIL_IN_ORDER_TYPE);
   const shopItems = items.filter((it) => it.orderType !== MAIL_IN_ORDER_TYPE);
-  const mailGroups = fineGrainedGroups(mailItems);
-  const shopGroups = fineGrainedGroups(shopItems);
+  const mailGroups = macroGroups(mailItems);
+  const shopGroups = macroGroups(shopItems);
   const statusOptions = getOrderStatusSelectOptions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
@@ -247,16 +230,23 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
         </div>
       ) : null}
 
-      {shopGroups.map((group) => (
-        <GroupSection
-          key={`shop-${group.key}`}
-          group={group}
-          selected={selected}
-          onOpenSupplierPicker={openSupplierPicker}
-          onToggleSelect={toggleSelect}
-          onToggleGroup={() => toggleGroup(group.items)}
-        />
-      ))}
+      {shopGroups.length > 0 ? (
+        <div className="space-y-3">
+          <div className="px-1 pt-1">
+            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">到店</h2>
+          </div>
+          {shopGroups.map((group) => (
+            <GroupSection
+              key={`shop-${group.key}`}
+              group={group}
+              selected={selected}
+              onOpenSupplierPicker={openSupplierPicker}
+              onToggleSelect={toggleSelect}
+              onToggleGroup={() => toggleGroup(group.items)}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {selected.size > 0 && (
         <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg sm:gap-3">
@@ -318,6 +308,13 @@ const GroupSection = memo(function GroupSection({
   onOpenSupplierPicker: (item: OrderListItem, anchor: HTMLElement | null) => void;
 }) {
   const [open, setOpen] = useState(group.defaultOpen);
+
+  /** 与 Tailwind `lg` 一致：<1024px 为移动端卡片列表，分组初始收起 */
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    if (mq.matches) setOpen(false);
+  }, [group.key]);
+
   const allSelected = group.items.length > 0 && group.items.every((i) => selected.has(i.id));
 
   return (
