@@ -252,10 +252,21 @@ const GroupSection = memo(function GroupSection({
           <div className="space-y-1.5 border-t border-border bg-surface-2 p-2.5 lg:hidden">
             {group.items.map((it) => {
               const phoneHref = telHrefFromDisplay(it.customerPhone);
+              const cust = it.customerName?.trim();
+              const iss = it.issue?.trim();
+              const secondaryParts: string[] = [];
+              if (cust && cust !== "-") secondaryParts.push(cust);
+              if (iss && iss !== "-") secondaryParts.push(iss);
+              const secondaryLine = secondaryParts.length > 0 ? secondaryParts.join(" · ") : "—";
+              const supplierLabel =
+                it.supplierShortName != null && it.supplierShortName !== ""
+                  ? `更改供应商（当前 ${it.supplierShortName}）`
+                  : "选择供应商";
+
               return (
               <article
                 key={it.id}
-                className={`min-w-0 rounded-xl border border-border bg-surface px-2.5 py-2 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : ""}`}
+                className={`min-w-0 rounded-[10px] border border-border bg-surface px-3 py-2.5 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : "shadow-sm"}`}
               >
                 <div className="flex min-w-0 items-start gap-2">
                   <input
@@ -264,54 +275,61 @@ const GroupSection = memo(function GroupSection({
                     onChange={() => onToggleSelect(it.id)}
                     type="checkbox"
                   />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex items-start justify-between gap-3">
-                      <StatusPopover orderId={it.id} status={it.status} />
-                      <div className="min-w-0 flex-1">
-                        {phoneHref ? (
-                          <a
-                            className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800 no-underline underline-offset-2 hover:underline active:opacity-80"
-                            href={phoneHref}
-                          >
-                            {it.customerPhone || "-"}
-                          </a>
-                        ) : (
-                          <span className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800">
-                            {it.customerPhone || "-"}
-                          </span>
-                        )}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="border-b border-border pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <StatusPopover orderId={it.id} status={it.status} />
+                        <div className="min-w-0 flex-1">
+                          {phoneHref ? (
+                            <a
+                              className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800 no-underline underline-offset-2 hover:underline active:opacity-80"
+                              href={phoneHref}
+                            >
+                              {it.customerPhone || "-"}
+                            </a>
+                          ) : (
+                            <span className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800">
+                              {it.customerPhone || "-"}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <div className="min-w-0 truncate text-sm font-semibold text-neutral-900">
-                        {it.deviceLabel || "-"}
+
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="min-w-0 truncate text-base font-semibold leading-snug text-neutral-900">
+                          {it.deviceLabel || "-"}
+                        </div>
+                        <ReworkWarrantyBadges item={it} />
                       </div>
-                      <ReworkWarrantyBadges item={it} />
+                      <p className="line-clamp-2 text-xs leading-snug text-neutral-600">{secondaryLine}</p>
                     </div>
-                    <div className="text-[11px] text-neutral-500">{it.customerName ?? "-"}</div>
-                    <div className="break-words text-[11px] leading-snug text-neutral-400 line-clamp-1">{it.issue || "-"}</div>
-                    <div className="space-y-1.5 text-[11px] leading-snug text-neutral-600">
-                      <div className="flex min-w-0 gap-1.5">
+
+                    <div className="rounded-lg bg-muted/40 px-2 py-1.5">
+                      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-neutral-600">
                         <span className="shrink-0 text-neutral-400">技师</span>
-                        <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
-                      </div>
-                      <div className="flex min-w-0 items-start gap-1.5">
-                        <span className="mt-0.5 shrink-0 text-neutral-400">供应商</span>
+                        <span className="min-w-0 max-w-[42%] truncate sm:max-w-[50%]">{it.technicianName ?? "-"}</span>
+                        <span className="shrink-0 text-neutral-300">·</span>
+                        <span className="shrink-0 text-neutral-400">供应商</span>
                         <button
-                          className={`inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
-                          title="点击选择供应商"
+                          aria-label={supplierLabel}
+                          className="inline-flex h-7 max-w-[min(65%,12rem)] shrink items-center gap-1 rounded-md border border-border bg-surface px-2 text-left text-[11px] font-medium text-neutral-700 transition-colors hover:bg-muted/80 active:bg-muted"
                           type="button"
                           onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                         >
                           {it.supplierShortName ? (
-                            <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
+                            <span className="min-w-0 truncate">
+                              <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
+                            </span>
                           ) : (
-                            <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
+                            <span className="text-neutral-500">选择</span>
                           )}
                         </button>
                       </div>
                     </div>
-                    <div className="w-full min-w-0">
+
+                    <div className="rounded-lg border border-border/80 bg-surface px-2 py-1.5 shadow-sm">
                       <OrderListMoneyCell
                         className="justify-start"
                         compact
@@ -322,6 +340,7 @@ const GroupSection = memo(function GroupSection({
                         }}
                       />
                     </div>
+
                     <div className="flex items-center justify-between gap-2 pt-0.5">
                       <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
                       <Link
