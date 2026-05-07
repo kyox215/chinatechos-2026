@@ -54,15 +54,7 @@ export type OrderEvent = {
   createdAt: string;
 };
 
-export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
-  const storeId = await resolveStoreId();
-  if (!env.supabaseUrl || !storeId) return null;
-
-  const supabase = createSupabaseServerClient();
-
-  const { data, error } = await supabase
-    .from("repair_orders")
-    .select(`
+const ORDER_DETAIL_SELECT_WITH_SIGNATURE = `
       id,
       public_no,
       order_type,
@@ -89,11 +81,71 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       customers:customer_id ( id, name, phone_e164, phone_raw ),
       devices:device_id ( id, brand, model, serial_or_imei ),
       suppliers:supplier_id ( id, name, short_name, color )
-    `)
+    `;
+
+const ORDER_DETAIL_SELECT_FALLBACK = `
+      id,
+      public_no,
+      order_type,
+      status,
+      issue_description,
+      diagnosis_result,
+      quotation_amount,
+      deposit_amount,
+      balance_amount,
+      is_paid,
+      approval_status,
+      approval_sent_at,
+      approval_confirmed_at,
+      technician_name,
+      internal_tag,
+      warranty_text,
+      pause_reason,
+      cancel_reason,
+      completed_at,
+      delivered_at,
+      created_at,
+      updated_at,
+      customers:customer_id ( id, name, phone_e164, phone_raw ),
+      devices:device_id ( id, brand, model, serial_or_imei ),
+      suppliers:supplier_id ( id, name, short_name, color )
+    `;
+
+function isMissingCustomerSignatureColumn(message?: string): boolean {
+  const msg = (message ?? "").toLowerCase();
+  return msg.includes("customer_signature") && (msg.includes("column") || msg.includes("schema cache"));
+}
+
+export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return null;
+
+  const supabase = createSupabaseServerClient();
+
+  const withSignature = await supabase
+    .from("repair_orders")
+    .select(ORDER_DETAIL_SELECT_WITH_SIGNATURE)
     .eq("id", id)
     .eq("store_id", storeId)
     .is("deleted_at", null)
     .single();
+
+  let data: Record<string, any> | null = withSignature.data as Record<string, any> | null;
+  let error = withSignature.error;
+  let signatureSupported = true;
+
+  if (error && isMissingCustomerSignatureColumn(error.message)) {
+    signatureSupported = false;
+    const fallback = await supabase
+      .from("repair_orders")
+      .select(ORDER_DETAIL_SELECT_FALLBACK)
+      .eq("id", id)
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .single();
+    data = fallback.data as Record<string, any> | null;
+    error = fallback.error;
+  }
 
   if (error || !data) return null;
 
@@ -120,7 +172,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     warrantyText: data.warranty_text,
     pauseReason: data.pause_reason,
     cancelReason: data.cancel_reason,
-    customerSignature: data.customer_signature ?? null,
+    customerSignature: signatureSupported ? data.customer_signature ?? null : null,
     completedAt: data.completed_at,
     deliveredAt: data.delivered_at,
     createdAt: data.created_at,

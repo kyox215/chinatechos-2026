@@ -23,6 +23,11 @@ function parseMoney(value: unknown): number | null {
   return Math.round(n * 100) / 100;
 }
 
+function isMissingCustomerSignatureColumn(message?: string): boolean {
+  const msg = (message ?? "").toLowerCase();
+  return msg.includes("customer_signature") && (msg.includes("column") || msg.includes("schema cache"));
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -197,6 +202,12 @@ export async function PATCH(
       .single();
 
     if (updateRes.error) {
+      if (isMissingCustomerSignatureColumn(updateRes.error.message)) {
+        return NextResponse.json(
+          { error: "签名字段尚未在数据库生效，请先执行 customer_signature 迁移" },
+          { status: 400 },
+        );
+      }
       return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
     }
   }
