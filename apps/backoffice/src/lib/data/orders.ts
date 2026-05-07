@@ -35,18 +35,25 @@ export type OrderListFilters = {
   pickupOverdue?: boolean;
   dateFrom?: string;
   dateTo?: string;
+  page?: number;
+  pageSize?: number;
 };
 
 export async function listOrders(filters: OrderListFilters = {}) {
   const storeId = await resolveStoreId();
   if (!env.supabaseUrl || !storeId) {
-    return { items: [] as OrderListItem[] };
+    return { items: [] as OrderListItem[], totalCount: 0, page: 1, pageSize: 200 };
   }
 
   const supabase = createSupabaseServerClient();
   const settings = await getStoreSettings();
   const approvalOverdueHours = settings?.approvalOverdueHours ?? 48;
   const pickupOverdueDays = settings?.pickupOverdueDays ?? 5;
+
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = Math.min(500, Math.max(1, filters.pageSize ?? 200));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   let query = supabase
     .from("repair_orders")
@@ -70,6 +77,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       devices:device_id ( brand, model, serial_or_imei ),
       suppliers:supplier_id ( short_name, color )
     `,
+      { count: "exact" },
     )
     .eq("store_id", storeId)
     .is("deleted_at", null)
@@ -131,11 +139,13 @@ export async function listOrders(filters: OrderListFilters = {}) {
     );
   }
 
-  const res = await query.limit(50);
+  const res = await query.range(from, to);
 
   if (res.error) {
     throw new Error(res.error.message);
   }
+
+  const totalCount = res.count ?? 0;
 
   const items: OrderListItem[] = (res.data ?? []).map((row) => {
     const customer = Array.isArray(row.customers) ? row.customers[0] : row.customers;
@@ -167,5 +177,5 @@ export async function listOrders(filters: OrderListFilters = {}) {
     };
   });
 
-  return { items };
+  return { items, totalCount, page, pageSize };
 }

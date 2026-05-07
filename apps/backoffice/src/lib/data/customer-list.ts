@@ -19,25 +19,34 @@ export type CustomerListFilters = {
   q?: string;
   hasActiveOrder?: boolean;
   hasRecentOrder?: boolean;
+  page?: number;
+  pageSize?: number;
 };
 
 export async function listCustomers(filters: CustomerListFilters = {}): Promise<{
   items: CustomerListItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }> {
   const storeId = await resolveStoreId();
   if (!env.supabaseUrl || !storeId) {
-    return { items: [] };
+    return { items: [], totalCount: 0, page: 1, pageSize: 50 };
   }
+
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = Math.min(200, Math.max(1, filters.pageSize ?? 50));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   const supabase = createSupabaseServerClient();
 
   let query = supabase
     .from("customers")
-    .select("id, name, phone_e164, phone_raw, created_at")
+    .select("id, name, phone_e164, phone_raw, created_at", { count: "exact" })
     .eq("store_id", storeId)
     .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(100);
+    .order("created_at", { ascending: false });
 
   if (filters.q) {
     const escaped = filters.q.replace(/[,%]/g, "");
@@ -45,9 +54,10 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
     query = query.or(`phone_e164.ilike.${like},name.ilike.${like}`);
   }
 
-  const { data: customers, error } = await query;
+  const { data: customers, error, count } = await query.range(from, to);
   if (error) throw new Error(error.message);
-  if (!customers || customers.length === 0) return { items: [] };
+  const totalCount = count ?? 0;
+  if (!customers || customers.length === 0) return { items: [], totalCount, page, pageSize };
 
   const customerIds = customers.map((c) => c.id);
 
@@ -120,5 +130,5 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
     items = items.filter((c) => c.lastOrderAt && c.lastOrderAt >= thirtyDaysAgo);
   }
 
-  return { items };
+  return { items, totalCount, page, pageSize };
 }

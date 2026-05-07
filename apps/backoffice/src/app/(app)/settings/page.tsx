@@ -1,5 +1,6 @@
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { ImportSection } from "@/components/settings/ImportSection";
+import { ExportSection } from "@/components/settings/ExportSection";
 import { getStoreSettings } from "@/lib/data/store-settings";
 
 export default async function SettingsPage() {
@@ -21,6 +22,7 @@ export default async function SettingsPage() {
       )}
 
       <ImportSection />
+      <ExportSection />
     </div>
   );
 }

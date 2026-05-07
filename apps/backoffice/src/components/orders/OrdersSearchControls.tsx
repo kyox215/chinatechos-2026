@@ -47,7 +47,6 @@ export function OrdersSearchControls(props: Props) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
-  const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/suppliers")
@@ -157,33 +156,6 @@ export function OrdersSearchControls(props: Props) {
               高级筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
             </button>
             <button className="ui-btn ui-btn-primary h-10 px-4 md:h-9" onClick={() => setCreateOpen(true)} type="button">新建工单</button>
-            <div className="relative">
-              <button
-                className="ui-btn ui-btn-secondary h-10 px-3 md:h-9"
-                onClick={() => setExportOpen((v) => !v)}
-                type="button"
-              >
-                导出
-              </button>
-              {exportOpen && (
-                <div className="absolute right-0 z-30 mt-1 w-36 rounded-xl border border-border bg-surface p-1 shadow-lg">
-                  <a
-                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted"
-                    href={`/api/orders/export?format=xlsx&status=${status}`}
-                    onClick={() => setExportOpen(false)}
-                  >
-                    导出 Excel
-                  </a>
-                  <a
-                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted"
-                    href={`/api/orders/export?format=csv&status=${status}`}
-                    onClick={() => setExportOpen(false)}
-                  >
-                    导出 CSV
-                  </a>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 

@@ -10,6 +10,8 @@ type PreviewRow = {
   model: string;
   issueDescription: string;
   quotationAmount: number | null;
+  status?: string;
+  createdAt?: string;
   errors: string[];
 };
 
@@ -17,6 +19,7 @@ type PreviewResult = {
   totalRows: number;
   errorRows: number;
   validRows: number;
+  isLegacy?: boolean;
   preview: PreviewRow[];
 };
 
@@ -132,6 +135,11 @@ export function ImportSection() {
                 错误 {preview.errorRows} 行（将跳过）
               </span>
             )}
+            {preview.isLegacy && (
+              <span className="rounded-full bg-blue-100 px-2.5 py-1 text-blue-700">
+                旧格式（自动映射状态+日期）
+              </span>
+            )}
           </div>
 
           <div className="max-h-64 overflow-auto rounded-lg border border-border">
@@ -145,6 +153,8 @@ export function ImportSection() {
                   <th className="px-2 py-1.5 text-left font-medium text-neutral-500">型号</th>
                   <th className="px-2 py-1.5 text-left font-medium text-neutral-500">问题</th>
                   <th className="px-2 py-1.5 text-left font-medium text-neutral-500">状态</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">日期</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">校验</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +166,8 @@ export function ImportSection() {
                     <td className="px-2 py-1">{r.brand}</td>
                     <td className="px-2 py-1">{r.model}</td>
                     <td className="max-w-[200px] truncate px-2 py-1">{r.issueDescription}</td>
+                    <td className="px-2 py-1 text-neutral-600">{r.status ?? "-"}</td>
+                    <td className="whitespace-nowrap px-2 py-1 text-neutral-500">{r.createdAt ?? "-"}</td>
                     <td className="px-2 py-1">
                       {r.errors.length > 0 ? (
                         <span className="text-rose-600">{r.errors.join(", ")}</span>

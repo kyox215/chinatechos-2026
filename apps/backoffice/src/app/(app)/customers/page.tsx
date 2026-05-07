@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { CustomerSearch } from "@/components/customers/CustomerSearch";
+import { CustomerPagination } from "@/components/customers/CustomerPagination";
 import { listCustomers } from "@/lib/data/customer-list";
 
 type QueryValue = string | string[] | undefined;
@@ -11,12 +12,16 @@ export default async function CustomersPage(props: {
   const searchParams = (await props.searchParams) ?? {};
   const q = normalizeQuery(searchParams.q);
   const filter = normalizeQuery(searchParams.filter) ?? "all";
+  const page = normalizeInt(searchParams.page, 1);
 
-  const { items } = await listCustomers({
+  const { items, totalCount, pageSize } = await listCustomers({
     q,
     hasActiveOrder: filter === "active",
     hasRecentOrder: filter === "recent",
+    page,
   });
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div className="space-y-4">
@@ -24,7 +29,7 @@ export default async function CustomersPage(props: {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">客户</h1>
           <div className="mt-1 text-sm text-neutral-600">
-            按手机号快速定位客户与历史工单。共 {items.length} 位客户。
+            按手机号快速定位客户与历史工单。共 {totalCount} 位客户。
           </div>
         </div>
         <Link
@@ -118,6 +123,10 @@ export default async function CustomersPage(props: {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <CustomerPagination page={page} totalPages={totalPages} />
+      )}
     </div>
   );
 }
@@ -138,4 +147,11 @@ function formatDate(value: string) {
 function normalizeQuery(value: QueryValue): string | undefined {
   if (!value) return undefined;
   return Array.isArray(value) ? value[0] : value;
+}
+
+function normalizeInt(value: QueryValue, fallback: number): number {
+  const s = normalizeQuery(value);
+  if (!s) return fallback;
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) && n >= 1 ? n : fallback;
 }
