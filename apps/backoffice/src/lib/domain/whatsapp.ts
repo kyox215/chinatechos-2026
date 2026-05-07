@@ -27,7 +27,11 @@ export function renderTemplate(body: string, vars: TemplateVars): string {
  * Phone should be in E.164 format (e.g. +393331234567).
  */
 export function buildWhatsAppLink(phone: string, messageBody: string): string {
-  const cleaned = phone.replace(/[^0-9]/g, "");
+  const cleaned = normalizeWhatsAppPhone(phone);
   const encoded = encodeURIComponent(messageBody);
   return `https://wa.me/${cleaned}?text=${encoded}`;
+}
+
+export function normalizeWhatsAppPhone(phone: string): string {
+  return phone.replace(/[^0-9]/g, "");
 }

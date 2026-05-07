@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildWhatsAppLink, renderTemplate } from "@/lib/domain/whatsapp";
+import { buildWhatsAppLink, normalizeWhatsAppPhone, renderTemplate } from "@/lib/domain/whatsapp";
 
 export async function POST(
   request: NextRequest,
@@ -16,6 +16,7 @@ export async function POST(
   const body = (await request.json()) as {
     templateCode?: string;
     customBody?: string;
+    overridePhone?: string;
     operatorName?: string;
   };
 
@@ -45,7 +46,7 @@ export async function POST(
     ? order.data.devices[0]
     : order.data.devices;
 
-  if (!customer?.phone_e164) {
+  if (!customer?.phone_e164 && !body.overridePhone?.trim()) {
     return NextResponse.json({ error: "客户无电话号码，无法发送消息" }, { status: 400 });
   }
 
@@ -78,7 +79,13 @@ export async function POST(
     return NextResponse.json({ error: "需要 templateCode 或 customBody" }, { status: 400 });
   }
 
-  const waLink = buildWhatsAppLink(customer.phone_e164, messageBody);
+  const sendPhoneRaw = body.overridePhone?.trim() || customer.phone_e164;
+  const sendPhone = normalizeWhatsAppPhone(sendPhoneRaw ?? "");
+  if (sendPhone.length < 8 || sendPhone.length > 15) {
+    return NextResponse.json({ error: "发送号码格式无效" }, { status: 400 });
+  }
+
+  const waLink = buildWhatsAppLink(sendPhone, messageBody);
 
   // Insert message_log
   const logRes = await supabase

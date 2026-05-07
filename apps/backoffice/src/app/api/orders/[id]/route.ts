@@ -14,6 +14,7 @@ const ORDER_FIELDS = [
   "pause_reason",
   "issue_description",
   "customer_signature",
+  "contact_phones",
 ] as const;
 
 function parseMoney(value: unknown): number | null {
@@ -52,6 +53,7 @@ export async function PATCH(
   if (rawBody.customerPhone !== undefined) body.customer_phone = rawBody.customerPhone;
   if (rawBody.serialOrImei !== undefined) body.serial_or_imei = rawBody.serialOrImei;
   if (rawBody.customerSignature !== undefined) body.customer_signature = rawBody.customerSignature;
+  if (rawBody.contactPhones !== undefined) body.contact_phones = rawBody.contactPhones;
   if (rawBody.supplierId !== undefined) body.supplier_id = rawBody.supplierId;
 
   const supabase = createSupabaseServerClient();
@@ -96,6 +98,18 @@ export async function PATCH(
         patch[field] = parsedQuotation;
       } else if (field === "deposit_amount") {
         patch[field] = parsedDeposit;
+      } else if (field === "contact_phones") {
+        const rawPhones = body.contact_phones;
+        if (rawPhones == null) {
+          patch[field] = [];
+        } else if (Array.isArray(rawPhones)) {
+          const normalized = rawPhones
+            .map((p) => String(p ?? "").trim())
+            .filter(Boolean);
+          patch[field] = Array.from(new Set(normalized));
+        } else {
+          return NextResponse.json({ error: "contactPhones 必须是字符串数组" }, { status: 400 });
+        }
       } else {
         patch[field] = body[field] ?? null;
       }

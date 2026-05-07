@@ -22,6 +22,7 @@ export type OrderDetail = {
   pauseReason: string | null;
   cancelReason: string | null;
   customerSignature: string | null;
+  contactPhones: string[];
   completedAt: string | null;
   deliveredAt: string | null;
   createdAt: string;
@@ -53,6 +54,36 @@ export type OrderEvent = {
   operatorName: string | null;
   createdAt: string;
 };
+
+const ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES = `
+      id,
+      public_no,
+      order_type,
+      status,
+      issue_description,
+      diagnosis_result,
+      quotation_amount,
+      deposit_amount,
+      balance_amount,
+      is_paid,
+      approval_status,
+      approval_sent_at,
+      approval_confirmed_at,
+      technician_name,
+      internal_tag,
+      warranty_text,
+      pause_reason,
+      cancel_reason,
+      customer_signature,
+      contact_phones,
+      completed_at,
+      delivered_at,
+      created_at,
+      updated_at,
+      customers:customer_id ( id, name, phone_e164, phone_raw ),
+      devices:device_id ( id, brand, model, serial_or_imei ),
+      suppliers:supplier_id ( id, name, short_name, color )
+    `;
 
 const ORDER_DETAIL_SELECT_WITH_SIGNATURE = `
       id,
@@ -116,23 +147,42 @@ function isMissingCustomerSignatureColumn(message?: string): boolean {
   return msg.includes("customer_signature") && (msg.includes("column") || msg.includes("schema cache"));
 }
 
+function isMissingContactPhonesColumn(message?: string): boolean {
+  const msg = (message ?? "").toLowerCase();
+  return msg.includes("contact_phones") && (msg.includes("column") || msg.includes("schema cache"));
+}
+
 export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   const storeId = await resolveStoreId();
   if (!env.supabaseUrl || !storeId) return null;
 
   const supabase = createSupabaseServerClient();
 
-  const withSignature = await supabase
+  const withSignatureAndPhones = await supabase
     .from("repair_orders")
-    .select(ORDER_DETAIL_SELECT_WITH_SIGNATURE)
+    .select(ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES)
     .eq("id", id)
     .eq("store_id", storeId)
     .is("deleted_at", null)
     .single();
 
-  let data: Record<string, any> | null = withSignature.data as Record<string, any> | null;
-  let error = withSignature.error;
+  let data: Record<string, any> | null = withSignatureAndPhones.data as Record<string, any> | null;
+  let error = withSignatureAndPhones.error;
   let signatureSupported = true;
+  let contactPhonesSupported = true;
+
+  if (error && isMissingContactPhonesColumn(error.message)) {
+    contactPhonesSupported = false;
+    const withoutPhones = await supabase
+      .from("repair_orders")
+      .select(ORDER_DETAIL_SELECT_WITH_SIGNATURE)
+      .eq("id", id)
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .single();
+    data = withoutPhones.data as Record<string, any> | null;
+    error = withoutPhones.error;
+  }
 
   if (error && isMissingCustomerSignatureColumn(error.message)) {
     signatureSupported = false;
@@ -173,6 +223,10 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     pauseReason: data.pause_reason,
     cancelReason: data.cancel_reason,
     customerSignature: signatureSupported ? data.customer_signature ?? null : null,
+    contactPhones:
+      contactPhonesSupported && Array.isArray(data.contact_phones)
+        ? data.contact_phones.filter((p: unknown) => typeof p === "string" && p.trim())
+        : [],
     completedAt: data.completed_at,
     deliveredAt: data.delivered_at,
     createdAt: data.created_at,

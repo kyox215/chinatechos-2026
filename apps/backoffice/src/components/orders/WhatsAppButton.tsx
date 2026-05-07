@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { STORE_NAME, STORE_ADDRESS } from "@/lib/domain/store-info";
+import { OrderWhatsAppSendModal } from "@/components/orders/OrderWhatsAppSendModal";
 
 type Props = {
   orderId: string;
   customerPhone: string;
+  contactPhones?: string[];
   status?: string;
   customerName?: string | null;
   deviceLabel?: string;
@@ -13,7 +15,7 @@ type Props = {
   quotationAmount?: number | null;
 };
 
-function buildStatusMessage(props: Props): string {
+export function buildStatusMessage(props: Props): string {
   const name = props.customerName ?? "Cliente";
   const device = props.deviceLabel || "dispositivo";
   const faults = props.issueDescription || "";
@@ -40,47 +42,31 @@ function buildStatusMessage(props: Props): string {
 }
 
 export function WhatsAppButton(props: Props) {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   if (!props.customerPhone) return null;
-
-  async function handleClick() {
-    setPending(true);
-    setError(null);
-    try {
-      const message = buildStatusMessage(props);
-      const res = await fetch(`/api/orders/${props.orderId}/messages/draft`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customBody: message }),
-      });
-      const data = (await res.json()) as { waLink?: string; messageLogId?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "创建消息失败");
-      if (data.waLink) {
-        window.open(data.waLink, "_blank");
-        if (data.messageLogId) {
-          await fetch(`/api/message-logs/${data.messageLogId}/opened`, { method: "POST" });
-        }
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "发送失败");
-    } finally {
-      setPending(false);
-    }
-  }
+  const message = buildStatusMessage(props);
+  const phones = (props.contactPhones && props.contactPhones.length > 0)
+    ? props.contactPhones
+    : [props.customerPhone];
 
   return (
     <div>
       <button
         className="h-8 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-60"
-        disabled={pending}
-        onClick={handleClick}
+        onClick={() => setOpen(true)}
         type="button"
       >
-        {pending ? "..." : "WhatsApp"}
+        WhatsApp
       </button>
-      {error && <div className="mt-1 text-[11px] text-rose-600">{error}</div>}
+      <OrderWhatsAppSendModal
+        open={open}
+        onClose={() => setOpen(false)}
+        orderId={props.orderId}
+        messageText={message}
+        initialPhones={phones}
+        title="发送 WhatsApp 给客户"
+      />
     </div>
   );
 }

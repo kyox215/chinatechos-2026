@@ -155,6 +155,7 @@ export default async function OrderDetailPage(props: {
                   <WhatsAppButton
                     orderId={order.id}
                     customerPhone={order.customer.phoneE164}
+                    contactPhones={order.contactPhones}
                     status={order.status}
                     customerName={order.customer.name}
                     deviceLabel={[order.device?.brand, order.device?.model].filter(Boolean).join(" ")}
