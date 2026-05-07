@@ -23,6 +23,9 @@ export type OrderListItem = {
   supplierShortName: string | null;
   supplierColor: string | null;
   originalOrderId: string | null;
+  /** From linked original order — used for rework warranty chips on list */
+  originalOrderCompletedAt: string | null;
+  originalOrderWarrantyText: string | null;
 };
 
 export type OrderListFilters = {
@@ -140,7 +143,33 @@ export async function listOrders(filters: OrderListFilters = {}) {
     throw new Error(res.error.message);
   }
 
-  const items: OrderListItem[] = (res.data ?? []).map((row) => {
+  const rows = res.data ?? [];
+  const originalIds = [
+    ...new Set(
+      rows
+        .map((r) => (r as { original_order_id?: string | null }).original_order_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ];
+  const originalMeta = new Map<string, { completed_at: string | null; warranty_text: string | null }>();
+  if (originalIds.length > 0) {
+    const origRes = await supabase
+      .from("repair_orders")
+      .select("id, completed_at, warranty_text")
+      .eq("store_id", storeId)
+      .in("id", originalIds)
+      .is("deleted_at", null);
+    if (!origRes.error && origRes.data) {
+      for (const o of origRes.data) {
+        originalMeta.set(o.id, {
+          completed_at: o.completed_at,
+          warranty_text: o.warranty_text,
+        });
+      }
+    }
+  }
+
+  const items: OrderListItem[] = rows.map((row) => {
     const customer = Array.isArray(row.customers) ? row.customers[0] : row.customers;
     const device = Array.isArray(row.devices) ? row.devices[0] : row.devices;
     const supplier = Array.isArray(row.suppliers) ? row.suppliers[0] : row.suppliers;
@@ -148,6 +177,8 @@ export async function listOrders(filters: OrderListFilters = {}) {
     const brand = device?.brand ?? "";
     const model = device?.model ?? "";
     const deviceLabel = [brand, model].filter(Boolean).join(" ");
+    const oid = (row as Record<string, unknown>).original_order_id as string | null | undefined;
+    const orig = oid ? originalMeta.get(oid) : undefined;
 
     return {
       id: row.id,
@@ -167,7 +198,9 @@ export async function listOrders(filters: OrderListFilters = {}) {
       supplierId: row.supplier_id ?? null,
       supplierShortName: supplier?.short_name ?? null,
       supplierColor: supplier?.color ?? null,
-      originalOrderId: (row as Record<string, unknown>).original_order_id as string | null ?? null,
+      originalOrderId: oid ?? null,
+      originalOrderCompletedAt: orig?.completed_at ?? null,
+      originalOrderWarrantyText: orig?.warranty_text ?? null,
     };
   });
 

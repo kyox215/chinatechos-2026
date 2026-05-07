@@ -3,6 +3,8 @@ import { formatOrderEUR } from "@/lib/domain/order-money";
 
 type Props = {
   money: OrderFinancialSnapshot;
+  /** Single-line / wrap-friendly summary for dense mobile cards */
+  compact?: boolean;
 };
 
 function MoneyRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
@@ -15,17 +17,30 @@ function MoneyRow({ label, value, valueColor }: { label: string; value: string; 
 }
 
 /** Full-label rows with semantic color for receivable; matches FinanceCard style. */
-export function OrderListMoneyCell({ money }: Props) {
+export function OrderListMoneyCell({ money, compact }: Props) {
   const hasReceivable = money.balanceAmount != null && money.balanceAmount > 0;
+  const balanceCls = hasReceivable ? "text-rose-700 font-medium" : "text-neutral-900";
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] leading-tight tabular-nums">
+        <span className="text-neutral-500">总金额</span>
+        <span className="text-neutral-900">{formatOrderEUR(money.quotationAmount)}</span>
+        <span className="text-neutral-300">·</span>
+        <span className="text-neutral-500">定金</span>
+        <span className="text-neutral-900">{formatOrderEUR(money.depositAmount)}</span>
+        <span className="text-neutral-300">·</span>
+        <span className="text-neutral-500">待收</span>
+        <span className={balanceCls}>{formatOrderEUR(money.balanceAmount)}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-1 leading-none">
       <MoneyRow label="总金额" value={formatOrderEUR(money.quotationAmount)} />
       <MoneyRow label="定金" value={formatOrderEUR(money.depositAmount)} />
-      <MoneyRow
-        label="待收"
-        value={formatOrderEUR(money.balanceAmount)}
-        valueColor={hasReceivable ? "text-rose-700 font-medium" : undefined}
-      />
+      <MoneyRow label="待收" value={formatOrderEUR(money.balanceAmount)} valueColor={hasReceivable ? "text-rose-700 font-medium" : undefined} />
     </div>
   );
 }

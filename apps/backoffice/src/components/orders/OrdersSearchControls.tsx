@@ -173,6 +173,7 @@ export function OrdersSearchControls(props: Props) {
                 <option value="rework">返修</option>
                 <option value="new">接单</option>
                 <option value="diagnosing">检测中</option>
+                <option value="repairing">维修中</option>
                 <option value="quoted">已报价</option>
                 <option value="waiting_approval">等回复</option>
                 <option value="parts_ordered">等配件</option>

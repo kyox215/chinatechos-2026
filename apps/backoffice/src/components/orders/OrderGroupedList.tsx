@@ -8,6 +8,7 @@ import { StatusPopover } from "@/components/orders/StatusPopover";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
 import { SupplierPickerModal } from "@/components/orders/SupplierPickerModal";
 import type { OrderListItem } from "@/lib/data/orders";
+import { calcWarranty } from "@/lib/domain/warranty-calc";
 
 type StatusGroup = {
   key: string;
@@ -24,6 +25,31 @@ const DESKTOP_GRID =
 const NEW_STATUSES = new Set(["new"]);
 const PROCESSING_STATUSES = new Set(["rework", "diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
 const PICKUP_STATUSES = new Set(["repaired", "notified"]);
+
+function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
+  if (!item.originalOrderId) return null;
+  const w = calcWarranty(item.originalOrderCompletedAt, item.originalOrderWarrantyText);
+  return (
+    <span className="flex shrink-0 flex-wrap items-center gap-1">
+      <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">返修</span>
+      {w ? (
+        w.isInWarranty ? (
+          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">
+            保修剩余 {w.remainingDays} 天
+          </span>
+        ) : (
+          <span className="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600">
+            保修已过期
+          </span>
+        )
+      ) : (
+        <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
+          保修信息不全
+        </span>
+      )}
+    </span>
+  );
+}
 
 function groupOrders(items: OrderListItem[]): StatusGroup[] {
   const newOrders: OrderListItem[] = [];
@@ -132,8 +158,10 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             value={batchStatus}
           >
             <option value="">选择目标状态</option>
+            <option value="new">接单</option>
             <option value="rework">返修</option>
             <option value="diagnosing">检测中</option>
+            <option value="repairing">维修中</option>
             <option value="quoted">已报价</option>
             <option value="waiting_approval">等回复</option>
             <option value="parts_ordered">等配件</option>
@@ -221,46 +249,45 @@ const GroupSection = memo(function GroupSection({
 
       {open && (
         <>
-          <div className="space-y-2 border-t border-border bg-surface-2 p-3 lg:hidden">
+          <div className="space-y-1.5 border-t border-border bg-surface-2 p-2.5 lg:hidden">
             {group.items.map((it) => (
               <article
                 key={it.id}
-                className={`rounded-xl border border-border bg-surface p-3 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : ""}`}
+                className={`rounded-xl border border-border bg-surface px-2.5 py-2 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : ""}`}
               >
                 <div className="flex items-start gap-2">
                   <input
                     checked={selected.has(it.id)}
-                    className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300"
                     onChange={() => onToggleSelect(it.id)}
                     type="checkbox"
                   />
-                  <div className="min-w-0 flex-1 space-y-2">
+                  <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex items-center justify-between gap-3">
                       <StatusPopover orderId={it.id} status={it.status} />
-                      <div className="shrink-0 text-sm font-semibold text-neutral-900">{it.customerPhone || "-"}</div>
+                      <div className="shrink-0 text-xs tabular-nums text-neutral-600">{it.customerPhone || "-"}</div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="min-w-0 truncate text-base font-semibold text-neutral-900">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="min-w-0 truncate text-sm font-semibold text-neutral-900">
                         {it.deviceLabel || "-"}
                       </div>
-                      {it.originalOrderId && (
-                        <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">返修</span>
-                      )}
+                      <ReworkWarrantyBadges item={it} />
                     </div>
-                    <div className="text-xs text-neutral-500">{it.customerName ?? "-"}</div>
-                    <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
-                      <div>电话：{it.customerPhone || "-"}</div>
-                      <div>技师：{it.technicianName ?? "-"}</div>
-                      <div>创建：{fmtDate(it.createdAt)}</div>
-                      <div className="text-neutral-700">
+                    <div className="text-[11px] text-neutral-500">{it.customerName ?? "-"}</div>
+                    <div className="break-words text-[11px] leading-snug text-neutral-400 line-clamp-1">{it.issue || "-"}</div>
+                    <div className="space-y-1 text-[11px] leading-snug text-neutral-600">
+                      <div className="flex min-w-0 gap-1.5">
+                        <span className="shrink-0 text-neutral-400">技师</span>
+                        <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
+                      </div>
+                      <div className="flex min-w-0 items-start gap-1.5">
+                        <span className="mt-0.5 shrink-0 text-neutral-400">供应商</span>
                         <button
-                          className={`inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
+                          className={`inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
                           title="点击选择供应商"
                           type="button"
                           onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                         >
-                          <span className="shrink-0">供应商：</span>
                           {it.supplierShortName ? (
                             <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
                           ) : (
@@ -270,16 +297,17 @@ const GroupSection = memo(function GroupSection({
                       </div>
                     </div>
                     <OrderListMoneyCell
+                      compact
                       money={{
                         quotationAmount: it.quotationAmount,
                         depositAmount: it.depositAmount,
                         balanceAmount: it.balanceAmount,
                       }}
                     />
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
                       <Link
-                        className="inline-flex h-9 items-center rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
+                        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
                         href={`/orders/${it.id}`}
                       >
                         详情
@@ -327,13 +355,11 @@ const GroupSection = memo(function GroupSection({
                   </div>
                   <div className="min-w-0 truncate pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
                   <div className="min-w-0 space-y-0.5 pr-2 pt-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="min-w-0 truncate text-base font-semibold text-neutral-900">
                         {it.deviceLabel || "-"}
                       </span>
-                      {it.originalOrderId && (
-                        <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">返修</span>
-                      )}
+                      <ReworkWarrantyBadges item={it} />
                     </div>
                     <div className="truncate text-xs text-neutral-500">{it.customerName ?? "-"}</div>
                     <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>

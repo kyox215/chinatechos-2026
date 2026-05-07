@@ -16,6 +16,7 @@ import { FAULT_TYPES, buildIssueFromFaults } from "@/lib/domain/fault-types";
 import type { PrintOptions } from "@/lib/domain/print-mode";
 import { triggerOrderSheetPrint } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 
 type Props = { open: boolean; onClose: () => void; initialPhone?: string; initialName?: string };
 
@@ -238,14 +239,11 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     }
   }
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <OverlayPortal
+      open={open}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
+      onBackdropClick={onClose}
     >
       <OrderPrintSheet payload={printPayload} />
 
@@ -346,6 +344,6 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
           </div>
         </div>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }

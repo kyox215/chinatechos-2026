@@ -346,6 +346,31 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   };
 }
 
+/** Child rework orders that reference this order as original (same store). */
+export async function listLinkedReworkOrders(parentOrderId: string): Promise<
+  { id: string; publicNo: string; status: string }[]
+> {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) return [];
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("repair_orders")
+    .select("id, public_no, status")
+    .eq("store_id", storeId)
+    .eq("original_order_id", parentOrderId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    id: row.id,
+    publicNo: row.public_no,
+    status: row.status,
+  }));
+}
+
 export async function getOrderEvents(orderId: string): Promise<OrderEvent[]> {
   const storeId = await resolveStoreId();
   if (!env.supabaseUrl || !storeId) return [];

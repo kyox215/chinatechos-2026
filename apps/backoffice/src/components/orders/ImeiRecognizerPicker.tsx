@@ -1,5 +1,7 @@
 "use client";
 
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -7,10 +9,11 @@ type Props = {
 };
 
 export function ImeiRecognizerPicker({ open, onClose, onPickMode }: Props) {
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4">
+    <OverlayPortal
+      open={open}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4"
+    >
       <div className="w-full max-w-md rounded-t-2xl bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-neutral-900">选择识别方式</h3>
@@ -46,7 +49,7 @@ export function ImeiRecognizerPicker({ open, onClose, onPickMode }: Props) {
           推荐优先使用条码识别；仅在条码难以识别时再用 OCR。
         </p>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }
 

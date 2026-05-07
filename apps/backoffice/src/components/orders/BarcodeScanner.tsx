@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 
 type Props = {
   open: boolean;
@@ -133,10 +134,11 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
   const nativeBarcode =
     typeof window !== "undefined" && typeof (window as unknown as { BarcodeDetector?: unknown }).BarcodeDetector !== "undefined";
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4">
+    <OverlayPortal
+      open={open}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4"
+    >
       <div className="flex w-full max-w-md flex-col rounded-t-2xl bg-surface pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <span className="text-sm font-semibold text-neutral-900">扫描 IMEI / 条形码</span>
@@ -166,6 +168,6 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
           {nativeBarcode ? "将条形码对准框内，自动识别" : "兼容模式：请将条码对准取景框并保持清晰稳定"}
         </div>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { CreateReworkButton } from "@/components/orders/CreateReworkButton";
 import { DeliverButton } from "@/components/orders/DeliverButton";
 import { FinanceCard } from "@/components/orders/FinanceCard";
@@ -11,7 +12,7 @@ import { StatusPopover } from "@/components/orders/StatusPopover";
 import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
 import { SignatureSection } from "@/components/orders/SignatureSection";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
-import { getOrderDetail, getOrderEvents } from "@/lib/data/order-detail";
+import { getOrderDetail, getOrderEvents, listLinkedReworkOrders } from "@/lib/data/order-detail";
 import { getStoreSettings } from "@/lib/data/store-settings";
 
 export default async function OrderDetailPage(props: {
@@ -22,6 +23,8 @@ export default async function OrderDetailPage(props: {
   if (!order) notFound();
 
   const events = await getOrderEvents(id);
+  const linkedReworkOrders =
+    order.status === "completed" ? await listLinkedReworkOrders(id) : [];
   const storeSettings = await getStoreSettings();
   const defaultPrintOptions = storeSettings
     ? {
@@ -218,6 +221,22 @@ export default async function OrderDetailPage(props: {
           </section>
         </div>
       </div>
+
+      {linkedReworkOrders.length > 0 && (
+        <section className="order-detail-section rounded-2xl border border-border bg-surface p-3 md:p-4">
+          <h2 className="mb-3 text-sm font-semibold text-neutral-900">关联返修单</h2>
+          <ul className="space-y-2 text-sm">
+            {linkedReworkOrders.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-center gap-2">
+                <Link href={`/orders/${row.id}`} className="font-medium text-indigo-600 hover:underline">
+                  {row.publicNo}
+                </Link>
+                <OrderStatusBadge status={row.status} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Timeline */}
       <section className={`rounded-2xl border border-border bg-surface p-3 md:p-4 ${timelineAnim} order-detail-section`}>

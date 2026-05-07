@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { recognizeImeiFromImage } from "@/lib/ocr/recognize-imei";
 
 type Props = {
@@ -38,10 +39,11 @@ export function ImeiImageRecognizer({ open, onClose, onPick }: Props) {
     }
   }
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4">
+    <OverlayPortal
+      open={open}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4"
+    >
       <div className="w-full max-w-md rounded-t-2xl bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-neutral-900">OCR 图片识别 IMEI</h3>
@@ -93,7 +95,8 @@ export function ImeiImageRecognizer({ open, onClose, onPick }: Props) {
           </div>
         ) : null}
       </div>
-    </div>
+    </OverlayPortal>
   );
 }
+
 

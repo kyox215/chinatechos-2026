@@ -34,6 +34,11 @@ export function ReworkInfoBanner(props: Props) {
           </span>
         )}
         {warranty && (
+          <span className="text-neutral-500">
+            到期：{formatDate(warranty.expiresAt.toISOString())}
+          </span>
+        )}
+        {warranty && (
           <span className={warranty.isInWarranty ? "font-medium text-emerald-700" : "font-medium text-rose-600"}>
             {warranty.isInWarranty
               ? `保修剩余 ${warranty.remainingDays} 天`
