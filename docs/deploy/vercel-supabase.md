@@ -12,7 +12,11 @@
 
 **做法（任选其一）：**
 
-**A. 增量迁移（已有业务库、不能整库覆盖时）** — 在 **SQL Editor** 中按下面顺序 **分别执行** 每个文件的 **全文**（复制自本仓库）：
+**A. 一键脚本（推荐）** — 在 **SQL Editor** 中打开并 **整段执行**（单次 Run）：
+
+- [`docs/deploy/apply-inventory-tables-supabase.sql`](apply-inventory-tables-supabase.sql)（已合并上述三份 migration，可直接复制文件全文）
+
+**B. 增量迁移（需分段执行时）** — 按下面顺序 **分别执行** 每个文件的 **全文**（复制自本仓库）：
 
 | 顺序 | 文件 |
 |------|------|
@@ -22,7 +26,7 @@
 
 执行后在 **Table Editor** 中确认存在表 **`inventory_items`**，然后刷新 Backoffice「商品管理」页。若极少数情况下仍提示 schema cache，可在 Dashboard 重启项目或等待数秒再试。
 
-**B. Supabase CLI**（本地已 `supabase link` 到目标项目时）：
+**C. Supabase CLI**（本地已 `supabase link` 到目标项目时）：
 
 ```bash
 cd /path/to/repo
