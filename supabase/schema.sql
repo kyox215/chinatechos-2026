@@ -8,7 +8,15 @@ create table if not exists public.stores (
   approval_overdue_hours int not null default 48,
   pickup_overdue_days int not null default 5,
   order_ui_config jsonb,
-  created_at timestamptz not null default now()
+  print_paper text not null default 'A5',
+  print_orientation text not null default 'landscape',
+  print_density text not null default 'normal',
+  print_margin_mm integer not null default 5,
+  created_at timestamptz not null default now(),
+  constraint stores_print_paper_check check (print_paper in ('A5', 'A4')),
+  constraint stores_print_orientation_check check (print_orientation in ('landscape', 'portrait')),
+  constraint stores_print_density_check check (print_density in ('compact', 'normal', 'relaxed')),
+  constraint stores_print_margin_mm_check check (print_margin_mm in (3, 5, 8))
 );
 
 create table if not exists public.customers (

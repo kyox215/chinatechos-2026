@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateOrderUiConfigFullSnapshot } from "@/lib/domain/order-ui-config";
-import { getStoreSettings } from "@/lib/data/store-settings";
+import { getStoreSettingsLoadResult } from "@/lib/data/store-settings";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const settings = await getStoreSettings();
-  if (!settings) {
-    return NextResponse.json({ error: "无法加载门店设置" }, { status: 404 });
+  const result = await getStoreSettingsLoadResult();
+  if (!result.ok) {
+    return NextResponse.json(
+      {
+        error: "无法加载门店设置",
+        reason: result.reason,
+        ...(result.detail ? { detail: result.detail } : {}),
+      },
+      { status: 404 },
+    );
   }
-  return NextResponse.json(settings);
+  return NextResponse.json(result.settings);
 }
 
 export async function PATCH(request: NextRequest) {

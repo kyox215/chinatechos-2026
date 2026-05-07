@@ -2,10 +2,11 @@ import { SettingsForm } from "@/components/settings/SettingsForm";
 import { ImportSection } from "@/components/settings/ImportSection";
 import { ExportSection } from "@/components/settings/ExportSection";
 import { OrderUiSettingsSection } from "@/components/settings/OrderUiSettingsSection";
-import { getStoreSettings } from "@/lib/data/store-settings";
+import { SettingsStoreLoadFailure } from "@/components/settings/SettingsStoreLoadFailure";
+import { getStoreSettingsLoadResult } from "@/lib/data/store-settings";
 
 export default async function SettingsPage() {
-  const settings = await getStoreSettings();
+  const load = await getStoreSettingsLoadResult();
 
   return (
     <div className="space-y-4">
@@ -14,15 +15,13 @@ export default async function SettingsPage() {
         <div className="mt-1 text-sm text-neutral-600">管理门店信息、自动化参数与系统选项。</div>
       </div>
 
-      {settings ? (
+      {load.ok ? (
         <>
-          <SettingsForm settings={settings} />
-          <OrderUiSettingsSection resolved={settings.resolvedOrderUi} />
+          <SettingsForm settings={load.settings} />
+          <OrderUiSettingsSection resolved={load.settings.resolvedOrderUi} />
         </>
       ) : (
-        <div className="rounded-xl border border-border px-4 py-8 text-sm text-neutral-500">
-          无法加载门店设置。请检查数据库连接和 stores 表数据。
-        </div>
+        <SettingsStoreLoadFailure detail={load.detail} reason={load.reason} />
       )}
 
       <ImportSection />
