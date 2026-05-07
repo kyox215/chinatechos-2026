@@ -19,15 +19,11 @@ type StatusGroup = {
 };
 
 const DESKTOP_GRID =
-  "grid grid-cols-[32px_92px_128px_minmax(220px,1fr)_150px_92px_72px_180px] gap-x-1.5";
+  "grid grid-cols-[32px_76px_minmax(90px,130px)_minmax(140px,1fr)_120px_68px_56px_minmax(120px,160px)] gap-x-1.5";
 
 const NEW_STATUSES = new Set(["new"]);
-const PROCESSING_STATUSES = new Set(["diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
+const PROCESSING_STATUSES = new Set(["rework", "diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
 const PICKUP_STATUSES = new Set(["repaired", "notified"]);
-
-function isTerminalOrderStatus(status: string) {
-  return status === "completed" || status === "cancelled";
-}
 
 function groupOrders(items: OrderListItem[]): StatusGroup[] {
   const newOrders: OrderListItem[] = [];
@@ -136,6 +132,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             value={batchStatus}
           >
             <option value="">选择目标状态</option>
+            <option value="rework">返修</option>
             <option value="diagnosing">检测中</option>
             <option value="quoted">已报价</option>
             <option value="waiting_approval">等回复</option>
@@ -242,8 +239,13 @@ const GroupSection = memo(function GroupSection({
                       <StatusPopover orderId={it.id} status={it.status} />
                       <div className="shrink-0 text-sm font-semibold text-neutral-900">{it.customerPhone || "-"}</div>
                     </div>
-                    <div className="truncate text-base font-semibold text-neutral-900">
-                      {it.deviceLabel || "-"}
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 truncate text-base font-semibold text-neutral-900">
+                        {it.deviceLabel || "-"}
+                      </div>
+                      {it.originalOrderId && (
+                        <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">返修</span>
+                      )}
                     </div>
                     <div className="text-xs text-neutral-500">{it.customerName ?? "-"}</div>
                     <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
@@ -253,17 +255,10 @@ const GroupSection = memo(function GroupSection({
                       <div>创建：{fmtDate(it.createdAt)}</div>
                       <div className="text-neutral-700">
                         <button
-                          className={`inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted disabled:cursor-not-allowed disabled:opacity-60`}
-                          disabled={isTerminalOrderStatus(it.status)}
-                          title={
-                            isTerminalOrderStatus(it.status)
-                              ? "已完成或已取消的工单不可修改"
-                              : "点击选择供应商"
-                          }
+                          className={`inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
+                          title="点击选择供应商"
                           type="button"
-                          onClick={(e) => {
-                            if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it, e.currentTarget);
-                          }}
+                          onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                         >
                           <span className="shrink-0">供应商：</span>
                           {it.supplierShortName ? (
@@ -296,8 +291,7 @@ const GroupSection = memo(function GroupSection({
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto lg:block">
-            <div className="min-w-[1000px]">
+          <div className="hidden lg:block">
               <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-neutral-500`}>
                 <div />
                 <div>状态</div>
@@ -331,10 +325,15 @@ const GroupSection = memo(function GroupSection({
                   <div className="flex items-start pt-1">
                     <StatusPopover orderId={it.id} status={it.status} />
                   </div>
-                  <div className="pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
+                  <div className="min-w-0 truncate pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
                   <div className="min-w-0 space-y-0.5 pr-2 pt-1">
-                    <div className="truncate text-base font-semibold text-neutral-900">
-                      {it.deviceLabel || "-"}
+                    <div className="flex items-center gap-1.5">
+                      <span className="min-w-0 truncate text-base font-semibold text-neutral-900">
+                        {it.deviceLabel || "-"}
+                      </span>
+                      {it.originalOrderId && (
+                        <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">返修</span>
+                      )}
                     </div>
                     <div className="truncate text-xs text-neutral-500">{it.customerName ?? "-"}</div>
                     <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
@@ -350,17 +349,10 @@ const GroupSection = memo(function GroupSection({
                   </div>
                   <div className="flex min-w-0 items-start pt-1">
                     <button
-                      className="inline-flex max-w-full min-h-[28px] items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-                      disabled={isTerminalOrderStatus(it.status)}
-                      title={
-                        isTerminalOrderStatus(it.status)
-                          ? "已完成或已取消的工单不可修改"
-                          : "点击选择供应商"
-                      }
+                      className="inline-flex max-w-full min-h-[28px] items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted"
+                      title="点击选择供应商"
                       type="button"
-                      onClick={(e) => {
-                        if (!isTerminalOrderStatus(it.status)) onOpenSupplierPicker(it, e.currentTarget);
-                      }}
+                      onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                     >
                       {it.supplierShortName ? (
                         <SupplierBadge color={it.supplierColor} name={it.supplierShortName} />
@@ -381,7 +373,6 @@ const GroupSection = memo(function GroupSection({
                   </div>
                 </div>
               ))}
-            </div>
           </div>
         </>
       )}

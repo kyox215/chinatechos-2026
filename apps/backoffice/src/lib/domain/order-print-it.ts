@@ -28,6 +28,11 @@ export type OrderPrintPayload = {
   internalTag: string | null;
   faultPriceLines?: FaultPriceLinePrint[];
   customerSignature?: string | null;
+  isRework?: boolean;
+  originalPublicNo?: string | null;
+  originalCompletedAt?: string | null;
+  originalWarrantyText?: string | null;
+  warrantyRemainingIt?: string | null;
 };
 
 export function formatEURPrint(value: number | null): string {
@@ -84,6 +89,31 @@ export function mapWarrantyCnToIt(warrantyTextCn: string | null | undefined): st
   if (s === "12个月") return "12 mesi sulla parte riparata/sostituita";
   if (!s) return "Come da accordi in negozio";
   return s;
+}
+
+export function formatWarrantyRemainingIt(remainingDays: number): string {
+  if (remainingDays > 0) {
+    return `Valida — ${remainingDays} giorni rimanenti`;
+  }
+  return `Scaduta da ${Math.abs(remainingDays)} giorni`;
+}
+
+export function mapStatusToIt(status: string): string {
+  const map: Record<string, string> = {
+    rework: "In riparazione (garanzia)",
+    new: "Nuovo",
+    diagnosing: "In diagnosi",
+    quoted: "Preventivato",
+    waiting_approval: "In attesa di conferma",
+    repairing: "In riparazione",
+    parts_ordered: "Ricambi ordinati",
+    parts_arrived: "Ricambi arrivati",
+    repaired: "Riparato",
+    notified: "Cliente avvisato",
+    completed: "Completato",
+    cancelled: "Annullato",
+  };
+  return map[status] ?? status;
 }
 
 export const WARRANTY_TERMS_IT: string[] = [

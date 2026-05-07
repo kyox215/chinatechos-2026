@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
-import { getNextActions, TERMINAL_STATUSES } from "@/lib/domain/order-status";
+import { getNextActions } from "@/lib/domain/order-status";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
 
 type SupplierOption = { id: string; short_name: string; color: string };
@@ -115,10 +115,6 @@ export function StatusPopover({
     const action = [...primary, ...secondary].find((a) => a.toStatus === "parts_ordered");
     if (!action) return;
     handleTransition(action.toStatus, action.confirmText, selectedSupplier || undefined);
-  }
-
-  if (TERMINAL_STATUSES.has(status)) {
-    return <OrderStatusBadge status={status} />;
   }
 
   const actionButtons = (mobile: boolean) => (

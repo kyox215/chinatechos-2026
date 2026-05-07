@@ -10,10 +10,20 @@ import {
   translateAccessoryTagsToIt,
 } from "@/lib/domain/order-print-it";
 
+function fmtDateOnly(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("it-IT", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+}
+
 export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
   const p = props.payload;
-  const title =
-    p.variant === "draft"
+  const title = p.isRework
+    ? "Ricevuta riparazione in garanzia"
+    : p.variant === "draft"
       ? "Bozza ordine di riparazione"
       : "Ricevuta ordine di riparazione";
 
@@ -42,6 +52,16 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
               <Row label="Modello" value={p.model} />
               <Row label="IMEI / Seriale" value={p.serialOrImei?.trim() || "—"} />
             </section>
+
+            {p.isRework && (
+              <section className="border-t border-neutral-200 pt-1">
+                <h2 className="mb-0.5 text-[9px] font-semibold">Riparazione in garanzia</h2>
+                <Row label="Ordine originale" value={p.originalPublicNo?.trim() || "—"} />
+                <Row label="Data completamento originale" value={fmtDateOnly(p.originalCompletedAt)} />
+                <Row label="Durata garanzia originale" value={mapWarrantyCnToIt(p.originalWarrantyText)} />
+                <Row label="Stato garanzia" value={p.warrantyRemainingIt || "—"} />
+              </section>
+            )}
 
             <section className="border-t border-neutral-200 pt-1">
               <h2 className="mb-0.5 text-[9px] font-semibold">Intervento richiesto</h2>

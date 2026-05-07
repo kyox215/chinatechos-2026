@@ -1,4 +1,5 @@
 export type RepairOrderStatus =
+  | "rework"
   | "new"
   | "diagnosing"
   | "quoted"
@@ -20,6 +21,12 @@ type StatusPresentation = {
 };
 
 const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
+  rework: {
+    label: "返修",
+    dotColor: "bg-rose-500",
+    textColor: "text-rose-700",
+    rowBg: "bg-rose-50",
+  },
   new: {
     label: "接单",
     dotColor: "bg-neutral-400",

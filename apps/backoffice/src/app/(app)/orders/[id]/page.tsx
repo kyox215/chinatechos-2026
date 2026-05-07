@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CreateReworkButton } from "@/components/orders/CreateReworkButton";
 import { DeliverButton } from "@/components/orders/DeliverButton";
 import { FinanceCard } from "@/components/orders/FinanceCard";
 import { NotifyCustomerButton } from "@/components/orders/NotifyCustomerButton";
 import { OrderInfoCard } from "@/components/orders/OrderInfoCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
+import { ReworkInfoBanner } from "@/components/orders/ReworkInfoBanner";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
 import { SignatureSection } from "@/components/orders/SignatureSection";
@@ -30,8 +32,8 @@ export default async function OrderDetailPage(props: {
       }
     : undefined;
 
-  const isTerminal = order.status === "completed" || order.status === "cancelled";
-  const showSignature = ["repaired", "notified", "completed"].includes(order.status);
+  const isTerminal = false;
+  const showSignature = ["repaired", "notified", "completed", "rework"].includes(order.status);
 
   const showCancelBanner = order.status === "cancelled" && Boolean(order.cancelReason);
   const showPauseBanner = Boolean(order.pauseReason);
@@ -74,6 +76,10 @@ export default async function OrderDetailPage(props: {
                 technicianName={order.technicianName}
                 warrantyText={order.warrantyText}
                 defaultPrintOptions={defaultPrintOptions}
+                isRework={!!order.originalOrderId}
+                originalPublicNo={order.originalOrder?.publicNo}
+                originalCompletedAt={order.originalOrder?.completedAt}
+                originalWarrantyText={order.originalOrder?.warrantyText}
               />
             </div>
             <div className="mt-2 text-sm">
@@ -84,6 +90,16 @@ export default async function OrderDetailPage(props: {
           </div>
         </div>
       </div>
+
+      {/* Rework info banner */}
+      {order.originalOrderId && order.originalOrder && (
+        <ReworkInfoBanner
+          originalOrderId={order.originalOrderId}
+          originalPublicNo={order.originalOrder.publicNo}
+          originalCompletedAt={order.originalOrder.completedAt}
+          originalWarrantyText={order.originalOrder.warrantyText}
+        />
+      )}
 
       {/* Banners */}
       {hasBanner ? (
@@ -163,6 +179,17 @@ export default async function OrderDetailPage(props: {
                     deviceLabel={[order.device?.brand, order.device?.model].filter(Boolean).join(" ")}
                     issueDescription={order.issueDescription}
                     quotationAmount={order.quotationAmount}
+                  />
+                )}
+                {order.status === "completed" && order.customer?.phoneE164 && (
+                  <CreateReworkButton
+                    orderId={order.id}
+                    customerPhone={order.customer.phoneE164}
+                    customerName={order.customer.name}
+                    brand={order.device?.brand ?? ""}
+                    model={order.device?.model ?? ""}
+                    serialOrImei={order.device?.serialOrImei ?? null}
+                    warrantyText={order.warrantyText}
                   />
                 )}
               </div>

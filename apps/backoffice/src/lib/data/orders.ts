@@ -22,6 +22,7 @@ export type OrderListItem = {
   supplierId: string | null;
   supplierShortName: string | null;
   supplierColor: string | null;
+  originalOrderId: string | null;
 };
 
 export type OrderListFilters = {
@@ -66,6 +67,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       completed_at,
       technician_name,
       supplier_id,
+      original_order_id,
       customers:customer_id ( name, phone_e164 ),
       devices:device_id ( brand, model, serial_or_imei ),
       suppliers:supplier_id ( short_name, color )
@@ -165,6 +167,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
       supplierId: row.supplier_id ?? null,
       supplierShortName: supplier?.short_name ?? null,
       supplierColor: supplier?.color ?? null,
+      originalOrderId: (row as Record<string, unknown>).original_order_id as string | null ?? null,
     };
   });
 

@@ -170,6 +170,7 @@ export function OrdersSearchControls(props: Props) {
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
               <select className="ui-input" onChange={(e) => setStatus(e.target.value)} value={status}>
                 <option value="all">状态：全部</option>
+                <option value="rework">返修</option>
                 <option value="new">接单</option>
                 <option value="diagnosing">检测中</option>
                 <option value="quoted">已报价</option>

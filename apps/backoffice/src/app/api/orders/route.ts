@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
   const technicianName = String(body.technicianName ?? "");
   const internalTag = String(body.internalTag ?? "");
   const warrantyText = String(body.warrantyText ?? "6个月");
+  const originalOrderId = body.originalOrderId ? String(body.originalOrderId) : undefined;
+  const initialStatus = body.initialStatus ? String(body.initialStatus) : undefined;
+  const isRework = initialStatus === "rework";
+
   if (!customerPhone.trim()) {
     return NextResponse.json({ error: "客户电话不能为空" }, { status: 400 });
   }
@@ -40,7 +44,7 @@ export async function POST(request: NextRequest) {
   if (!model.trim()) {
     return NextResponse.json({ error: "设备型号不能为空" }, { status: 400 });
   }
-  if (!issueDescription.trim()) {
+  if (!isRework && !issueDescription.trim()) {
     return NextResponse.json({ error: "问题描述不能为空" }, { status: 400 });
   }
 
@@ -52,12 +56,14 @@ export async function POST(request: NextRequest) {
       brand: brand.trim(),
       model: model.trim(),
       serialOrImei: serialOrImei.trim() || undefined,
-      issueDescription: issueDescription.trim(),
+      issueDescription: issueDescription.trim() || (isRework ? "返修" : ""),
       quotationAmount,
       depositAmount,
       technicianName: technicianName.trim() || undefined,
       internalTag: internalTag.trim() || undefined,
       warrantyText: warrantyText.trim() || undefined,
+      originalOrderId,
+      initialStatus,
     });
 
     return NextResponse.json({ ok: true, ...result }, { status: 201 });

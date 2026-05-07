@@ -24,6 +24,12 @@ export type OrderDetail = {
   customerSignature: string | null;
   contactPhones: string[];
   faultPrices: Record<string, string>;
+  originalOrderId: string | null;
+  originalOrder: {
+    publicNo: string;
+    completedAt: string | null;
+    warrantyText: string | null;
+  } | null;
   completedAt: string | null;
   deliveredAt: string | null;
   createdAt: string;
@@ -78,6 +84,7 @@ const ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES = `
       customer_signature,
       contact_phones,
       fault_prices,
+      original_order_id,
       completed_at,
       delivered_at,
       created_at,
@@ -108,6 +115,7 @@ const ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES_NO_FAULT = `
       cancel_reason,
       customer_signature,
       contact_phones,
+      original_order_id,
       completed_at,
       delivered_at,
       created_at,
@@ -137,6 +145,7 @@ const ORDER_DETAIL_SELECT_WITH_SIGNATURE = `
       pause_reason,
       cancel_reason,
       customer_signature,
+      original_order_id,
       completed_at,
       delivered_at,
       created_at,
@@ -165,6 +174,7 @@ const ORDER_DETAIL_SELECT_FALLBACK = `
       warranty_text,
       pause_reason,
       cancel_reason,
+      original_order_id,
       completed_at,
       delivered_at,
       created_at,
@@ -254,6 +264,23 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   const device = Array.isArray(data.devices) ? data.devices[0] : data.devices;
   const supplier = Array.isArray(data.suppliers) ? data.suppliers[0] : data.suppliers;
 
+  let originalOrder: OrderDetail["originalOrder"] = null;
+  const origId = data.original_order_id as string | null | undefined;
+  if (origId) {
+    const origRes = await supabase
+      .from("repair_orders")
+      .select("public_no, completed_at, warranty_text")
+      .eq("id", origId)
+      .single();
+    if (origRes.data) {
+      originalOrder = {
+        publicNo: origRes.data.public_no,
+        completedAt: origRes.data.completed_at,
+        warrantyText: origRes.data.warranty_text,
+      };
+    }
+  }
+
   return {
     id: data.id,
     publicNo: data.public_no,
@@ -286,6 +313,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
               .map(([k, v]) => [k, String(v)]),
           )
         : {},
+    originalOrderId: origId ?? null,
+    originalOrder,
     completedAt: data.completed_at,
     deliveredAt: data.delivered_at,
     createdAt: data.created_at,

@@ -16,6 +16,8 @@ export type CreateOrderInput = {
   technicianName?: string;
   internalTag?: string;
   warrantyText?: string;
+  originalOrderId?: string;
+  initialStatus?: string;
 };
 
 export async function createOrder(input: CreateOrderInput) {
@@ -109,23 +111,28 @@ export async function createOrder(input: CreateOrderInput) {
   const balance = Math.max(0, quotation - deposit);
 
   // Create repair order
+  const insertData: Record<string, unknown> = {
+    store_id: storeId,
+    public_no: publicNo,
+    order_type: input.orderType ?? "dropoff_repair",
+    status: input.initialStatus ?? "new",
+    customer_id: customerId,
+    device_id: deviceId,
+    issue_description: input.issueDescription,
+    quotation_amount: input.quotationAmount ?? null,
+    deposit_amount: input.depositAmount ?? null,
+    balance_amount: balance || null,
+    technician_name: input.technicianName || null,
+    internal_tag: input.internalTag || null,
+    warranty_text: input.warrantyText || "6个月",
+  };
+  if (input.originalOrderId) {
+    insertData.original_order_id = input.originalOrderId;
+  }
+
   const orderRes = await supabase
     .from("repair_orders")
-    .insert({
-      store_id: storeId,
-      public_no: publicNo,
-      order_type: input.orderType ?? "dropoff_repair",
-      status: "new",
-      customer_id: customerId,
-      device_id: deviceId,
-      issue_description: input.issueDescription,
-      quotation_amount: input.quotationAmount ?? null,
-      deposit_amount: input.depositAmount ?? null,
-      balance_amount: balance || null,
-      technician_name: input.technicianName || null,
-      internal_tag: input.internalTag || null,
-      warranty_text: input.warrantyText || "6个月",
-    })
+    .insert(insertData)
     .select("id, public_no, status")
     .single();
 

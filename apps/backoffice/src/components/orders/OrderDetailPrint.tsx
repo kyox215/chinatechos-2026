@@ -3,11 +3,13 @@
 import { PrintOrderButton } from "@/components/orders/PrintOrderButton";
 import type { PrintOptions } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
+import { formatWarrantyRemainingIt } from "@/lib/domain/order-print-it";
 import {
   buildFaultPriceLinesFromStoredIssue,
   issueSummaryForPrintIt,
 } from "@/lib/domain/fault-print-it";
 import { extractFaultExtraNote } from "@/lib/domain/fault-types";
+import { calcWarranty } from "@/lib/domain/warranty-calc";
 
 export type OrderDetailPrintProps = {
   publicNo: string;
@@ -27,6 +29,10 @@ export type OrderDetailPrintProps = {
   internalTag: string | null;
   customerSignature?: string | null;
   defaultPrintOptions?: PrintOptions;
+  isRework?: boolean;
+  originalPublicNo?: string | null;
+  originalCompletedAt?: string | null;
+  originalWarrantyText?: string | null;
 };
 
 export function OrderDetailPrint(props: OrderDetailPrintProps) {
@@ -49,6 +55,12 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     interventionFreeNote = stripped || null;
   }
 
+  let warrantyRemainingIt: string | null = null;
+  if (props.isRework && props.originalCompletedAt && props.originalWarrantyText) {
+    const w = calcWarranty(props.originalCompletedAt, props.originalWarrantyText);
+    if (w) warrantyRemainingIt = formatWarrantyRemainingIt(w.remainingDays);
+  }
+
   const payload: OrderPrintPayload = {
     variant: "saved",
     publicNo: props.publicNo,
@@ -69,6 +81,11 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
     internalTag: props.internalTag,
     faultPriceLines: faultPriceLines.length > 0 ? faultPriceLines : undefined,
     customerSignature: props.customerSignature,
+    isRework: props.isRework ?? false,
+    originalPublicNo: props.originalPublicNo ?? null,
+    originalCompletedAt: props.originalCompletedAt ?? null,
+    originalWarrantyText: props.originalWarrantyText ?? null,
+    warrantyRemainingIt,
   };
 
   return <PrintOrderButton payload={payload} defaultPrintOptions={props.defaultPrintOptions} />;

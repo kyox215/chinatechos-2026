@@ -16,6 +16,7 @@ const ORDER_FIELDS = [
   "customer_signature",
   "contact_phones",
   "fault_prices",
+  "original_order_id",
 ] as const;
 
 const FAULT_PRICE_KEYS = new Set([
@@ -71,6 +72,7 @@ export async function PATCH(
   if (rawBody.customerSignature !== undefined) body.customer_signature = rawBody.customerSignature;
   if (rawBody.contactPhones !== undefined) body.contact_phones = rawBody.contactPhones;
   if (rawBody.faultPrices !== undefined) body.fault_prices = rawBody.faultPrices;
+  if (rawBody.originalOrderId !== undefined) body.original_order_id = rawBody.originalOrderId;
   if (rawBody.supplierId !== undefined) body.supplier_id = rawBody.supplierId;
 
   const supabase = createSupabaseServerClient();
@@ -90,10 +92,6 @@ export async function PATCH(
   const isSignatureOnly =
     body.customer_signature !== undefined &&
     Object.keys(rawBody).every((k) => k === "customerSignature" || k === "operatorName");
-
-  if ((current.data.status === "completed" || current.data.status === "cancelled") && !isSignatureOnly) {
-    return NextResponse.json({ error: "已完成或已取消的工单不可编辑" }, { status: 400 });
-  }
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const updatedFields: string[] = [];
@@ -236,24 +234,20 @@ export async function PATCH(
   }
 
   if (Object.keys(patch).length > 1) {
-    const optionalColumns = ["fault_prices", "contact_phones", "customer_signature"] as const;
+    const optionalColumns = ["fault_prices", "contact_phones", "customer_signature", "original_order_id"] as const;
 
     let activePatch = { ...patch };
     let lastError: string | null = null;
 
     for (let attempt = 0; attempt <= optionalColumns.length; attempt++) {
-      let query = supabase
+      const updateRes = await supabase
         .from("repair_orders")
         .update(activePatch)
         .eq("id", params.id)
         .eq("store_id", storeId)
-        .is("deleted_at", null);
-
-      if (!isSignatureOnly) {
-        query = query.not("status", "in", "(completed,cancelled)");
-      }
-
-      const updateRes = await query.select("id, status").single();
+        .is("deleted_at", null)
+        .select("id, status")
+        .single();
 
       if (!updateRes.error) {
         lastError = null;
