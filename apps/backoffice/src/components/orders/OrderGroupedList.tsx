@@ -19,7 +19,7 @@ type StatusGroup = {
 };
 
 const DESKTOP_GRID =
-  "grid grid-cols-[32px_92px_118px_minmax(128px,1fr)_72px_150px_84px_72px_124px] gap-x-1.5";
+  "grid grid-cols-[32px_92px_128px_minmax(220px,1fr)_150px_92px_72px_180px] gap-x-1.5";
 
 const NEW_STATUSES = new Set(["new"]);
 const PROCESSING_STATUSES = new Set(["diagnosing", "quoted", "waiting_approval", "parts_ordered", "parts_arrived"]);
@@ -240,11 +240,12 @@ const GroupSection = memo(function GroupSection({
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex items-center justify-between gap-3">
                       <StatusPopover orderId={it.id} status={it.status} />
-                      <div className="shrink-0 text-sm font-semibold text-neutral-900">{it.publicNo}</div>
+                      <div className="shrink-0 text-sm font-semibold text-neutral-900">{it.customerPhone || "-"}</div>
                     </div>
-                    <div className="text-sm text-neutral-900">
-                      {(it.customerName ?? "未命名客户") + (it.deviceLabel ? ` · ${it.deviceLabel}` : "")}
+                    <div className="truncate text-base font-semibold text-neutral-900">
+                      {it.deviceLabel || "-"}
                     </div>
+                    <div className="text-xs text-neutral-500">{it.customerName ?? "-"}</div>
                     <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
                     <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
                       <div>电话：{it.customerPhone || "-"}</div>
@@ -280,7 +281,8 @@ const GroupSection = memo(function GroupSection({
                         balanceAmount: it.balanceAmount,
                       }}
                     />
-                    <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
                       <Link
                         className="inline-flex h-9 items-center rounded-xl border border-border bg-surface px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
                         href={`/orders/${it.id}`}
@@ -299,9 +301,8 @@ const GroupSection = memo(function GroupSection({
               <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-neutral-500`}>
                 <div />
                 <div>状态</div>
-                <div>工单号</div>
+                <div>电话</div>
                 <div>客户 / 设备</div>
-                <div>时间</div>
                 <div>财务</div>
                 <div>供应商</div>
                 <div>技师</div>
@@ -330,15 +331,14 @@ const GroupSection = memo(function GroupSection({
                   <div className="flex items-start pt-1">
                     <StatusPopover orderId={it.id} status={it.status} />
                   </div>
-                  <div className="pt-1 text-xs font-medium leading-snug text-neutral-900">{it.publicNo}</div>
+                  <div className="pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
                   <div className="min-w-0 space-y-0.5 pr-2 pt-1">
-                    <div className="truncate text-sm font-medium text-neutral-900">
-                      {it.customerName ?? "未命名客户"}
-                      {it.deviceLabel ? <span className="font-normal text-neutral-500"> · {it.deviceLabel}</span> : null}
+                    <div className="truncate text-base font-semibold text-neutral-900">
+                      {it.deviceLabel || "-"}
                     </div>
+                    <div className="truncate text-xs text-neutral-500">{it.customerName ?? "-"}</div>
                     <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
                   </div>
-                  <div className="whitespace-nowrap pt-1 text-xs text-neutral-500">{fmtDate(it.createdAt)}</div>
                   <div className="min-w-0">
                     <OrderListMoneyCell
                       money={{
@@ -370,7 +370,8 @@ const GroupSection = memo(function GroupSection({
                     </button>
                   </div>
                   <div className="truncate pt-1 text-xs text-neutral-500">{it.technicianName ?? "-"}</div>
-                  <div className="flex items-center justify-end pt-1">
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <span className="whitespace-nowrap text-xs text-neutral-500">{fmtDate(it.createdAt)}</span>
                     <Link
                       className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium leading-7 text-neutral-600 hover:bg-muted"
                       href={`/orders/${it.id}`}
