@@ -45,14 +45,31 @@ export function SettingsStoreLoadFailure(props: Props) {
       ) : null}
 
       {reason === "schema_mismatch" ? (
-        <ul className="list-inside list-disc space-y-1 text-neutral-700">
-          <li>
-            数据库 <code className="text-xs">stores</code> 表缺少应用所需列（例如{" "}
-            <code className="text-xs">print_paper</code> 等）。请在 Supabase SQL Editor 执行迁移{" "}
-            <code className="text-xs">supabase/migrations/20260507_add_store_print_defaults.sql</code>
-            ，或重新应用完整 <code className="text-xs">supabase/schema.sql</code>（新建库推荐）。
-          </li>
-        </ul>
+        <div className="space-y-3 text-neutral-700">
+          <p>
+            数据库 <code className="text-xs">stores</code> 表结构与当前应用不一致（常见缺少{" "}
+            <code className="text-xs">order_ui_config</code>、<code className="text-xs">print_paper</code>{" "}
+            等列）。请在 Supabase <strong>SQL Editor</strong> 按顺序执行仓库中的迁移（整文件粘贴运行）：
+          </p>
+          <ol className="list-inside list-decimal space-y-2 pl-1">
+            <li>
+              <code className="text-xs">supabase/migrations/20260508_add_order_ui_config.sql</code>（
+              <code className="text-xs">order_ui_config</code>）
+            </li>
+            <li>
+              <code className="text-xs">supabase/migrations/20260507_add_store_print_defaults.sql</code>（打印相关列）
+            </li>
+          </ol>
+          <p>
+            若为<strong>新建库</strong>，也可一次性执行根目录 <code className="text-xs">supabase/schema.sql</code>。
+          </p>
+          <p className="text-neutral-600">
+            若报错信息仅提及 <code className="text-xs">order_ui_config</code>，可先单独执行：
+          </p>
+          <p className="rounded-lg border border-border bg-surface px-3 py-2 font-mono text-xs text-neutral-800">
+            alter table public.stores add column if not exists order_ui_config jsonb;
+          </p>
+        </div>
       ) : null}
 
       {reason === "supabase_error" ? (
