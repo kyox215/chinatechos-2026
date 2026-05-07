@@ -48,16 +48,14 @@ function macroGroups(items: OrderListItem[], resolved: ResolvedOrderUi): StatusG
     const statusSet = new Set(spec.statuses);
     const raw = items.filter((it) => statusSet.has(it.status));
     for (const it of raw) assigned.add(it.id);
-    if (raw.length > 0) {
-      groups.push({
-        key: spec.id,
-        label: spec.label,
-        items: sortOrderItemsInGroup(raw, resolved),
-        defaultOpen: spec.defaultOpenDesktop,
-        titleColor: spec.titleColor,
-        bgColor: spec.bgColor,
-      });
-    }
+    groups.push({
+      key: spec.id,
+      label: spec.label,
+      items: sortOrderItemsInGroup(raw, resolved),
+      defaultOpen: spec.defaultOpenDesktop,
+      titleColor: spec.titleColor,
+      bgColor: spec.bgColor,
+    });
   }
   const misc = items.filter((it) => !assigned.has(it.id));
   if (misc.length > 0) {
@@ -150,14 +148,6 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
     } finally {
       setBatchPending(false);
     }
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="rounded-xl border border-border px-3 py-8 text-sm text-neutral-500">
-        暂无工单数据（请先配置 Supabase 并写入 repair_orders）。
-      </div>
-    );
   }
 
   return (
@@ -272,6 +262,11 @@ const GroupSection = memo(function GroupSection({
       </div>
 
       {open && (
+        group.items.length === 0 ? (
+          <div className="border-t border-border bg-surface-2 px-3 py-8 text-center text-sm text-neutral-500">
+            本分组暂无工单
+          </div>
+        ) : (
         <>
           <div className="space-y-1.5 border-t border-border bg-surface-2 p-2.5 lg:hidden">
             {group.items.map((it) => {
@@ -463,6 +458,7 @@ const GroupSection = memo(function GroupSection({
               ))}
           </div>
         </>
+        )
       )}
     </div>
   );
