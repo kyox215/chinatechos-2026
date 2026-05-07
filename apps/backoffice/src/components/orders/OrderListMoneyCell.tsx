@@ -5,6 +5,8 @@ type Props = {
   money: OrderFinancialSnapshot;
   /** Single-line / wrap-friendly summary for dense mobile cards */
   compact?: boolean;
+  /** Extra classes on the compact row (e.g. justify-end for right column layout) */
+  className?: string;
 };
 
 function MoneyRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
@@ -17,13 +19,15 @@ function MoneyRow({ label, value, valueColor }: { label: string; value: string; 
 }
 
 /** Full-label rows with semantic color for receivable; matches FinanceCard style. */
-export function OrderListMoneyCell({ money, compact }: Props) {
+export function OrderListMoneyCell({ money, compact, className }: Props) {
   const hasReceivable = money.balanceAmount != null && money.balanceAmount > 0;
   const balanceCls = hasReceivable ? "text-rose-700 font-medium" : "text-neutral-900";
 
   if (compact) {
     return (
-      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] leading-tight tabular-nums">
+      <div
+        className={`flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] leading-tight tabular-nums ${className ?? ""}`}
+      >
         <span className="text-neutral-500">总金额</span>
         <span className="text-neutral-900">{formatOrderEUR(money.quotationAmount)}</span>
         <span className="text-neutral-300">·</span>

@@ -250,7 +250,9 @@ const GroupSection = memo(function GroupSection({
       {open && (
         <>
           <div className="space-y-1.5 border-t border-border bg-surface-2 p-2.5 lg:hidden">
-            {group.items.map((it) => (
+            {group.items.map((it) => {
+              const phoneHref = telHrefFromDisplay(it.customerPhone);
+              return (
               <article
                 key={it.id}
                 className={`rounded-xl border border-border bg-surface px-2.5 py-2 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : ""}`}
@@ -262,61 +264,76 @@ const GroupSection = memo(function GroupSection({
                     onChange={() => onToggleSelect(it.id)}
                     type="checkbox"
                   />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 gap-2">
+                    <div className="min-w-0 flex-1 space-y-1.5">
                       <StatusPopover orderId={it.id} status={it.status} />
-                      <div className="shrink-0 text-xs tabular-nums text-neutral-600">{it.customerPhone || "-"}</div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <div className="min-w-0 truncate text-sm font-semibold text-neutral-900">
-                        {it.deviceLabel || "-"}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="min-w-0 truncate text-sm font-semibold text-neutral-900">
+                          {it.deviceLabel || "-"}
+                        </div>
+                        <ReworkWarrantyBadges item={it} />
                       </div>
-                      <ReworkWarrantyBadges item={it} />
-                    </div>
-                    <div className="text-[11px] text-neutral-500">{it.customerName ?? "-"}</div>
-                    <div className="break-words text-[11px] leading-snug text-neutral-400 line-clamp-1">{it.issue || "-"}</div>
-                    <div className="space-y-1 text-[11px] leading-snug text-neutral-600">
-                      <div className="flex min-w-0 gap-1.5">
-                        <span className="shrink-0 text-neutral-400">技师</span>
-                        <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
+                      <div className="text-[11px] text-neutral-500">{it.customerName ?? "-"}</div>
+                      <div className="break-words text-[11px] leading-snug text-neutral-400 line-clamp-1">{it.issue || "-"}</div>
+                      <div className="space-y-1 text-[11px] leading-snug text-neutral-600">
+                        <div className="flex min-w-0 gap-1.5">
+                          <span className="shrink-0 text-neutral-400">技师</span>
+                          <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
+                        </div>
+                        <div className="flex min-w-0 items-start gap-1.5">
+                          <span className="mt-0.5 shrink-0 text-neutral-400">供应商</span>
+                          <button
+                            className={`inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
+                            title="点击选择供应商"
+                            type="button"
+                            onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
+                          >
+                            {it.supplierShortName ? (
+                              <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
+                            ) : (
+                              <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex min-w-0 items-start gap-1.5">
-                        <span className="mt-0.5 shrink-0 text-neutral-400">供应商</span>
-                        <button
-                          className={`inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
-                          title="点击选择供应商"
-                          type="button"
-                          onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
+                    </div>
+                    <div className="flex w-[min(42%,9rem)] min-w-[6rem] shrink-0 flex-col items-end gap-1 border-l border-border/70 pl-2">
+                      {phoneHref ? (
+                        <a
+                          className="max-w-full text-right text-sm font-semibold tabular-nums leading-snug text-neutral-900 underline-offset-2 hover:underline active:opacity-80"
+                          href={phoneHref}
                         >
-                          {it.supplierShortName ? (
-                            <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
-                          ) : (
-                            <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
-                          )}
-                        </button>
+                          {it.customerPhone || "-"}
+                        </a>
+                      ) : (
+                        <span className="max-w-full text-right text-sm font-semibold tabular-nums leading-snug text-neutral-900">
+                          {it.customerPhone || "-"}
+                        </span>
+                      )}
+                      <OrderListMoneyCell
+                        className="justify-end"
+                        compact
+                        money={{
+                          quotationAmount: it.quotationAmount,
+                          depositAmount: it.depositAmount,
+                          balanceAmount: it.balanceAmount,
+                        }}
+                      />
+                      <div className="mt-auto flex w-full flex-col items-end gap-1 border-t border-border/60 pt-1">
+                        <span className="text-[10px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
+                        <Link
+                          className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
+                          href={`/orders/${it.id}`}
+                        >
+                          详情
+                        </Link>
                       </div>
-                    </div>
-                    <OrderListMoneyCell
-                      compact
-                      money={{
-                        quotationAmount: it.quotationAmount,
-                        depositAmount: it.depositAmount,
-                        balanceAmount: it.balanceAmount,
-                      }}
-                    />
-                    <div className="flex items-center justify-between gap-2 pt-0.5">
-                      <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
-                      <Link
-                        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
-                        href={`/orders/${it.id}`}
-                      >
-                        详情
-                      </Link>
                     </div>
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
 
           <div className="hidden lg:block">
@@ -408,4 +425,13 @@ const GroupSection = memo(function GroupSection({
 
 function fmtDate(v: string) {
   return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(v));
+}
+
+/** Build tel: href when the stored phone looks dialable (digits, optional leading +). */
+function telHrefFromDisplay(phone: string | null | undefined): string | null {
+  const raw = phone?.trim();
+  if (!raw || raw === "-") return null;
+  const normalized = raw.replace(/\s/g, "");
+  if (!/^\+?[0-9]{8,}$/.test(normalized)) return null;
+  return `tel:${normalized}`;
 }
