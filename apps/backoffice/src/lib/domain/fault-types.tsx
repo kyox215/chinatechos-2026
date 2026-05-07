@@ -177,11 +177,15 @@ export function extractFaultExtraNote(issue: string): string {
   for (const ft of FAULT_TYPES) {
     const selected = map.get(ft.key);
     if (!selected || selected.length === 0) continue;
+    const escaped = ft.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (ft.subTypes && !selected.includes("_self")) {
-      const escaped = ft.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      remaining = remaining.replace(new RegExp(escaped + "\\s*\\([^)]*\\)"), "");
+      // (?:[^()]*|\([^()]*\))* handles one level of nested parens (e.g. 扬声器(上扬声器(听筒)))
+      remaining = remaining.replace(
+        new RegExp(escaped + "\\s*\\((?:[^()]*|\\([^()]*\\))*\\)", "g"),
+        "",
+      );
     } else {
-      remaining = remaining.replace(ft.label, "");
+      remaining = remaining.replace(new RegExp(escaped, "g"), "");
     }
   }
   return remaining

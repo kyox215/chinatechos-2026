@@ -17,6 +17,7 @@ export type OrderDetailPrintProps = {
   model: string;
   serialOrImei: string | null;
   issueDescription: string;
+  faultPrices: Record<string, string>;
   diagnosisResult: string | null;
   quotationAmount: number | null;
   depositAmount: number | null;
@@ -32,7 +33,7 @@ export function OrderDetailPrint(props: OrderDetailPrintProps) {
   const { summaryIt } = issueSummaryForPrintIt(props.issueDescription);
   const faultPriceLines = buildFaultPriceLinesFromStoredIssue(
     props.issueDescription,
-    props.quotationAmount,
+    props.faultPrices,
   );
   let interventionFreeNote: string | null =
     extractFaultExtraNote(props.issueDescription).trim() || null;

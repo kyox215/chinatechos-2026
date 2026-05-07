@@ -15,7 +15,23 @@ const ORDER_FIELDS = [
   "issue_description",
   "customer_signature",
   "contact_phones",
+  "fault_prices",
 ] as const;
+
+const FAULT_PRICE_KEYS = new Set([
+  "screen",
+  "battery",
+  "charging",
+  "camera",
+  "water",
+  "motherboard",
+  "system",
+  "backcover",
+  "faceid",
+  "speaker",
+  "mic",
+  "buttons",
+]);
 
 function parseMoney(value: unknown): number | null {
   if (value == null) return null;
@@ -54,6 +70,7 @@ export async function PATCH(
   if (rawBody.serialOrImei !== undefined) body.serial_or_imei = rawBody.serialOrImei;
   if (rawBody.customerSignature !== undefined) body.customer_signature = rawBody.customerSignature;
   if (rawBody.contactPhones !== undefined) body.contact_phones = rawBody.contactPhones;
+  if (rawBody.faultPrices !== undefined) body.fault_prices = rawBody.faultPrices;
   if (rawBody.supplierId !== undefined) body.supplier_id = rawBody.supplierId;
 
   const supabase = createSupabaseServerClient();
@@ -109,6 +126,25 @@ export async function PATCH(
           patch[field] = Array.from(new Set(normalized));
         } else {
           return NextResponse.json({ error: "contactPhones 必须是字符串数组" }, { status: 400 });
+        }
+      } else if (field === "fault_prices") {
+        const raw = body.fault_prices;
+        if (raw == null) {
+          patch[field] = {};
+        } else if (typeof raw === "object" && !Array.isArray(raw)) {
+          const entries = Object.entries(raw as Record<string, unknown>);
+          const cleaned: Record<string, string> = {};
+          for (const [key, value] of entries) {
+            if (!FAULT_PRICE_KEYS.has(key)) continue;
+            const s = String(value ?? "").trim();
+            if (!s) continue;
+            const n = Number(s);
+            if (!Number.isFinite(n) || n < 0) continue;
+            cleaned[key] = n.toFixed(2);
+          }
+          patch[field] = cleaned;
+        } else {
+          return NextResponse.json({ error: "faultPrices 必须是对象" }, { status: 400 });
         }
       } else {
         patch[field] = body[field] ?? null;

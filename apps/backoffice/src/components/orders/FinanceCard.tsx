@@ -10,6 +10,7 @@ import { SendQuoteModal } from "@/components/orders/SendQuoteModal";
 type Props = {
   orderId: string;
   issueDescription: string;
+  faultPrices: Record<string, string>;
   quotationAmount: number | null;
   depositAmount: number | null;
   balanceAmount: number | null;
@@ -22,7 +23,7 @@ type Props = {
 
 function pricesFromIssueAndQuotation(
   issueDescription: string,
-  _quotationAmount: number | null,
+  faultPrices: Record<string, string>,
 ): Record<string, string> {
   const faultMap = parseFaultsFromIssue(issueDescription);
   const lines = Array.from(faultMap.entries()).map(([key, subs]) => {
@@ -34,7 +35,7 @@ function pricesFromIssueAndQuotation(
     return { key, label: subLabels.length > 0 ? `${label}(${subLabels.join(", ")})` : label };
   });
   const init: Record<string, string> = {};
-  lines.forEach((f) => { init[f.key] = ""; });
+  lines.forEach((f) => { init[f.key] = faultPrices[f.key] ?? ""; });
   return init;
 }
 
@@ -51,7 +52,7 @@ export function FinanceCard(props: Props) {
   });
 
   const [prices, setPrices] = useState<Record<string, string>>(() =>
-    pricesFromIssueAndQuotation(props.issueDescription, props.quotationAmount),
+    pricesFromIssueAndQuotation(props.issueDescription, props.faultPrices),
   );
   const [deposit, setDeposit] = useState(props.depositAmount != null ? String(props.depositAmount) : "");
   const [isPaid, setIsPaid] = useState(props.isPaid);
@@ -59,8 +60,8 @@ export function FinanceCard(props: Props) {
 
   useEffect(() => {
     if (editing) return;
-    setPrices(pricesFromIssueAndQuotation(props.issueDescription, props.quotationAmount));
-  }, [props.issueDescription, props.quotationAmount, editing]);
+    setPrices(pricesFromIssueAndQuotation(props.issueDescription, props.faultPrices));
+  }, [props.issueDescription, props.faultPrices, editing]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSendModal, setShowSendModal] = useState(false);
@@ -87,6 +88,17 @@ export function FinanceCard(props: Props) {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "保存失败");
+
+      const saveFaultPricesRes = await fetch(`/api/orders/${props.orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          faultPrices: prices,
+        }),
+      });
+      const saveFaultPricesData = (await saveFaultPricesRes.json()) as { error?: string };
+      if (!saveFaultPricesRes.ok) throw new Error(saveFaultPricesData.error ?? "保存分项价格失败");
+
       setEditing(false);
       router.refresh();
     } catch (e) {

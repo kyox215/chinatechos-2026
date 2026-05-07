@@ -23,6 +23,7 @@ export type OrderDetail = {
   cancelReason: string | null;
   customerSignature: string | null;
   contactPhones: string[];
+  faultPrices: Record<string, string>;
   completedAt: string | null;
   deliveredAt: string | null;
   createdAt: string;
@@ -56,6 +57,37 @@ export type OrderEvent = {
 };
 
 const ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES = `
+      id,
+      public_no,
+      order_type,
+      status,
+      issue_description,
+      diagnosis_result,
+      quotation_amount,
+      deposit_amount,
+      balance_amount,
+      is_paid,
+      approval_status,
+      approval_sent_at,
+      approval_confirmed_at,
+      technician_name,
+      internal_tag,
+      warranty_text,
+      pause_reason,
+      cancel_reason,
+      customer_signature,
+      contact_phones,
+      fault_prices,
+      completed_at,
+      delivered_at,
+      created_at,
+      updated_at,
+      customers:customer_id ( id, name, phone_e164, phone_raw ),
+      devices:device_id ( id, brand, model, serial_or_imei ),
+      suppliers:supplier_id ( id, name, short_name, color )
+    `;
+
+const ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES_NO_FAULT = `
       id,
       public_no,
       order_type,
@@ -152,6 +184,11 @@ function isMissingContactPhonesColumn(message?: string): boolean {
   return msg.includes("contact_phones") && (msg.includes("column") || msg.includes("schema cache"));
 }
 
+function isMissingFaultPricesColumn(message?: string): boolean {
+  const msg = (message ?? "").toLowerCase();
+  return msg.includes("fault_prices") && (msg.includes("column") || msg.includes("schema cache"));
+}
+
 export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   const storeId = await resolveStoreId();
   if (!env.supabaseUrl || !storeId) return null;
@@ -170,6 +207,20 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   let error = withSignatureAndPhones.error;
   let signatureSupported = true;
   let contactPhonesSupported = true;
+  let faultPricesSupported = true;
+
+  if (error && isMissingFaultPricesColumn(error.message)) {
+    faultPricesSupported = false;
+    const withoutFaultPrices = await supabase
+      .from("repair_orders")
+      .select(ORDER_DETAIL_SELECT_WITH_SIGNATURE_AND_PHONES_NO_FAULT)
+      .eq("id", id)
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .single();
+    data = withoutFaultPrices.data as Record<string, any> | null;
+    error = withoutFaultPrices.error;
+  }
 
   if (error && isMissingContactPhonesColumn(error.message)) {
     contactPhonesSupported = false;
@@ -227,6 +278,14 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
       contactPhonesSupported && Array.isArray(data.contact_phones)
         ? data.contact_phones.filter((p: unknown) => typeof p === "string" && p.trim())
         : [],
+    faultPrices:
+      faultPricesSupported && data.fault_prices && typeof data.fault_prices === "object"
+        ? Object.fromEntries(
+            Object.entries(data.fault_prices as Record<string, unknown>)
+              .filter(([, v]) => v != null && String(v).trim() !== "")
+              .map(([k, v]) => [k, String(v)]),
+          )
+        : {},
     completedAt: data.completed_at,
     deliveredAt: data.delivered_at,
     createdAt: data.created_at,

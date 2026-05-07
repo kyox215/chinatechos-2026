@@ -64,6 +64,7 @@ export default async function OrderDetailPage(props: {
                 customerSignature={order.customerSignature}
                 depositAmount={order.depositAmount}
                 diagnosisResult={order.diagnosisResult}
+                faultPrices={order.faultPrices}
                 internalTag={order.internalTag}
                 issueDescription={order.issueDescription}
                 model={order.device?.model ?? "—"}
@@ -124,6 +125,7 @@ export default async function OrderDetailPage(props: {
           <FinanceCard
             orderId={order.id}
             issueDescription={order.issueDescription}
+            faultPrices={order.faultPrices}
             quotationAmount={order.quotationAmount}
             depositAmount={order.depositAmount}
             balanceAmount={order.balanceAmount}

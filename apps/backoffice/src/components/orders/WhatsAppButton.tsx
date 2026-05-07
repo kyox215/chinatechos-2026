@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { STORE_NAME, STORE_ADDRESS } from "@/lib/domain/store-info";
+import { issueSummaryForPrintIt } from "@/lib/domain/fault-print-it";
 import { OrderWhatsAppSendModal } from "@/components/orders/OrderWhatsAppSendModal";
 
 type Props = {
@@ -18,7 +19,10 @@ type Props = {
 export function buildStatusMessage(props: Props): string {
   const name = props.customerName ?? "Cliente";
   const device = props.deviceLabel || "dispositivo";
-  const faults = props.issueDescription || "";
+  const rawIssue = props.issueDescription || "";
+  const faults = rawIssue
+    ? issueSummaryForPrintIt(rawIssue).summaryIt
+    : "";
   const quote = props.quotationAmount;
 
   switch (props.status) {

@@ -1,5 +1,4 @@
 import {
-  buildIssueFromFaults,
   extractFaultExtraNote,
   parseFaultsFromIssue,
 } from "@/lib/domain/fault-types";
@@ -136,25 +135,21 @@ export function buildFaultPriceLinesItalian(
  */
 export function buildFaultPriceLinesFromStoredIssue(
   issueDescription: string,
-  quotationAmount: number | null,
+  faultPrices: Record<string, string>,
 ): { labelIt: string; amountEur: number | null }[] {
   const map = parseFaultsFromIssue(issueDescription);
   const lines: { labelIt: string; amountEur: number | null }[] = [];
   for (const key of KEY_ORDER) {
     const selected = map.get(key);
     if (!selected || selected.length === 0) continue;
+    const raw = faultPrices[key];
+    const n = raw != null && raw !== "" ? Number(raw) : NaN;
     lines.push({
       labelIt: italianLabelForFaultKey(key, selected),
-      amountEur: null,
+      amountEur: Number.isFinite(n) ? n : null,
     });
   }
-  const n = lines.length;
-  const total = quotationAmount != null && !Number.isNaN(quotationAmount) ? quotationAmount : null;
-  if (n === 0 || total == null || total <= 0) {
-    return lines.map((l) => ({ ...l, amountEur: null }));
-  }
-  const per = total / n;
-  return lines.map((l) => ({ ...l, amountEur: per }));
+  return lines;
 }
 
 export function buildIssueItalianFromFaults(
