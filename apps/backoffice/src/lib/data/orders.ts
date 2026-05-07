@@ -57,7 +57,11 @@ export function sanitizeOrderSearchQ(raw: string): string {
     .replace(/\\/g, "")
     .replace(/,/g, "")
     .replace(/%/g, "")
-    .replace(/_/g, "");
+    .replace(/_/g, "")
+    // PostgREST logic-tree parser treats `+` as boolean OR — breaks `ilike."…+39…"` even when quoted.
+    .replace(/\+/g, "")
+    .replace(/[()]/g, "")
+    .replace(/"/g, "");
 }
 
 /** PostgREST filter value: quote so `.` and other chars in search text do not break `col.op.value` parsing. */
