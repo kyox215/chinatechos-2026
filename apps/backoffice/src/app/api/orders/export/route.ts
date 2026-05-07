@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getOrderStatusLabel } from "@/lib/domain/order-status";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import * as XLSX from "xlsx";
-
-const STATUS_LABELS: Record<string, string> = {
-  new: "接单",
-  diagnosing: "检测中",
-  quoted: "已报价",
-  waiting_approval: "等回复",
-  repairing: "维修中",
-  parts_ordered: "等配件",
-  parts_arrived: "到货",
-  repaired: "修好",
-  notified: "已通知",
-  completed: "已完成",
-  cancelled: "已取消",
-};
 
 const COLUMNS = [
   "工单号",
@@ -76,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     return [
       row.public_no,
-      STATUS_LABELS[row.status] ?? row.status,
+      getOrderStatusLabel(row.status),
       customer?.name ?? "",
       customer?.phone_e164 ?? "",
       device?.brand ?? "",

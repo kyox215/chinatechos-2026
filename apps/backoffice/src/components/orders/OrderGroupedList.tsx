@@ -8,6 +8,7 @@ import { StatusPopover } from "@/components/orders/StatusPopover";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
 import { SupplierPickerModal } from "@/components/orders/SupplierPickerModal";
 import type { OrderListItem } from "@/lib/data/orders";
+import { getOrderStatusSelectOptions } from "@/lib/domain/order-status";
 import { calcWarranty } from "@/lib/domain/warranty-calc";
 
 type StatusGroup = {
@@ -22,17 +23,120 @@ type StatusGroup = {
 const DESKTOP_GRID =
   "grid grid-cols-[32px_76px_minmax(90px,130px)_minmax(140px,1fr)_120px_68px_56px_minmax(120px,160px)] gap-x-1.5";
 
-const NEW_STATUSES = new Set(["new"]);
-const PROCESSING_STATUSES = new Set([
-  "rework",
-  "diagnosing",
-  "quoted",
-  "waiting_approval",
-  "repairing",
-  "parts_ordered",
-  "parts_arrived",
-]);
-const PICKUP_STATUSES = new Set(["repaired", "notified"]);
+/** 寄修工单置顶分组用（与列表筛选默认一致） */
+const MAIL_IN_ORDER_TYPE = "quick_repair";
+
+type GroupSpec = {
+  key: string;
+  label: string;
+  statuses: Set<string>;
+  titleColor: string;
+  bgColor: string;
+  defaultOpen: boolean;
+};
+
+const GROUP_SPECS: GroupSpec[] = [
+  { key: "new", label: "接单", statuses: new Set(["new"]), titleColor: "text-blue-700", bgColor: "bg-blue-50", defaultOpen: true },
+  { key: "rework", label: "返修", statuses: new Set(["rework"]), titleColor: "text-rose-700", bgColor: "bg-rose-50", defaultOpen: true },
+  { key: "diagnosing", label: "检测中", statuses: new Set(["diagnosing"]), titleColor: "text-sky-700", bgColor: "bg-sky-50", defaultOpen: true },
+  {
+    key: "quote",
+    label: "报价",
+    statuses: new Set(["quoted", "waiting_approval"]),
+    titleColor: "text-violet-700",
+    bgColor: "bg-violet-50",
+    defaultOpen: true,
+  },
+  {
+    key: "quote_ok",
+    label: "报价已确认",
+    statuses: new Set(["repairing"]),
+    titleColor: "text-indigo-700",
+    bgColor: "bg-indigo-50",
+    defaultOpen: true,
+  },
+  {
+    key: "parts_ordered",
+    label: "等配件",
+    statuses: new Set(["parts_ordered"]),
+    titleColor: "text-orange-700",
+    bgColor: "bg-orange-50",
+    defaultOpen: true,
+  },
+  {
+    key: "parts_arrived",
+    label: "配件到货 · 到货已通知",
+    statuses: new Set(["parts_arrived"]),
+    titleColor: "text-orange-800",
+    bgColor: "bg-orange-50",
+    defaultOpen: true,
+  },
+  { key: "repaired", label: "修好未通知", statuses: new Set(["repaired"]), titleColor: "text-teal-700", bgColor: "bg-teal-50", defaultOpen: true },
+  { key: "notified", label: "修好已通知", statuses: new Set(["notified"]), titleColor: "text-cyan-700", bgColor: "bg-cyan-50", defaultOpen: true },
+  {
+    key: "unfixed_pickup",
+    label: "未修待取件",
+    statuses: new Set(["unfixed_pickup"]),
+    titleColor: "text-amber-800",
+    bgColor: "bg-amber-50",
+    defaultOpen: true,
+  },
+  {
+    key: "waiting_pickup",
+    label: "待取件（旧）",
+    statuses: new Set(["waiting_pickup"]),
+    titleColor: "text-emerald-700",
+    bgColor: "bg-emerald-50",
+    defaultOpen: true,
+  },
+  {
+    key: "completed",
+    label: "已完成",
+    statuses: new Set(["completed"]),
+    titleColor: "text-emerald-800",
+    bgColor: "bg-emerald-50",
+    defaultOpen: false,
+  },
+  {
+    key: "cancelled",
+    label: "已取消",
+    statuses: new Set(["cancelled"]),
+    titleColor: "text-neutral-600",
+    bgColor: "bg-neutral-50",
+    defaultOpen: false,
+  },
+];
+
+function fineGrainedGroups(items: OrderListItem[]): StatusGroup[] {
+  const groups: StatusGroup[] = [];
+  const assigned = new Set<string>();
+  for (const spec of GROUP_SPECS) {
+    const bucket = items.filter((it) => spec.statuses.has(it.status));
+    for (const it of bucket) assigned.add(it.id);
+    if (bucket.length > 0) {
+      groups.push({
+        key: spec.key,
+        label: spec.label,
+        items: bucket,
+        defaultOpen: spec.defaultOpen,
+        titleColor: spec.titleColor,
+        bgColor: spec.bgColor,
+      });
+    }
+  }
+  const misc = items.filter((it) => !assigned.has(it.id));
+  if (misc.length > 0) {
+    groups.push({
+      key: "other",
+      label: "其他",
+      items: misc,
+      defaultOpen: true,
+      titleColor: "text-neutral-700",
+      bgColor: "bg-neutral-100",
+    });
+  }
+  return groups;
+}
 
 function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
   if (!item.originalOrderId) return null;
@@ -59,34 +163,13 @@ function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
   );
 }
 
-function groupOrders(items: OrderListItem[]): StatusGroup[] {
-  const newOrders: OrderListItem[] = [];
-  const processing: OrderListItem[] = [];
-  const pickup: OrderListItem[] = [];
-  const ended: OrderListItem[] = [];
-
-  for (const item of items) {
-    if (NEW_STATUSES.has(item.status)) newOrders.push(item);
-    else if (PROCESSING_STATUSES.has(item.status)) processing.push(item);
-    else if (PICKUP_STATUSES.has(item.status)) pickup.push(item);
-    else ended.push(item);
-  }
-
-  const groups: StatusGroup[] = [];
-  if (newOrders.length > 0)
-    groups.push({ key: "new", label: "新单", items: newOrders, defaultOpen: true, titleColor: "text-blue-700", bgColor: "bg-blue-50" });
-  if (processing.length > 0)
-    groups.push({ key: "processing", label: "处理中", items: processing, defaultOpen: true, titleColor: "text-amber-700", bgColor: "bg-amber-50" });
-  if (pickup.length > 0)
-    groups.push({ key: "pickup", label: "待取件", items: pickup, defaultOpen: true, titleColor: "text-teal-700", bgColor: "bg-teal-50" });
-  if (ended.length > 0)
-    groups.push({ key: "ended", label: "已结束", items: ended, defaultOpen: false, titleColor: "text-neutral-500", bgColor: "bg-neutral-50" });
-  return groups;
-}
-
 export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const router = useRouter();
-  const groups = groupOrders(items);
+  const mailItems = items.filter((it) => it.orderType === MAIL_IN_ORDER_TYPE);
+  const shopItems = items.filter((it) => it.orderType !== MAIL_IN_ORDER_TYPE);
+  const mailGroups = fineGrainedGroups(mailItems);
+  const shopGroups = fineGrainedGroups(shopItems);
+  const statusOptions = getOrderStatusSelectOptions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
@@ -146,9 +229,27 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
 
   return (
     <div className="space-y-3">
-      {groups.map((group) => (
+      {mailGroups.length > 0 ? (
+        <div className="space-y-3">
+          <div className="px-1 pt-1">
+            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">寄修</h2>
+          </div>
+          {mailGroups.map((group) => (
+            <GroupSection
+              key={`mail-${group.key}`}
+              group={group}
+              selected={selected}
+              onOpenSupplierPicker={openSupplierPicker}
+              onToggleSelect={toggleSelect}
+              onToggleGroup={() => toggleGroup(group.items)}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {shopGroups.map((group) => (
         <GroupSection
-          key={group.key}
+          key={`shop-${group.key}`}
           group={group}
           selected={selected}
           onOpenSupplierPicker={openSupplierPicker}
@@ -166,18 +267,11 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             value={batchStatus}
           >
             <option value="">选择目标状态</option>
-            <option value="new">接单</option>
-            <option value="rework">返修</option>
-            <option value="diagnosing">检测中</option>
-            <option value="repairing">维修中</option>
-            <option value="quoted">已报价</option>
-            <option value="waiting_approval">等回复</option>
-            <option value="parts_ordered">等配件</option>
-            <option value="parts_arrived">到货</option>
-            <option value="repaired">修好</option>
-            <option value="notified">已通知</option>
-            <option value="completed">已完成</option>
-            <option value="cancelled">已取消</option>
+            {statusOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
           <button
             className="h-8 rounded-lg bg-primary px-4 text-xs font-semibold text-white disabled:opacity-60"

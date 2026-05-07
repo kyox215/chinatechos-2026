@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getOrderStatusSelectOptions } from "@/lib/domain/order-status";
 
 export function ExportSection() {
   const [status, setStatus] = useState("all");
@@ -19,17 +20,11 @@ export function ExportSection() {
           value={status}
         >
           <option value="all">全部状态</option>
-          <option value="new">接单</option>
-          <option value="diagnosing">检测中</option>
-          <option value="quoted">已报价</option>
-          <option value="waiting_approval">等回复</option>
-          <option value="repairing">维修中</option>
-          <option value="parts_ordered">等配件</option>
-          <option value="parts_arrived">到货</option>
-          <option value="repaired">修好</option>
-          <option value="notified">已通知</option>
-          <option value="completed">已完成</option>
-          <option value="cancelled">已取消</option>
+          {getOrderStatusSelectOptions().map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </select>
         <a
           className="ui-btn ui-btn-primary inline-flex h-9 items-center px-4 text-xs font-semibold"

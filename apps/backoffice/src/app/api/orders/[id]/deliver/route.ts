@@ -29,8 +29,9 @@ export async function POST(
     return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
   }
 
-  if (current.data.status !== "notified") {
-    return NextResponse.json({ error: "仅在已通知状态下可标记交付" }, { status: 400 });
+  const deliverable = current.data.status === "notified" || current.data.status === "unfixed_pickup";
+  if (!deliverable) {
+    return NextResponse.json({ error: "仅在「修好已通知」或「未修待取件」状态下可标记交付" }, { status: 400 });
   }
 
   if (current.data.delivered_at) {
@@ -63,7 +64,7 @@ export async function POST(
     storeId: storeId,
     orderId: params.id,
     eventType: "status_changed",
-    payload: { fromStatus: "notified", toStatus: "completed" },
+    payload: { fromStatus: current.data.status, toStatus: "completed" },
     operatorName: body.operatorName ?? "frontdesk",
   });
 

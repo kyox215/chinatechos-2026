@@ -36,7 +36,7 @@ export default async function OrderDetailPage(props: {
     : undefined;
 
   const isTerminal = false;
-  const showSignature = ["repaired", "notified", "completed", "rework"].includes(order.status);
+  const showSignature = ["repaired", "notified", "unfixed_pickup", "completed", "rework"].includes(order.status);
 
   const showCancelBanner = order.status === "cancelled" && Boolean(order.cancelReason);
   const showPauseBanner = Boolean(order.pauseReason);
@@ -169,7 +169,7 @@ export default async function OrderDetailPage(props: {
                     deviceLabel={[order.device?.brand, order.device?.model].filter(Boolean).join(" ")}
                   />
                 )}
-                {order.status === "notified" && (
+                {(order.status === "notified" || order.status === "unfixed_pickup") && (
                   <DeliverButton orderId={order.id} deliveredAt={order.deliveredAt} />
                 )}
                 {order.customer?.phoneE164 && (

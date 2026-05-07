@@ -3,6 +3,7 @@ export type TransitionResult = {
   reason?: string;
 };
 
+/** Workflow sequence for list ordering (primary sort), then by `updated_at` desc. */
 const STATUS_ORDER = [
   "rework",
   "new",
@@ -14,11 +15,11 @@ const STATUS_ORDER = [
   "parts_arrived",
   "repaired",
   "notified",
+  "unfixed_pickup",
   "completed",
 ] as const;
 
-/** Workflow sequence for list ordering (primary sort), then by `updated_at` desc. */
-const LIST_STATUS_SEQUENCE = [...STATUS_ORDER, "cancelled"] as const;
+const LIST_STATUS_SEQUENCE = [...STATUS_ORDER, "waiting_pickup", "cancelled"] as const;
 
 export function getStatusListSortIndex(status: string): number {
   const idx = (LIST_STATUS_SEQUENCE as readonly string[]).indexOf(status);
@@ -28,27 +29,55 @@ export function getStatusListSortIndex(status: string): number {
 /** Previously-terminal statuses — exported for UI styling only, no longer blocks transitions. */
 export const TERMINAL_STATUSES = new Set(["completed", "cancelled"]);
 
-const ALL_STATUSES = [...STATUS_ORDER, "cancelled"] as const;
+const ALL_STATUSES = [...STATUS_ORDER, "waiting_pickup", "cancelled"] as const;
 
-const STATUS_LABELS: Record<string, string> = {
+/** 与徽标话术对齐；导出、下拉、批量切换同源使用 */
+export const ORDER_STATUS_LABELS: Record<string, string> = {
   rework: "返修",
   new: "接单",
   diagnosing: "检测中",
-  quoted: "已报价",
-  waiting_approval: "等回复",
-  repairing: "维修中",
+  quoted: "报价",
+  waiting_approval: "报价",
+  repairing: "报价已确认",
   parts_ordered: "等配件",
-  parts_arrived: "到货",
-  repaired: "修好",
-  notified: "已通知",
+  parts_arrived: "到货已通知",
+  repaired: "修好未通知",
+  notified: "修好已通知",
+  unfixed_pickup: "未修待取件",
+  waiting_pickup: "待取件（旧）",
   completed: "已完成",
   cancelled: "已取消",
 };
 
-export function validateOrderTransition(
-  fromStatus: string,
-  toStatus: string,
-): TransitionResult {
+export const ORDER_STATUS_SELECT_SEQUENCE = [
+  "rework",
+  "new",
+  "diagnosing",
+  "quoted",
+  "waiting_approval",
+  "repairing",
+  "parts_ordered",
+  "parts_arrived",
+  "repaired",
+  "notified",
+  "unfixed_pickup",
+  "waiting_pickup",
+  "completed",
+  "cancelled",
+] as const;
+
+export function getOrderStatusSelectOptions(): { value: string; label: string }[] {
+  return ORDER_STATUS_SELECT_SEQUENCE.map((value) => ({
+    value,
+    label: ORDER_STATUS_LABELS[value] ?? value,
+  }));
+}
+
+export function getOrderStatusLabel(status: string): string {
+  return ORDER_STATUS_LABELS[status] ?? status;
+}
+
+export function validateOrderTransition(fromStatus: string, toStatus: string): TransitionResult {
   if (fromStatus === toStatus) {
     return { ok: false, reason: "不能转到相同状态" };
   }
@@ -75,15 +104,15 @@ export function getNextActions(status: string): {
   if (nonCancel.length > 0) {
     primary.push({
       toStatus: nonCancel[0],
-      label: STATUS_LABELS[nonCancel[0]] ?? nonCancel[0],
-      confirmText: `确认切换到 "${STATUS_LABELS[nonCancel[0]]}"？`,
+      label: ORDER_STATUS_LABELS[nonCancel[0]] ?? nonCancel[0],
+      confirmText: `确认切换到 "${ORDER_STATUS_LABELS[nonCancel[0]] ?? nonCancel[0]}"？`,
     });
 
     for (let i = 1; i < nonCancel.length; i++) {
       secondary.push({
         toStatus: nonCancel[i],
-        label: STATUS_LABELS[nonCancel[i]] ?? nonCancel[i],
-        confirmText: `确认切换到 "${STATUS_LABELS[nonCancel[i]]}"？`,
+        label: ORDER_STATUS_LABELS[nonCancel[i]] ?? nonCancel[i],
+        confirmText: `确认切换到 "${ORDER_STATUS_LABELS[nonCancel[i]] ?? nonCancel[i]}"？`,
       });
     }
   }

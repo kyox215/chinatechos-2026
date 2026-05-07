@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getOrderStatusLabel } from "@/lib/domain/order-status";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { generatePublicNo } from "@/lib/domain/public-no";
@@ -359,13 +360,6 @@ export async function POST(request: NextRequest) {
   }
 
   if (mode === "preview") {
-    const statusLabels: Record<string, string> = {
-      new: "接单", diagnosing: "检测中", quoted: "已报价",
-      waiting_approval: "等回复", repairing: "维修中", parts_ordered: "等配件",
-      parts_arrived: "到货", repaired: "修好", notified: "已通知",
-      completed: "已完成", cancelled: "已取消",
-    };
-
     const preview = rows.slice(0, 50).map((r) => ({
       rowNum: r.rowNum,
       customerPhone: r.customerPhone,
@@ -374,7 +368,7 @@ export async function POST(request: NextRequest) {
       model: r.model,
       issueDescription: r.issueDescription.slice(0, 60),
       quotationAmount: r.quotationAmount,
-      status: statusLabels[r.status] ?? r.status,
+      status: getOrderStatusLabel(r.status),
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString("it-IT") : "-",
       errors: r.errors,
     }));

@@ -40,6 +40,8 @@ export function buildStatusMessage(props: Props): string {
       return `Buongiorno ${name}, la riparazione del suo ${device} è completata! Può passare a ritirarlo presso ${STORE_ADDRESS}. Grazie, ${STORE_NAME}`;
     case "notified":
       return `Buongiorno ${name}, le ricordiamo che il suo ${device} è pronto per il ritiro presso ${STORE_ADDRESS}. Grazie, ${STORE_NAME}`;
+    case "unfixed_pickup":
+      return `Buongiorno ${name}, il suo ${device} è pronto per il ritiro (senza riparazione) presso ${STORE_ADDRESS}. Grazie, ${STORE_NAME}`;
     default:
       return `Buongiorno ${name}, la contatto da ${STORE_NAME} riguardo il suo ordine di riparazione.`;
   }

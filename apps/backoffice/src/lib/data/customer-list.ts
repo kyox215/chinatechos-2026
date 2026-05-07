@@ -82,7 +82,7 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
     }
   >();
 
-  const activeStatuses = new Set(["new", "diagnosing", "waiting_approval", "repairing", "waiting_pickup"]);
+  const terminalStatuses = new Set(["completed", "cancelled"]);
 
   for (const order of orders ?? []) {
     if (!order.customer_id) continue;
@@ -99,7 +99,7 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
       existing.lastOrderAt = order.created_at;
       existing.lastOrderStatus = order.status;
     }
-    if (activeStatuses.has(order.status)) {
+    if (!terminalStatuses.has(order.status)) {
       existing.hasActiveOrder = true;
     }
     statsMap.set(order.customer_id, existing);

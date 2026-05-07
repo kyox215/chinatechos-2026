@@ -120,7 +120,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
   if (filters.pickupOverdue) {
     const cutoff = new Date(Date.now() - pickupOverdueDays * 24 * 3600 * 1000).toISOString();
     // Unified flow: pickup-facing statuses are repaired / notified (legacy waiting_pickup migrated).
-    query = query.in("status", ["repaired", "notified"]).lte("completed_at", cutoff);
+    query = query.in("status", ["repaired", "notified", "unfixed_pickup"]).lte("completed_at", cutoff);
   }
 
   if (filters.q) {

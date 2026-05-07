@@ -61,6 +61,7 @@ begin
       'repairing',
       'repaired',
       'notified',
+      'unfixed_pickup',
       'waiting_pickup',
       'completed',
       'cancelled'

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
+import { getOrderStatusSelectOptions } from "@/lib/domain/order-status";
 
 type Suggestion = {
   id: string;
@@ -235,7 +236,7 @@ export function OrdersSearchControls(props: Props) {
                 />
                 <FilterChip
                   active={props.status === "parts_ordered"}
-                  label="待到货"
+                  label="等配件"
                   variant="accent"
                   onClick={() =>
                     applyFilters({
@@ -259,18 +260,11 @@ export function OrdersSearchControls(props: Props) {
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
               <select className={compactInput} onChange={(e) => setStatus(e.target.value)} value={status}>
                 <option value="all">状态：全部</option>
-                <option value="rework">返修</option>
-                <option value="new">接单</option>
-                <option value="diagnosing">检测中</option>
-                <option value="repairing">维修中</option>
-                <option value="quoted">已报价</option>
-                <option value="waiting_approval">等回复</option>
-                <option value="parts_ordered">等配件</option>
-                <option value="parts_arrived">到货</option>
-                <option value="repaired">修好</option>
-                <option value="notified">已通知</option>
-                <option value="completed">已完成</option>
-                <option value="cancelled">已取消</option>
+                {getOrderStatusSelectOptions().map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
               <select className={compactInput} onChange={(e) => setPaid(e.target.value)} value={paid}>
                 <option value="all">结清：全部</option>

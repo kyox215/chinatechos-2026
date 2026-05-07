@@ -9,12 +9,15 @@ export type RepairOrderStatus =
   | "repairing"
   | "repaired"
   | "notified"
+  | "unfixed_pickup"
   | "waiting_pickup"
   | "completed"
   | "cancelled";
 
 type StatusPresentation = {
   label: string;
+  /** 鼠标悬停补充说明（主文案仍用 label） */
+  badgeTitle?: string;
   dotColor: string;
   textColor: string;
   rowBg: string;
@@ -40,16 +43,17 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
     rowBg: "bg-sky-50",
   },
   quoted: {
-    label: "已报价",
+    label: "报价",
     dotColor: "bg-violet-500",
     textColor: "text-violet-700",
     rowBg: "bg-violet-50",
   },
   waiting_approval: {
-    label: "等回复",
-    dotColor: "bg-amber-500",
-    textColor: "text-amber-700",
-    rowBg: "bg-amber-50",
+    label: "报价",
+    badgeTitle: "待客户确认报价",
+    dotColor: "bg-violet-500",
+    textColor: "text-violet-700",
+    rowBg: "bg-violet-50",
   },
   parts_ordered: {
     label: "等配件",
@@ -58,31 +62,39 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
     rowBg: "bg-orange-50",
   },
   parts_arrived: {
-    label: "到货",
+    label: "到货已通知",
+    badgeTitle: "配件已到店",
     dotColor: "bg-orange-600",
     textColor: "text-orange-800",
     rowBg: "bg-orange-50",
   },
   repairing: {
-    label: "维修中(旧)",
-    dotColor: "bg-indigo-400",
-    textColor: "text-indigo-600",
+    label: "报价已确认",
+    badgeTitle: "维修进行中",
+    dotColor: "bg-indigo-500",
+    textColor: "text-indigo-700",
     rowBg: "bg-indigo-50",
   },
   repaired: {
-    label: "修好",
+    label: "修好未通知",
     dotColor: "bg-teal-500",
     textColor: "text-teal-700",
     rowBg: "bg-teal-50",
   },
   notified: {
-    label: "已通知",
+    label: "修好已通知",
     dotColor: "bg-cyan-500",
     textColor: "text-cyan-700",
     rowBg: "bg-cyan-50",
   },
+  unfixed_pickup: {
+    label: "未修待取件",
+    dotColor: "bg-amber-600",
+    textColor: "text-amber-900",
+    rowBg: "bg-amber-50",
+  },
   waiting_pickup: {
-    label: "待取件(旧)",
+    label: "待取件（旧）",
     dotColor: "bg-emerald-400",
     textColor: "text-emerald-600",
     rowBg: "bg-emerald-50",
@@ -100,6 +112,8 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
     rowBg: "bg-neutral-50",
   },
 };
+
+export type OrderStatusPresentation = StatusPresentation;
 
 export function getOrderStatusPresentation(status: string): StatusPresentation {
   const fallback: StatusPresentation = {
