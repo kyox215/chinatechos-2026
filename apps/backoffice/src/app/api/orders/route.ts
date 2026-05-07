@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder } from "@/lib/data/create-order";
 
+function parseNonNegativeNumber(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return Math.round(n * 100) / 100;
+}
+
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
 
@@ -19,8 +26,8 @@ export async function POST(request: NextRequest) {
   const model = String(body.model ?? "");
   const serialOrImei = String(body.serialOrImei ?? "");
   const issueDescription = String(body.issueDescription ?? "");
-  const quotationAmount = body.quotationAmount != null ? Number(body.quotationAmount) : undefined;
-  const depositAmount = body.depositAmount != null ? Number(body.depositAmount) : undefined;
+  const quotationAmount = parseNonNegativeNumber(body.quotationAmount);
+  const depositAmount = parseNonNegativeNumber(body.depositAmount);
   const technicianName = String(body.technicianName ?? "");
   const internalTag = String(body.internalTag ?? "");
   const warrantyText = String(body.warrantyText ?? "6个月");
@@ -46,8 +53,8 @@ export async function POST(request: NextRequest) {
       model: model.trim(),
       serialOrImei: serialOrImei.trim() || undefined,
       issueDescription: issueDescription.trim(),
-      quotationAmount: quotationAmount && !isNaN(quotationAmount) ? quotationAmount : undefined,
-      depositAmount: depositAmount && !isNaN(depositAmount) ? depositAmount : undefined,
+      quotationAmount,
+      depositAmount,
       technicianName: technicianName.trim() || undefined,
       internalTag: internalTag.trim() || undefined,
       warrantyText: warrantyText.trim() || undefined,

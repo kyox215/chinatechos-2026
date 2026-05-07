@@ -97,7 +97,7 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
 
           <section className="min-w-0 space-y-1.5 pl-1">
             <header className="border-b border-neutral-300 pb-1.5">
-              <div className="text-[10px] font-semibold uppercase tracking-wide">Garanzia & Informazioni negozio</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide">Garanzia e informazioni negozio</div>
               <div className="mt-0.5 text-[8px] text-neutral-700">{STORE_NAME}</div>
               <div className="text-[8px] text-neutral-700">{STORE_ADDRESS}</div>
             </header>
@@ -110,15 +110,6 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
                 ))}
               </ul>
             </section>
-
-            {p.issueOriginalUnparsed ? (
-              <section className="border-b border-neutral-200 pb-1">
-                <h2 className="mb-0.5 text-[9px] font-semibold">Note di riferimento</h2>
-                <p className="whitespace-pre-wrap text-[8px] leading-tight text-neutral-700">
-                  {p.issueOriginalUnparsed}
-                </p>
-              </section>
-            ) : null}
 
             <section className="border-b border-neutral-200 pb-1">
               <h2 className="mb-0.5 text-[9px] font-semibold">Firma cliente</h2>

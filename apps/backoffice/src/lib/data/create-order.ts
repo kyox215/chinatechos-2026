@@ -104,6 +104,9 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   const publicNo = await generatePublicNo(store.data.store_code);
+  const quotation = Number.isFinite(input.quotationAmount ?? NaN) ? Math.max(0, Number(input.quotationAmount)) : 0;
+  const deposit = Number.isFinite(input.depositAmount ?? NaN) ? Math.max(0, Number(input.depositAmount)) : 0;
+  const balance = Math.max(0, quotation - deposit);
 
   // Create repair order
   const orderRes = await supabase
@@ -118,6 +121,7 @@ export async function createOrder(input: CreateOrderInput) {
       issue_description: input.issueDescription,
       quotation_amount: input.quotationAmount ?? null,
       deposit_amount: input.depositAmount ?? null,
+      balance_amount: balance || null,
       technician_name: input.technicianName || null,
       internal_tag: input.internalTag || null,
       warranty_text: input.warrantyText || "6个月",

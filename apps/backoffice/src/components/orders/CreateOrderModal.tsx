@@ -171,6 +171,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   }
 
   async function handleSubmit() {
+    if (pending) return;
     if (!validateForSubmit()) return;
 
     setPending(true);

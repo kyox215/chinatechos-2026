@@ -168,13 +168,21 @@ body {
     background: white !important;
   }
 
-  body * {
-    visibility: hidden !important;
+  body > * {
+    display: none !important;
   }
 
-  .order-print-sheet,
-  .order-print-sheet * {
-    visibility: visible !important;
+  body > *:has(.order-print-sheet) {
+    display: block !important;
+  }
+
+  body > *:has(.order-print-sheet) * {
+    display: none !important;
+  }
+
+  body > *:has(.order-print-sheet) .order-print-sheet,
+  body > *:has(.order-print-sheet) .order-print-sheet * {
+    display: revert !important;
   }
 
   .order-print-sheet {
@@ -183,10 +191,10 @@ body {
     width: 138mm !important;
     height: 200mm !important;
     max-width: 138mm !important;
-    min-height: 200mm !important;
+    min-height: 0 !important;
     margin: 0 auto !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     page-break-inside: avoid;
     break-inside: avoid-page;
   }
@@ -195,7 +203,8 @@ body {
     width: 200mm !important;
     height: 138mm !important;
     max-width: none !important;
+    margin: 0 !important;
     transform-origin: top left !important;
-    transform: translateY(200mm) rotate(-90deg) !important;
+    transform: translateX(138mm) rotate(90deg) !important;
   }
 }

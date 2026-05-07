@@ -15,6 +15,13 @@ const ORDER_FIELDS = [
   "issue_description",
 ] as const;
 
+function parseMoney(value: unknown): number | null {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return NaN;
+  return Math.round(n * 100) / 100;
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -25,7 +32,20 @@ export async function PATCH(
   }
 
   const params = await context.params;
-  const body = (await request.json()) as Record<string, unknown>;
+  const rawBody = (await request.json()) as Record<string, unknown>;
+  const body: Record<string, unknown> = { ...rawBody };
+  if (rawBody.issueDescription !== undefined) body.issue_description = rawBody.issueDescription;
+  if (rawBody.quotationAmount !== undefined) body.quotation_amount = rawBody.quotationAmount;
+  if (rawBody.depositAmount !== undefined) body.deposit_amount = rawBody.depositAmount;
+  if (rawBody.balanceAmount !== undefined) body.balance_amount = rawBody.balanceAmount;
+  if (rawBody.technicianName !== undefined) body.technician_name = rawBody.technicianName;
+  if (rawBody.internalTag !== undefined) body.internal_tag = rawBody.internalTag;
+  if (rawBody.warrantyText !== undefined) body.warranty_text = rawBody.warrantyText;
+  if (rawBody.pauseReason !== undefined) body.pause_reason = rawBody.pauseReason;
+  if (rawBody.customerName !== undefined) body.customer_name = rawBody.customerName;
+  if (rawBody.customerPhone !== undefined) body.customer_phone = rawBody.customerPhone;
+  if (rawBody.serialOrImei !== undefined) body.serial_or_imei = rawBody.serialOrImei;
+  if (rawBody.supplierId !== undefined) body.supplier_id = rawBody.supplierId;
 
   const supabase = createSupabaseServerClient();
 
@@ -47,13 +67,27 @@ export async function PATCH(
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const updatedFields: string[] = [];
+  const parsedQuotation = body.quotation_amount !== undefined ? parseMoney(body.quotation_amount) : undefined;
+  if (parsedQuotation !== undefined && Number.isNaN(parsedQuotation)) {
+    return NextResponse.json({ error: "报价金额无效" }, { status: 400 });
+  }
+  const parsedDeposit = body.deposit_amount !== undefined ? parseMoney(body.deposit_amount) : undefined;
+  if (parsedDeposit !== undefined && Number.isNaN(parsedDeposit)) {
+    return NextResponse.json({ error: "定金金额无效" }, { status: 400 });
+  }
 
   for (const field of ORDER_FIELDS) {
     if (field in body) {
       if (field === "balance_amount" && (body.quotation_amount !== undefined || body.deposit_amount !== undefined)) {
         continue;
       }
-      patch[field] = body[field] ?? null;
+      if (field === "quotation_amount") {
+        patch[field] = parsedQuotation;
+      } else if (field === "deposit_amount") {
+        patch[field] = parsedDeposit;
+      } else {
+        patch[field] = body[field] ?? null;
+      }
       updatedFields.push(field);
     }
   }
@@ -65,12 +99,12 @@ export async function PATCH(
     patch.deposit_amount !== undefined;
   if (touchesMoney) {
     const nextQ =
-      body.quotation_amount !== undefined
-        ? Number(body.quotation_amount ?? 0)
+      parsedQuotation !== undefined
+        ? Number(parsedQuotation ?? 0)
         : Number(current.data.quotation_amount ?? 0);
     const nextD =
-      body.deposit_amount !== undefined
-        ? Number(body.deposit_amount ?? 0)
+      parsedDeposit !== undefined
+        ? Number(parsedDeposit ?? 0)
         : Number(current.data.deposit_amount ?? 0);
     patch.balance_amount = Math.max(0, nextQ - nextD);
     if (!updatedFields.includes("balance_amount")) updatedFields.push("balance_amount");
@@ -101,14 +135,18 @@ export async function PATCH(
     const customerName = body.customer_name ? String(body.customer_name).trim() : null;
 
     if (customerPhone && current.data.customer_id) {
-      await supabase
+      const customerUpdate = await supabase
         .from("customers")
         .update({
           name: customerName,
           phone_e164: customerPhone,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", current.data.customer_id);
+        .eq("id", current.data.customer_id)
+        .eq("store_id", storeId);
+      if (customerUpdate.error) {
+        return NextResponse.json({ error: customerUpdate.error.message }, { status: 500 });
+      }
       updatedFields.push("customer");
     }
   }
@@ -120,10 +158,14 @@ export async function PATCH(
       if (body.model !== undefined) devicePatch.model = String(body.model ?? "").trim();
       if (body.serial_or_imei !== undefined) devicePatch.serial_or_imei = body.serial_or_imei ? String(body.serial_or_imei).trim() : null;
 
-      await supabase
+      const deviceUpdate = await supabase
         .from("devices")
         .update(devicePatch)
-        .eq("id", current.data.device_id);
+        .eq("id", current.data.device_id)
+        .eq("store_id", storeId);
+      if (deviceUpdate.error) {
+        return NextResponse.json({ error: deviceUpdate.error.message }, { status: 500 });
+      }
       updatedFields.push("device");
     }
   }
@@ -138,6 +180,7 @@ export async function PATCH(
       .update(patch)
       .eq("id", params.id)
       .eq("store_id", storeId)
+      .not("status", "in", "(completed,cancelled)")
       .is("deleted_at", null)
       .select("id, status")
       .single();

@@ -77,6 +77,7 @@ export function FinanceCard(props: Props) {
   const receivableDisplay = props.balanceAmount ?? (remaining || null);
 
   async function handleSave() {
+    if (pending) return;
     setPending(true);
     setError(null);
     try {

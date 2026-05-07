@@ -117,6 +117,7 @@ export function OrderInfoCard(props: Props) {
   }, [customerPhone, editing]);
 
   async function handleSave() {
+    if (pending) return;
     const finalBrand = brand === "其他" ? customBrand.trim() : brand;
     setPending(true);
     setError(null);

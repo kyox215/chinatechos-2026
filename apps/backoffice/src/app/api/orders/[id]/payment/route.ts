@@ -3,6 +3,13 @@ import { writeOrderEvent } from "@/lib/data/order-events";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+function parseMoney(value: unknown): number | null {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return NaN;
+  return Math.round(n * 100) / 100;
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -38,20 +45,29 @@ export async function PATCH(
     return NextResponse.json({ error: "已完成或已取消的工单不可修改付款" }, { status: 400 });
   }
 
+  const parsedQuotation = body.quotationAmount !== undefined ? parseMoney(body.quotationAmount) : undefined;
+  if (parsedQuotation !== undefined && Number.isNaN(parsedQuotation)) {
+    return NextResponse.json({ error: "报价金额无效" }, { status: 400 });
+  }
+  const parsedDeposit = body.depositAmount !== undefined ? parseMoney(body.depositAmount) : undefined;
+  if (parsedDeposit !== undefined && Number.isNaN(parsedDeposit)) {
+    return NextResponse.json({ error: "定金金额无效" }, { status: 400 });
+  }
+
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
-  if (body.quotationAmount !== undefined) {
-    patch.quotation_amount = body.quotationAmount;
+  if (parsedQuotation !== undefined) {
+    patch.quotation_amount = parsedQuotation;
   }
-  if (body.depositAmount !== undefined) {
-    patch.deposit_amount = body.depositAmount;
+  if (parsedDeposit !== undefined) {
+    patch.deposit_amount = parsedDeposit;
   }
 
-  const finalQuotation = body.quotationAmount !== undefined
-    ? (body.quotationAmount ?? 0)
+  const finalQuotation = parsedQuotation !== undefined
+    ? (parsedQuotation ?? 0)
     : (current.data.quotation_amount ?? 0);
-  const finalDeposit = body.depositAmount !== undefined
-    ? (body.depositAmount ?? 0)
+  const finalDeposit = parsedDeposit !== undefined
+    ? (parsedDeposit ?? 0)
     : (current.data.deposit_amount ?? 0);
   patch.balance_amount = Math.max(0, finalQuotation - finalDeposit);
 
@@ -64,6 +80,7 @@ export async function PATCH(
     .update(patch)
     .eq("id", params.id)
     .eq("store_id", storeId)
+    .not("status", "in", "(completed,cancelled)")
     .is("deleted_at", null)
     .select("id, deposit_amount, balance_amount, is_paid")
     .single();

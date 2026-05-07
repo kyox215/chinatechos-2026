@@ -48,15 +48,18 @@ export function SendQuoteModal(props: Props) {
   const waLink = buildWhatsAppLink(props.customerPhone, messageText);
 
   async function handleSend() {
+    if (pending) return;
     setPending(true);
     setError(null);
     try {
       // Update quotation amount
-      await fetch(`/api/orders/${props.orderId}`, {
+      const updateRes = await fetch(`/api/orders/${props.orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quotation_amount: props.total }),
       });
+      const updateData = (await updateRes.json()) as { error?: string };
+      if (!updateRes.ok) throw new Error(updateData.error ?? "报价金额更新失败");
 
       // Transition to waiting_approval
       const res = await fetch(`/api/orders/${props.orderId}/transition`, {
