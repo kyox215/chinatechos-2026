@@ -1,8 +1,10 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { env } from "@/lib/env/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { generateInventoryPublicNo } from "@/lib/domain/inventory-public-no";
 import { appendInventoryEvent } from "@/lib/data/inventory-events";
 import { canSellInventory } from "@/lib/inventory/sellable";
+import { isUuid, normalizeScanInput, tryExtractUrlLastSegment } from "@/lib/inventory/scan-parse";
 
 export type ProductChannel = "new_retail" | "refurbished" | "trade_in";
 export type InventoryLifecycle = "draft" | "in_stock" | "reserved" | "sold" | "cancelled";
@@ -39,7 +41,17 @@ function normalizePhoneE164(raw: string): string {
   return `+39${digits}`;
 }
 
-const TRADE_IN_HOLD_DAYS = 7;
+export class InventoryImeiConflictError extends Error {
+  readonly existingId: string;
+  readonly existingPublicNo: string;
+
+  constructor(existingId: string, existingPublicNo: string) {
+    super(`IMEI/序列号已在库：${existingPublicNo}`);
+    this.name = "InventoryImeiConflictError";
+    this.existingId = existingId;
+    this.existingPublicNo = existingPublicNo;
+  }
+}
 
 function addHoldDays(from: Date, days: number): Date {
   const d = new Date(from.getTime());
@@ -47,10 +59,125 @@ function addHoldDays(from: Date, days: number): Date {
   return d;
 }
 
+const DEFAULT_TRADE_IN_HOLD_DAYS = 7;
+
+export async function resolveTradeInHoldDaysForStore(storeId: string): Promise<number> {
+  const raw = env.tradeInHoldDays?.trim();
+  if (raw) {
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 0 && n <= 365) return Math.floor(n);
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("stores")
+    .select("order_ui_config")
+    .eq("id", storeId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  const cfg = data?.order_ui_config as Record<string, unknown> | null | undefined;
+  const inv = cfg?.inventory as Record<string, unknown> | undefined;
+  const d = inv?.trade_in_hold_days;
+  if (typeof d === "number" && Number.isFinite(d) && d >= 0 && d <= 365) {
+    return Math.floor(d);
+  }
+
+  return DEFAULT_TRADE_IN_HOLD_DAYS;
+}
+
+export function normalizeIdempotencyKey(raw: string | null | undefined): string | null {
+  const k = raw?.trim() ?? "";
+  if (!k) return null;
+  if (k.length > 128) return null;
+  return k;
+}
+
+export async function findInventoryByIdempotencyKey(
+  idempotencyKey: string,
+): Promise<{ id: string; publicNo: string } | null> {
+  const storeId = await resolveStoreId();
+  if (!storeId) return null;
+
+  const supabase = createSupabaseServerClient();
+  const { data: mapRow, error } = await supabase
+    .from("inventory_create_idempotency")
+    .select("inventory_item_id")
+    .eq("store_id", storeId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  const itemId = mapRow?.inventory_item_id as string | undefined;
+  if (!itemId) return null;
+
+  const item = await getInventoryItem(itemId);
+  if (!item) return null;
+  return { id: item.id, publicNo: item.public_no };
+}
+
+export async function registerInventoryIdempotencyAfterCreate(input: {
+  idempotencyKey: string;
+  newItemId: string;
+  publicNo: string;
+}): Promise<{ outcome: "registered" | "replayed"; id: string; publicNo: string }> {
+  const storeId = await resolveStoreId();
+  if (!storeId) throw new Error("无法确定门店");
+
+  const supabase = createSupabaseServerClient();
+  const ins = await supabase.from("inventory_create_idempotency").insert({
+    store_id: storeId,
+    idempotency_key: input.idempotencyKey,
+    inventory_item_id: input.newItemId,
+  });
+
+  if (!ins.error) {
+    return { outcome: "registered", id: input.newItemId, publicNo: input.publicNo };
+  }
+
+  const msg = ins.error.message ?? "";
+  const pgCode = (ins.error as { code?: string }).code;
+  const isDup =
+    pgCode === "23505" ||
+    msg.includes("duplicate key") ||
+    msg.includes("inventory_create_idempotency_pkey");
+
+  if (!isDup) throw new Error(ins.error.message);
+
+  const { data: existingMap, error: mapErr } = await supabase
+    .from("inventory_create_idempotency")
+    .select("inventory_item_id")
+    .eq("store_id", storeId)
+    .eq("idempotency_key", input.idempotencyKey)
+    .maybeSingle();
+
+  if (mapErr) throw new Error(mapErr.message);
+  const winnerId = existingMap?.inventory_item_id as string | undefined;
+  if (!winnerId) throw new Error("幂等映射读取失败");
+
+  if (winnerId === input.newItemId) {
+    return { outcome: "registered", id: input.newItemId, publicNo: input.publicNo };
+  }
+
+  const del = await supabase
+    .from("inventory_items")
+    .delete()
+    .eq("id", input.newItemId)
+    .eq("store_id", storeId);
+
+  if (del.error) throw new Error(del.error.message);
+
+  const winner = await getInventoryItem(winnerId);
+  if (!winner) throw new Error("幂等目标记录不存在");
+  return { outcome: "replayed", id: winner.id, publicNo: winner.public_no };
+}
+
 export async function listInventoryItems(opts: {
   q?: string;
   channel?: string;
   status?: string;
+  dateFrom?: string;
+  dateTo?: string;
   limit?: number;
 }): Promise<{ items: InventoryItemRow[] }> {
   const storeId = await resolveStoreId();
@@ -70,6 +197,12 @@ export async function listInventoryItems(opts: {
   }
   if (opts.status && opts.status !== "all") {
     q = q.eq("lifecycle_status", opts.status);
+  }
+  if (opts.dateFrom?.trim()) {
+    q = q.gte("created_at", `${opts.dateFrom.trim()}T00:00:00.000Z`);
+  }
+  if (opts.dateTo?.trim()) {
+    q = q.lte("created_at", `${opts.dateTo.trim()}T23:59:59.999Z`);
   }
 
   const { data, error } = await q;
@@ -93,6 +226,137 @@ export async function listInventoryItems(opts: {
   }
 
   return { items: rows };
+}
+
+/** Active inventory = not sold/cancelled (same rule as IMEI duplicate check). */
+const ACTIVE_STATUSES: InventoryLifecycle[] = ["draft", "in_stock", "reserved"];
+
+async function findDuplicateActiveImei(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  storeId: string,
+  imei: string,
+): Promise<{ id: string; public_no: string } | null> {
+  const { data } = await supabase
+    .from("inventory_items")
+    .select("id, public_no")
+    .eq("store_id", storeId)
+    .eq("imei_or_serial", imei)
+    .is("deleted_at", null)
+    .in("lifecycle_status", ACTIVE_STATUSES)
+    .limit(1)
+    .maybeSingle();
+
+  if (!data?.id) return null;
+  return { id: data.id as string, public_no: data.public_no as string };
+}
+
+/**
+ * Resolve scanner / pasted text to a single inventory id or fall back to list search.
+ */
+export async function lookupInventoryScan(raw: string): Promise<
+  { match: "direct"; id: string } | { match: "search"; q: string }
+> {
+  const trimmed = normalizeScanInput(raw);
+  if (!trimmed) return { match: "search", q: "" };
+
+  let candidate = trimmed;
+  if (!isUuid(candidate)) {
+    const seg = tryExtractUrlLastSegment(trimmed);
+    if (seg && isUuid(seg)) candidate = seg;
+  }
+
+  const storeId = await resolveStoreId();
+  if (!storeId) return { match: "search", q: trimmed };
+
+  const supabase = createSupabaseServerClient();
+
+  if (isUuid(candidate)) {
+    const { data } = await supabase
+      .from("inventory_items")
+      .select("id")
+      .eq("store_id", storeId)
+      .eq("id", candidate)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (data?.id) return { match: "direct", id: data.id as string };
+  }
+
+  const { data: byNo } = await supabase
+    .from("inventory_items")
+    .select("id")
+    .eq("store_id", storeId)
+    .eq("public_no", trimmed)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (byNo?.id) return { match: "direct", id: byNo.id as string };
+
+  const { data: byImei } = await supabase
+    .from("inventory_items")
+    .select("id")
+    .eq("store_id", storeId)
+    .eq("imei_or_serial", trimmed)
+    .is("deleted_at", null)
+    .limit(2);
+  if (byImei && byImei.length === 1) {
+    return { match: "direct", id: byImei[0].id as string };
+  }
+
+  return { match: "search", q: trimmed };
+}
+
+export async function listInventoryItemsForExport(opts: {
+  q?: string;
+  channel?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<InventoryItemRow[]> {
+  const storeId = await resolveStoreId();
+  if (!storeId) return [];
+
+  const supabase = createSupabaseServerClient();
+  let query = supabase
+    .from("inventory_items")
+    .select("*")
+    .eq("store_id", storeId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(5000);
+
+  if (opts.channel && opts.channel !== "all") {
+    query = query.eq("product_channel", opts.channel);
+  }
+  if (opts.status && opts.status !== "all") {
+    query = query.eq("lifecycle_status", opts.status);
+  }
+  if (opts.dateFrom?.trim()) {
+    query = query.gte("created_at", `${opts.dateFrom.trim()}T00:00:00.000Z`);
+  }
+  if (opts.dateTo?.trim()) {
+    query = query.lte("created_at", `${opts.dateTo.trim()}T23:59:59.999Z`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  let rows = (data ?? []) as InventoryItemRow[];
+  const needle = opts.q?.trim().toLowerCase();
+  if (needle) {
+    rows = rows.filter((r) => {
+      const hay = [
+        r.public_no,
+        r.brand,
+        r.model,
+        r.imei_or_serial ?? "",
+        r.notes ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(needle);
+    });
+  }
+
+  return rows;
 }
 
 export async function getInventoryItem(id: string): Promise<InventoryItemRow | null> {
@@ -166,9 +430,19 @@ export async function createInventoryItem(input: CreateInventoryInput): Promise<
     }
   }
 
+  const imei = input.imeiOrSerial?.trim();
+  if (imei) {
+    const dup = await findDuplicateActiveImei(supabase, storeId, imei);
+    if (dup) {
+      throw new InventoryImeiConflictError(dup.id, dup.public_no);
+    }
+  }
+
   const now = new Date();
+  const holdDays =
+    input.productChannel === "trade_in" ? await resolveTradeInHoldDaysForStore(storeId) : 0;
   const listingHoldUntil =
-    input.productChannel === "trade_in" ? addHoldDays(now, TRADE_IN_HOLD_DAYS).toISOString() : null;
+    input.productChannel === "trade_in" ? addHoldDays(now, holdDays).toISOString() : null;
 
   const row = {
     store_id: storeId,
@@ -177,7 +451,7 @@ export async function createInventoryItem(input: CreateInventoryInput): Promise<
     lifecycle_status: "in_stock" as const,
     brand: input.brand.trim(),
     model: input.model.trim(),
-    imei_or_serial: input.imeiOrSerial?.trim() || null,
+    imei_or_serial: imei || null,
     purchase_cost: input.purchaseCost ?? null,
     list_price: input.listPrice ?? null,
     seller_customer_id: sellerCustomerId,

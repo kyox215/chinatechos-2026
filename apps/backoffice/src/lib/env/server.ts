@@ -4,6 +4,8 @@ export const env = {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   defaultStoreId: process.env.DEFAULT_STORE_ID,
+  /** Recovery hold window in days; optional override for `resolveTradeInHoldDaysForStore`. */
+  tradeInHoldDays: process.env.TRADE_IN_HOLD_DAYS,
 };
 
 let _resolvedStoreId: string | null = null;

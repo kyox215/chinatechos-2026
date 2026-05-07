@@ -74,3 +74,34 @@ function summarizeQaForPrintIt(qa: Record<string, unknown>): string | null {
 }
 
 export { STORE_NAME, STORE_ADDRESS };
+
+/** Must stay in sync with `POST /api/inventory/[id]/print-log` audit payload. */
+export const TRADE_IN_AGREEMENT_LEGAL_VERSION = "trade_in_it_v1";
+
+export type TradeInAgreementPrintPayload = {
+  printedAtIso: string;
+  publicNo: string;
+  brand: string;
+  model: string;
+  imeiOrSerial: string | null;
+  sellerLineIt: string | null;
+  legalVersion: string;
+};
+
+export function buildTradeInAgreementPrintPayload(input: {
+  publicNo: string;
+  brand: string;
+  model: string;
+  imeiOrSerial: string | null;
+  sellerLabel?: string | null;
+}): TradeInAgreementPrintPayload {
+  return {
+    printedAtIso: new Date().toISOString(),
+    publicNo: input.publicNo,
+    brand: input.brand,
+    model: input.model,
+    imeiOrSerial: input.imeiOrSerial,
+    sellerLineIt: input.sellerLabel?.trim() || null,
+    legalVersion: TRADE_IN_AGREEMENT_LEGAL_VERSION,
+  };
+}

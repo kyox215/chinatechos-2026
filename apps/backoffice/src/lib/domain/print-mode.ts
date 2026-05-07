@@ -13,9 +13,13 @@ export type PrintOptions = {
   orientation?: PrintOrientation;
   density?: PrintDensity;
   marginMm?: 3 | 5 | 8;
+  /** CSS selector for the printable root (defaults to the first `.order-print-sheet`). */
+  sheetSelector?: string;
 };
 
-const DEFAULT_PRINT_OPTIONS: Required<PrintOptions> = {
+type CorePrintOptions = Required<Omit<PrintOptions, "sheetSelector">>;
+
+const DEFAULT_PRINT_OPTIONS: CorePrintOptions = {
   paperSize: "A5",
   orientation: "landscape",
   density: "normal",
@@ -32,7 +36,7 @@ function getPrintPortal(): HTMLElement {
   return portal;
 }
 
-function normalizeOptions(options?: PrintOptions): Required<PrintOptions> {
+function normalizeOptions(options?: PrintOptions): CorePrintOptions {
   return {
     paperSize: options?.paperSize ?? DEFAULT_PRINT_OPTIONS.paperSize,
     orientation: options?.orientation ?? DEFAULT_PRINT_OPTIONS.orientation,
@@ -48,7 +52,7 @@ function getPaperSizeMm(paperSize: PrintPaper, orientation: PrintOrientation) {
 
 function applyPrintConfig(
   body: HTMLElement,
-  options: Required<PrintOptions>,
+  options: CorePrintOptions,
 ) {
   const { w, h } = getPaperSizeMm(options.paperSize, options.orientation);
   const contentW = Math.max(0, w - options.marginMm * 2);
@@ -88,13 +92,13 @@ export function triggerOrderSheetPrint(
 ) {
   if (typeof window === "undefined") return;
 
-  const options = normalizeOptions(
-    typeof optionsOrAfter === "function" ? undefined : optionsOrAfter,
-  );
+  const optsArg = typeof optionsOrAfter === "function" ? undefined : optionsOrAfter;
+  const options = normalizeOptions(optsArg);
   const onAfter =
     typeof optionsOrAfter === "function" ? optionsOrAfter : onAfterMaybe;
 
-  const sheet = document.querySelector<HTMLElement>(".order-print-sheet");
+  const sheetSelector = optsArg?.sheetSelector ?? ".order-print-sheet";
+  const sheet = document.querySelector<HTMLElement>(sheetSelector);
   if (!sheet) return;
 
   const originalParent = sheet.parentElement;

@@ -264,3 +264,44 @@ drop policy if exists "inventory_events_read" on public.inventory_events;
 create policy "inventory_events_read" on public.inventory_events
 for select
 using (store_id = public.current_store_id());
+
+create table if not exists public.inventory_attachments (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete restrict,
+  inventory_item_id uuid not null references public.inventory_items(id) on delete cascade,
+  kind text not null check (kind in ('id_front', 'id_back', 'invoice', 'box', 'other')),
+  storage_path text not null,
+  file_name text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists inventory_attachments_item_idx on public.inventory_attachments(inventory_item_id);
+
+alter table public.inventory_attachments enable row level security;
+
+drop policy if exists "inventory_attachments_read" on public.inventory_attachments;
+create policy "inventory_attachments_read" on public.inventory_attachments
+for select
+using (store_id = public.current_store_id());
+
+insert into storage.buckets (id, name, public)
+values ('inventory-docs', 'inventory-docs', false)
+on conflict (id) do nothing;
+
+create table if not exists public.inventory_create_idempotency (
+  store_id uuid not null references public.stores(id) on delete cascade,
+  idempotency_key text not null,
+  inventory_item_id uuid not null references public.inventory_items(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (store_id, idempotency_key)
+);
+
+create index if not exists inventory_create_idempotency_item_idx
+  on public.inventory_create_idempotency(inventory_item_id);
+
+alter table public.inventory_create_idempotency enable row level security;
+
+drop policy if exists "inventory_create_idempotency_read" on public.inventory_create_idempotency;
+create policy "inventory_create_idempotency_read" on public.inventory_create_idempotency
+for select
+using (store_id = public.current_store_id());

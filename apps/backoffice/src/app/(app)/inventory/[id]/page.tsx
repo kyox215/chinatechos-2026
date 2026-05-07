@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { InventoryDetailClient, type InventoryDetailVm } from "@/components/inventory/InventoryDetailClient";
 import type { InventoryEventVM } from "@/components/inventory/InventoryTimeline";
 import { canSellInventory } from "@/lib/inventory/sellable";
+import { listInventoryAttachmentsWithUrls } from "@/lib/data/inventory-attachments";
 import { getInventoryItem, listInventoryEvents } from "@/lib/data/inventory";
 import { getCustomerDetail } from "@/lib/data/customer-detail";
 
@@ -9,6 +10,16 @@ export default async function InventoryDetailPage(props: { params: Promise<{ id:
   const { id } = await props.params;
   const item = await getInventoryItem(id);
   if (!item) notFound();
+
+  const attachmentsRaw = await listInventoryAttachmentsWithUrls(id);
+  const attachments = attachmentsRaw.map((a) => ({
+    id: a.id,
+    kind: a.kind,
+    signedUrl: a.signedUrl,
+    file_name: a.file_name,
+    created_at: a.created_at,
+    masked: a.masked,
+  }));
 
   const eventsRaw = await listInventoryEvents(id);
   const events: InventoryEventVM[] = eventsRaw.map((e) => ({
@@ -53,5 +64,5 @@ export default async function InventoryDetailPage(props: { params: Promise<{ id:
 
   const canSell = canSellInventory(item);
 
-  return <InventoryDetailClient canSell={canSell} events={events} item={vm} />;
+  return <InventoryDetailClient attachments={attachments} canSell={canSell} events={events} item={vm} />;
 }

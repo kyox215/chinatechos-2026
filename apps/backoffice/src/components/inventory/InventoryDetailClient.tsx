@@ -9,8 +9,16 @@ import {
   presentInventoryChannel,
   presentInventoryStatus,
 } from "@/lib/domain/inventory-presentation";
-import { buildInventorySalePrintPayload } from "@/lib/domain/inventory-print-it";
+import {
+  buildInventorySalePrintPayload,
+  buildTradeInAgreementPrintPayload,
+} from "@/lib/domain/inventory-print-it";
+import {
+  InventoryAttachmentsSection,
+  type InventoryAttachmentClientVm,
+} from "@/components/inventory/InventoryAttachmentsSection";
 import { InventoryPrintButton } from "@/components/inventory/InventoryPrintButton";
+import { TradeInAgreementPrintButton } from "@/components/inventory/TradeInAgreementPrintButton";
 import type { InventoryEventVM } from "@/components/inventory/InventoryTimeline";
 import { InventoryTimeline } from "@/components/inventory/InventoryTimeline";
 
@@ -69,6 +77,7 @@ export function InventoryDetailClient(props: {
   item: InventoryDetailVm;
   events: InventoryEventVM[];
   canSell: boolean;
+  attachments: InventoryAttachmentClientVm[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -165,6 +174,14 @@ export function InventoryDetailClient(props: {
   const holdActive =
     props.item.listing_hold_until && new Date(props.item.listing_hold_until) > new Date();
 
+  const tradeInPrintPayload = buildTradeInAgreementPrintPayload({
+    publicNo: props.item.public_no,
+    brand: props.item.brand,
+    model: props.item.model,
+    imeiOrSerial: props.item.imei_or_serial,
+    sellerLabel: props.item.sellerLabel,
+  });
+
   const printPayload = buildInventorySalePrintPayload({
     publicNo: props.item.public_no,
     productChannel: props.item.product_channel,
@@ -214,6 +231,9 @@ export function InventoryDetailClient(props: {
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
+          {props.item.product_channel === "trade_in" ? (
+            <TradeInAgreementPrintButton inventoryId={props.item.id} payload={tradeInPrintPayload} />
+          ) : null}
           {props.item.lifecycle_status === "sold" ? (
             <InventoryPrintButton payload={printPayload} label="Stampa ricevuta" />
           ) : null}
@@ -323,6 +343,8 @@ export function InventoryDetailClient(props: {
           <p className="mt-2 text-xs text-neutral-500">回收机须标记质检完成后才可售。</p>
         )}
       </section>
+
+      <InventoryAttachmentsSection attachments={props.attachments} inventoryId={props.item.id} />
 
       <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
         <h2 className="mb-2 text-sm font-semibold">关联客户</h2>
