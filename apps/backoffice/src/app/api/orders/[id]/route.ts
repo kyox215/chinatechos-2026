@@ -40,9 +40,9 @@ function parseMoney(value: unknown): number | null {
   return Math.round(n * 100) / 100;
 }
 
-function isMissingCustomerSignatureColumn(message?: string): boolean {
+function isMissingColumn(message: string | undefined, columnName: string): boolean {
   const msg = (message ?? "").toLowerCase();
-  return msg.includes("customer_signature") && (msg.includes("column") || msg.includes("schema cache"));
+  return msg.includes(columnName) && (msg.includes("column") || msg.includes("schema cache"));
 }
 
 export async function PATCH(
@@ -236,29 +236,47 @@ export async function PATCH(
   }
 
   if (Object.keys(patch).length > 1) {
-    let query = supabase
-      .from("repair_orders")
-      .update(patch)
-      .eq("id", params.id)
-      .eq("store_id", storeId)
-      .is("deleted_at", null);
+    const optionalColumns = ["fault_prices", "contact_phones", "customer_signature"] as const;
 
-    if (!isSignatureOnly) {
-      query = query.not("status", "in", "(completed,cancelled)");
+    let activePatch = { ...patch };
+    let lastError: string | null = null;
+
+    for (let attempt = 0; attempt <= optionalColumns.length; attempt++) {
+      let query = supabase
+        .from("repair_orders")
+        .update(activePatch)
+        .eq("id", params.id)
+        .eq("store_id", storeId)
+        .is("deleted_at", null);
+
+      if (!isSignatureOnly) {
+        query = query.not("status", "in", "(completed,cancelled)");
+      }
+
+      const updateRes = await query.select("id, status").single();
+
+      if (!updateRes.error) {
+        lastError = null;
+        break;
+      }
+
+      const msg = updateRes.error.message;
+      const dropped = optionalColumns.find(
+        (col) => col in activePatch && isMissingColumn(msg, col),
+      );
+      if (dropped) {
+        const { [dropped]: _, ...rest } = activePatch;
+        activePatch = rest;
+        lastError = null;
+        continue;
+      }
+
+      lastError = msg;
+      break;
     }
 
-    const updateRes = await query
-      .select("id, status")
-      .single();
-
-    if (updateRes.error) {
-      if (isMissingCustomerSignatureColumn(updateRes.error.message)) {
-        return NextResponse.json(
-          { error: "签名字段尚未在数据库生效，请先执行 customer_signature 迁移" },
-          { status: 400 },
-        );
-      }
-      return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
+    if (lastError) {
+      return NextResponse.json({ error: lastError }, { status: 500 });
     }
   }
 

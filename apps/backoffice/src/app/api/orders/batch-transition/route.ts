@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   for (const orderId of body.orderIds) {
     const current = await supabase
       .from("repair_orders")
-      .select("id, status")
+      .select("id, status, delivered_at")
       .eq("id", orderId)
       .eq("store_id", storeId)
       .is("deleted_at", null)
@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
       patch.approval_sent_at = new Date().toISOString();
     }
     if (body.toStatus === "completed") {
-      patch.delivered_at = new Date().toISOString();
+      if (!current.data.delivered_at) {
+        patch.delivered_at = new Date().toISOString();
+      }
       patch.completed_at = new Date().toISOString();
     }
     if (body.toStatus === "cancelled") {

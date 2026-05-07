@@ -89,15 +89,24 @@ export function FinanceCard(props: Props) {
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "保存失败");
 
-      const saveFaultPricesRes = await fetch(`/api/orders/${props.orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          faultPrices: prices,
-        }),
-      });
-      const saveFaultPricesData = (await saveFaultPricesRes.json()) as { error?: string };
-      if (!saveFaultPricesRes.ok) throw new Error(saveFaultPricesData.error ?? "保存分项价格失败");
+      try {
+        const saveFaultPricesRes = await fetch(`/api/orders/${props.orderId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ faultPrices: prices }),
+        });
+        if (!saveFaultPricesRes.ok) {
+          const fpData = (await saveFaultPricesRes.json()) as { error?: string };
+          const msg = fpData.error ?? "";
+          if (msg.toLowerCase().includes("schema cache") || msg.toLowerCase().includes("column")) {
+            setError("分项价格暂未保存（数据库待迁移），其余已保存");
+          } else {
+            setError(msg || "保存分项价格失败");
+          }
+        }
+      } catch {
+        setError("分项价格保存请求失败，其余已保存");
+      }
 
       setEditing(false);
       router.refresh();

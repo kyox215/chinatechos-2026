@@ -8,6 +8,7 @@ const STATUS_ORDER = [
   "diagnosing",
   "quoted",
   "waiting_approval",
+  "repairing",
   "parts_ordered",
   "parts_arrived",
   "repaired",
@@ -27,12 +28,25 @@ const STATUS_LABELS: Record<string, string> = {
   diagnosing: "检测中",
   quoted: "已报价",
   waiting_approval: "等回复",
+  repairing: "维修中",
   parts_ordered: "等配件",
   parts_arrived: "到货",
   repaired: "修好",
   notified: "已通知",
   completed: "已完成",
   cancelled: "已取消",
+};
+
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  new:               ["diagnosing", "quoted", "cancelled"],
+  diagnosing:        ["quoted", "waiting_approval", "repairing", "cancelled"],
+  quoted:            ["waiting_approval", "repairing", "cancelled"],
+  waiting_approval:  ["repairing", "cancelled"],
+  repairing:         ["parts_ordered", "repaired", "cancelled"],
+  parts_ordered:     ["parts_arrived", "cancelled"],
+  parts_arrived:     ["repairing", "repaired", "cancelled"],
+  repaired:          ["notified", "completed", "cancelled"],
+  notified:          ["completed", "cancelled"],
 };
 
 export function validateOrderTransition(
@@ -47,9 +61,11 @@ export function validateOrderTransition(
     return { ok: false, reason: "不能转到相同状态" };
   }
 
-  const validTargets = ALL_STATUSES.filter((s) => s !== fromStatus);
-  if (!validTargets.includes(toStatus as (typeof ALL_STATUSES)[number])) {
-    return { ok: false, reason: `不支持转到 "${toStatus}"` };
+  const allowed = ALLOWED_TRANSITIONS[fromStatus];
+  if (!allowed || !allowed.includes(toStatus)) {
+    const fromLabel = STATUS_LABELS[fromStatus] ?? fromStatus;
+    const toLabel = STATUS_LABELS[toStatus] ?? toStatus;
+    return { ok: false, reason: `"${fromLabel}" 不可直接转到 "${toLabel}"` };
   }
 
   return { ok: true };
@@ -70,37 +86,36 @@ export function getNextActions(status: string): {
     return { primary: [], secondary: [] };
   }
 
-  const currentIdx = STATUS_ORDER.indexOf(status as (typeof STATUS_ORDER)[number]);
-  const nextStatus = currentIdx >= 0 && currentIdx < STATUS_ORDER.length - 1
-    ? STATUS_ORDER[currentIdx + 1]
-    : null;
+  const allowed = ALLOWED_TRANSITIONS[status] ?? [];
+  const nonCancel = allowed.filter((s) => s !== "cancelled");
 
   const primary: ActionItem[] = [];
   const secondary: ActionItem[] = [];
 
-  if (nextStatus) {
+  if (nonCancel.length > 0) {
     primary.push({
-      toStatus: nextStatus,
-      label: STATUS_LABELS[nextStatus] ?? nextStatus,
-      confirmText: `确认切换到 "${STATUS_LABELS[nextStatus]}"？`,
+      toStatus: nonCancel[0],
+      label: STATUS_LABELS[nonCancel[0]] ?? nonCancel[0],
+      confirmText: `确认切换到 "${STATUS_LABELS[nonCancel[0]]}"？`,
     });
+
+    for (let i = 1; i < nonCancel.length; i++) {
+      secondary.push({
+        toStatus: nonCancel[i],
+        label: STATUS_LABELS[nonCancel[i]] ?? nonCancel[i],
+        confirmText: `确认切换到 "${STATUS_LABELS[nonCancel[i]]}"？`,
+      });
+    }
   }
 
-  for (const s of STATUS_ORDER) {
-    if (s === status || s === nextStatus) continue;
+  if (allowed.includes("cancelled")) {
     secondary.push({
-      toStatus: s,
-      label: STATUS_LABELS[s] ?? s,
-      confirmText: `确认切换到 "${STATUS_LABELS[s]}"？`,
+      toStatus: "cancelled",
+      label: "已取消",
+      confirmText: "确认取消此工单？",
+      variant: "danger",
     });
   }
-
-  secondary.push({
-    toStatus: "cancelled",
-    label: "已取消",
-    confirmText: "确认取消此工单？",
-    variant: "danger",
-  });
 
   return { primary, secondary };
 }

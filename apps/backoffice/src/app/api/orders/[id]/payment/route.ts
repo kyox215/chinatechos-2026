@@ -63,17 +63,18 @@ export async function PATCH(
     patch.deposit_amount = parsedDeposit;
   }
 
+  if (body.isPaid !== undefined) {
+    patch.is_paid = body.isPaid;
+  }
+
   const finalQuotation = parsedQuotation !== undefined
     ? (parsedQuotation ?? 0)
     : (current.data.quotation_amount ?? 0);
   const finalDeposit = parsedDeposit !== undefined
     ? (parsedDeposit ?? 0)
     : (current.data.deposit_amount ?? 0);
-  patch.balance_amount = Math.max(0, finalQuotation - finalDeposit);
-
-  if (body.isPaid !== undefined) {
-    patch.is_paid = body.isPaid;
-  }
+  const isPaidFinal = body.isPaid !== undefined ? body.isPaid : current.data.is_paid;
+  patch.balance_amount = isPaidFinal ? 0 : Math.max(0, finalQuotation - finalDeposit);
 
   const updateRes = await supabase
     .from("repair_orders")
