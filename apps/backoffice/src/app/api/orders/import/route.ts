@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrderStatusLabel } from "@/lib/domain/order-status";
+import {
+  defaultResolvedOrderUi,
+  resolveStatusLabel,
+} from "@/lib/domain/order-ui-config";
+import { getStoreSettings } from "@/lib/data/store-settings";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { generatePublicNo } from "@/lib/domain/public-no";
@@ -360,6 +364,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (mode === "preview") {
+    const storeSettings = await getStoreSettings();
+    const resolvedUi = storeSettings?.resolvedOrderUi ?? defaultResolvedOrderUi();
+
     const preview = rows.slice(0, 50).map((r) => ({
       rowNum: r.rowNum,
       customerPhone: r.customerPhone,
@@ -368,7 +375,7 @@ export async function POST(request: NextRequest) {
       model: r.model,
       issueDescription: r.issueDescription.slice(0, 60),
       quotationAmount: r.quotationAmount,
-      status: getOrderStatusLabel(r.status),
+      status: resolveStatusLabel(r.status, resolvedUi),
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString("it-IT") : "-",
       errors: r.errors,
     }));

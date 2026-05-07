@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
-import { getOrderStatusSelectOptions } from "@/lib/domain/order-status";
+import { getOrderStatusSelectOptionsResolved } from "@/lib/domain/order-ui-config";
 
 type Suggestion = {
   id: string;
@@ -33,6 +34,7 @@ type Props = {
 };
 
 export function OrdersSearchControls(props: Props) {
+  const orderUi = useResolvedOrderUi();
   const router = useRouter();
   const [q, setQ] = useState(props.q ?? "");
   const [status, setStatus] = useState(props.status);
@@ -260,7 +262,7 @@ export function OrdersSearchControls(props: Props) {
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
               <select className={compactInput} onChange={(e) => setStatus(e.target.value)} value={status}>
                 <option value="all">状态：全部</option>
-                {getOrderStatusSelectOptions().map((o) => (
+                {getOrderStatusSelectOptionsResolved(orderUi).map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>

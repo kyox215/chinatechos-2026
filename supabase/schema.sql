@@ -7,6 +7,7 @@ create table if not exists public.stores (
   timezone text not null default 'Europe/Rome',
   approval_overdue_hours int not null default 48,
   pickup_overdue_days int not null default 5,
+  order_ui_config jsonb,
   created_at timestamptz not null default now()
 );
 

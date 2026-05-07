@@ -1,6 +1,7 @@
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { ImportSection } from "@/components/settings/ImportSection";
 import { ExportSection } from "@/components/settings/ExportSection";
+import { OrderUiSettingsSection } from "@/components/settings/OrderUiSettingsSection";
 import { getStoreSettings } from "@/lib/data/store-settings";
 
 export default async function SettingsPage() {
@@ -14,7 +15,10 @@ export default async function SettingsPage() {
       </div>
 
       {settings ? (
-        <SettingsForm settings={settings} />
+        <>
+          <SettingsForm settings={settings} />
+          <OrderUiSettingsSection resolved={settings.resolvedOrderUi} />
+        </>
       ) : (
         <div className="rounded-xl border border-border px-4 py-8 text-sm text-neutral-500">
           无法加载门店设置。请检查数据库连接和 stores 表数据。

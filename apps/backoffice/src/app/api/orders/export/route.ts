@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrderStatusLabel } from "@/lib/domain/order-status";
+import {
+  defaultResolvedOrderUi,
+  resolveStatusLabel,
+} from "@/lib/domain/order-ui-config";
+import { getStoreSettings } from "@/lib/data/store-settings";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import * as XLSX from "xlsx";
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format") ?? "xlsx";
   const status = request.nextUrl.searchParams.get("status");
 
+  const storeSettings = await getStoreSettings();
+  const resolvedUi = storeSettings?.resolvedOrderUi ?? defaultResolvedOrderUi();
+
   const supabase = createSupabaseServerClient();
   let query = supabase
     .from("repair_orders")
@@ -63,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     return [
       row.public_no,
-      getOrderStatusLabel(row.status),
+      resolveStatusLabel(row.status, resolvedUi),
       customer?.name ?? "",
       customer?.phone_e164 ?? "",
       device?.brand ?? "",

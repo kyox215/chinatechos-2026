@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { getOrderStatusSelectOptions } from "@/lib/domain/order-status";
+import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
+import { getOrderStatusSelectOptionsResolved } from "@/lib/domain/order-ui-config";
 
 export function ExportSection() {
+  const orderUi = useResolvedOrderUi();
   const [status, setStatus] = useState("all");
 
   return (
@@ -20,7 +22,7 @@ export function ExportSection() {
           value={status}
         >
           <option value="all">全部状态</option>
-          {getOrderStatusSelectOptions().map((o) => (
+          {getOrderStatusSelectOptionsResolved(orderUi).map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>

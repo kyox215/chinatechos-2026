@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateOrderUiConfigFullSnapshot } from "@/lib/domain/order-ui-config";
 import { getStoreSettings } from "@/lib/data/store-settings";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -27,6 +28,7 @@ export async function PATCH(request: NextRequest) {
     printOrientation?: "landscape" | "portrait";
     printDensity?: "compact" | "normal" | "relaxed";
     printMarginMm?: 3 | 5 | 8;
+    orderUiConfig?: unknown;
   };
 
   const patch: Record<string, unknown> = {};
@@ -74,6 +76,17 @@ export async function PATCH(request: NextRequest) {
     patch.print_margin_mm = val;
   }
 
+  if (body.orderUiConfig !== undefined) {
+    const validated = validateOrderUiConfigFullSnapshot(body.orderUiConfig);
+    if (!validated.ok) {
+      return NextResponse.json(
+        { error: validated.errors.join("；"), errors: validated.errors },
+        { status: 422 },
+      );
+    }
+    patch.order_ui_config = validated.value as unknown as Record<string, unknown>;
+  }
+
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "没有可更新的字段" }, { status: 400 });
   }
@@ -83,7 +96,9 @@ export async function PATCH(request: NextRequest) {
     .from("stores")
     .update(patch)
     .eq("id", storeId)
-    .select("id, name, store_code, timezone, approval_overdue_hours, pickup_overdue_days, print_paper, print_orientation, print_density, print_margin_mm")
+    .select(
+      "id, name, store_code, timezone, approval_overdue_hours, pickup_overdue_days, print_paper, print_orientation, print_density, print_margin_mm, order_ui_config",
+    )
     .single();
 
   if (result.error) {

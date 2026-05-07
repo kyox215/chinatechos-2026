@@ -7,8 +7,13 @@ import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
 import { SupplierPickerModal } from "@/components/orders/SupplierPickerModal";
+import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import type { OrderListItem } from "@/lib/data/orders";
-import { getOrderStatusSelectOptions, getStatusListSortIndex } from "@/lib/domain/order-status";
+import {
+  getOrderStatusSelectOptionsResolved,
+  getStatusListSortIndexResolved,
+  type ResolvedOrderUi,
+} from "@/lib/domain/order-ui-config";
 import { calcWarranty } from "@/lib/domain/warranty-calc";
 
 type StatusGroup = {
@@ -23,66 +28,11 @@ type StatusGroup = {
 const DESKTOP_GRID =
   "grid grid-cols-[32px_76px_minmax(90px,130px)_minmax(140px,1fr)_120px_68px_56px_minmax(120px,160px)] gap-x-1.5";
 
-/** 寄修工单置顶分组用（与列表筛选默认一致） */
-const MAIL_IN_ORDER_TYPE = "quick_repair";
-
-type GroupSpec = {
-  key: string;
-  label: string;
-  statuses: Set<string>;
-  titleColor: string;
-  bgColor: string;
-  defaultOpen: boolean;
-};
-
-/** 大分组：小状态仍在行内徽标展示 */
-const MACRO_GROUP_SPECS: GroupSpec[] = [
-  { key: "rework", label: "返修", statuses: new Set(["rework"]), titleColor: "text-rose-700", bgColor: "bg-rose-50", defaultOpen: true },
-  { key: "new", label: "接单", statuses: new Set(["new"]), titleColor: "text-blue-700", bgColor: "bg-blue-50", defaultOpen: true },
-  {
-    key: "processing",
-    label: "处理中",
-    statuses: new Set([
-      "diagnosing",
-      "quoted",
-      "waiting_approval",
-      "repairing",
-      "parts_ordered",
-      "parts_arrived",
-    ]),
-    titleColor: "text-amber-800",
-    bgColor: "bg-amber-50",
-    defaultOpen: true,
-  },
-  {
-    key: "pickup",
-    label: "待取件",
-    statuses: new Set(["repaired", "notified", "unfixed_pickup", "waiting_pickup"]),
-    titleColor: "text-teal-800",
-    bgColor: "bg-teal-50",
-    defaultOpen: true,
-  },
-  {
-    key: "completed",
-    label: "已完成",
-    statuses: new Set(["completed"]),
-    titleColor: "text-emerald-800",
-    bgColor: "bg-emerald-50",
-    defaultOpen: false,
-  },
-  {
-    key: "cancelled",
-    label: "已取消",
-    statuses: new Set(["cancelled"]),
-    titleColor: "text-neutral-600",
-    bgColor: "bg-neutral-50",
-    defaultOpen: false,
-  },
-];
-
-function sortOrderItemsInGroup(bucket: OrderListItem[]): OrderListItem[] {
+function sortOrderItemsInGroup(bucket: OrderListItem[], resolved: ResolvedOrderUi): OrderListItem[] {
   return [...bucket].sort((a, b) => {
-    const rankDiff = getStatusListSortIndex(a.status) - getStatusListSortIndex(b.status);
+    const rankDiff =
+      getStatusListSortIndexResolved(a.status, resolved) -
+      getStatusListSortIndexResolved(b.status, resolved);
     if (rankDiff !== 0) return rankDiff;
     const tu = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     if (tu !== 0) return tu;
@@ -90,18 +40,20 @@ function sortOrderItemsInGroup(bucket: OrderListItem[]): OrderListItem[] {
   });
 }
 
-function macroGroups(items: OrderListItem[]): StatusGroup[] {
+/** 大分组配置来自门店设置（resolvedOrderUi.macroGroups） */
+function macroGroups(items: OrderListItem[], resolved: ResolvedOrderUi): StatusGroup[] {
   const groups: StatusGroup[] = [];
   const assigned = new Set<string>();
-  for (const spec of MACRO_GROUP_SPECS) {
-    const raw = items.filter((it) => spec.statuses.has(it.status));
+  for (const spec of resolved.macroGroups) {
+    const statusSet = new Set(spec.statuses);
+    const raw = items.filter((it) => statusSet.has(it.status));
     for (const it of raw) assigned.add(it.id);
     if (raw.length > 0) {
       groups.push({
-        key: spec.key,
+        key: spec.id,
         label: spec.label,
-        items: sortOrderItemsInGroup(raw),
-        defaultOpen: spec.defaultOpen,
+        items: sortOrderItemsInGroup(raw, resolved),
+        defaultOpen: spec.defaultOpenDesktop,
         titleColor: spec.titleColor,
         bgColor: spec.bgColor,
       });
@@ -112,7 +64,7 @@ function macroGroups(items: OrderListItem[]): StatusGroup[] {
     groups.push({
       key: "other",
       label: "其他",
-      items: sortOrderItemsInGroup(misc),
+      items: sortOrderItemsInGroup(misc, resolved),
       defaultOpen: true,
       titleColor: "text-neutral-700",
       bgColor: "bg-neutral-100",
@@ -148,11 +100,12 @@ function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
 
 export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const router = useRouter();
-  const mailItems = items.filter((it) => it.orderType === MAIL_IN_ORDER_TYPE);
-  const shopItems = items.filter((it) => it.orderType !== MAIL_IN_ORDER_TYPE);
-  const mailGroups = macroGroups(mailItems);
-  const shopGroups = macroGroups(shopItems);
-  const statusOptions = getOrderStatusSelectOptions();
+  const ui = useResolvedOrderUi();
+  const mailItems = items.filter((it) => it.orderType === ui.mailInOrderType);
+  const shopItems = items.filter((it) => it.orderType !== ui.mailInOrderType);
+  const mailGroups = macroGroups(mailItems, ui);
+  const shopGroups = macroGroups(shopItems, ui);
+  const statusOptions = getOrderStatusSelectOptionsResolved(ui);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
@@ -215,7 +168,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
       {mailGroups.length > 0 ? (
         <div className="space-y-3">
           <div className="px-1 pt-1">
-            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">寄修</h2>
+            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">{ui.sectionTitles.mail}</h2>
           </div>
           {mailGroups.map((group) => (
             <GroupSection
@@ -233,7 +186,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
       {shopGroups.length > 0 ? (
         <div className="space-y-3">
           <div className="px-1 pt-1">
-            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">到店</h2>
+            <h2 className="text-[11px] font-bold uppercase tracking-wide text-neutral-500">{ui.sectionTitles.shop}</h2>
           </div>
           {shopGroups.map((group) => (
             <GroupSection

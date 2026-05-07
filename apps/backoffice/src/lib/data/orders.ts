@@ -2,7 +2,10 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { getStoreSettings } from "@/lib/data/store-settings";
-import { getStatusListSortIndex } from "@/lib/domain/order-status";
+import {
+  defaultResolvedOrderUi,
+  getStatusListSortIndexResolved,
+} from "@/lib/domain/order-ui-config";
 
 export type OrderListItem = {
   id: string;
@@ -54,6 +57,7 @@ export async function listOrders(filters: OrderListFilters = {}) {
   const settings = await getStoreSettings();
   const approvalOverdueHours = settings?.approvalOverdueHours ?? 48;
   const pickupOverdueDays = settings?.pickupOverdueDays ?? 5;
+  const resolvedUi = settings?.resolvedOrderUi ?? defaultResolvedOrderUi();
 
   let query = supabase
     .from("repair_orders")
@@ -209,7 +213,9 @@ export async function listOrders(filters: OrderListFilters = {}) {
   });
 
   items.sort((a, b) => {
-    const rankDiff = getStatusListSortIndex(a.status) - getStatusListSortIndex(b.status);
+    const rankDiff =
+      getStatusListSortIndexResolved(a.status, resolvedUi) -
+      getStatusListSortIndexResolved(b.status, resolvedUi);
     if (rankDiff !== 0) return rankDiff;
     const tu = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     if (tu !== 0) return tu;

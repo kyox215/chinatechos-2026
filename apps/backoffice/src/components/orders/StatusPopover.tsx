@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { getNextActions } from "@/lib/domain/order-status";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
 
@@ -42,7 +43,8 @@ export function StatusPopover({
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  const { primary, secondary } = getNextActions(status);
+  const ui = useResolvedOrderUi();
+  const { primary, secondary } = getNextActions(status, ui.statusLabels);
 
   useEffect(() => {
     if (!supplierPicker) return;

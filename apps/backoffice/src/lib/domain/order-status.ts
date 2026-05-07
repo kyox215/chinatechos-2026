@@ -91,7 +91,10 @@ export type ActionItem = {
   variant?: "danger";
 };
 
-export function getNextActions(status: string): {
+export function getNextActions(
+  status: string,
+  labels: Record<string, string> = ORDER_STATUS_LABELS,
+): {
   primary: ActionItem[];
   secondary: ActionItem[];
 } {
@@ -101,25 +104,27 @@ export function getNextActions(status: string): {
   const primary: ActionItem[] = [];
   const secondary: ActionItem[] = [];
 
+  const lbl = (s: string) => labels[s] ?? ORDER_STATUS_LABELS[s] ?? s;
+
   if (nonCancel.length > 0) {
     primary.push({
       toStatus: nonCancel[0],
-      label: ORDER_STATUS_LABELS[nonCancel[0]] ?? nonCancel[0],
-      confirmText: `确认切换到 "${ORDER_STATUS_LABELS[nonCancel[0]] ?? nonCancel[0]}"？`,
+      label: lbl(nonCancel[0]),
+      confirmText: `确认切换到 "${lbl(nonCancel[0])}"？`,
     });
 
     for (let i = 1; i < nonCancel.length; i++) {
       secondary.push({
         toStatus: nonCancel[i],
-        label: ORDER_STATUS_LABELS[nonCancel[i]] ?? nonCancel[i],
-        confirmText: `确认切换到 "${ORDER_STATUS_LABELS[nonCancel[i]] ?? nonCancel[i]}"？`,
+        label: lbl(nonCancel[i]),
+        confirmText: `确认切换到 "${lbl(nonCancel[i])}"？`,
       });
     }
   }
 
   secondary.push({
     toStatus: "cancelled",
-    label: "已取消",
+    label: lbl("cancelled"),
     confirmText: "确认取消此工单？",
     variant: "danger",
   });
