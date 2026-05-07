@@ -4,20 +4,43 @@ import { listInventoryItems } from "@/lib/data/inventory";
 
 type QueryValue = string | string[] | undefined;
 
+async function resolveSearchParamsRecord(
+  sp: Promise<Record<string, QueryValue>> | Record<string, QueryValue> | undefined,
+): Promise<Record<string, QueryValue>> {
+  if (sp == null) return {};
+  if (typeof (sp as Promise<Record<string, QueryValue>>).then === "function") {
+    return (await sp) ?? {};
+  }
+  return sp as Record<string, QueryValue>;
+}
+
 export default async function InventoryPage(props: {
-  searchParams?: Promise<Record<string, QueryValue>>;
+  searchParams?: Promise<Record<string, QueryValue>> | Record<string, QueryValue>;
 }) {
-  const searchParams = (await props.searchParams) ?? {};
+  const searchParams = await resolveSearchParamsRecord(props.searchParams);
   const q = normalizeQuery(searchParams.q);
   const channel = normalizeQuery(searchParams.channel) ?? "all";
   const status = normalizeQuery(searchParams.status) ?? "all";
   const dateFrom = normalizeQuery(searchParams.dateFrom);
   const dateTo = normalizeQuery(searchParams.dateTo);
 
-  const { items } = await listInventoryItems({ q, channel, status, dateFrom, dateTo });
+  const { items, error: listError } = await listInventoryItems({ q, channel, status, dateFrom, dateTo });
 
   return (
     <div className="space-y-4">
+      {listError ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-medium">库存列表暂时无法加载</p>
+          <p className="mt-1 font-mono text-xs opacity-90">{listError}</p>
+          <p className="mt-2 text-xs text-neutral-700">
+            请确认已在 Supabase 执行库存相关迁移、环境变量已配置{" "}
+            <code className="rounded bg-white/80 px-1">NEXT_PUBLIC_SUPABASE_URL</code> 与{" "}
+            <code className="rounded bg-white/80 px-1">SUPABASE_SERVICE_ROLE_KEY</code>（或{" "}
+            <code className="rounded bg-white/80 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+            ）、以及 <code className="rounded bg-white/80 px-1">DEFAULT_STORE_ID</code>（若未设置则需 Service Role 能读到门店表）。
+          </p>
+        </div>
+      ) : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="text-xl font-semibold tracking-tight">商品管理</h1>
         <InventoryListToolbar

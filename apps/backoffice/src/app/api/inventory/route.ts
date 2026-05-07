@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
   try {
-    const { items } = await listInventoryItems({ q, channel, status, dateFrom, dateTo });
+    const { items, error } = await listInventoryItems({ q, channel, status, dateFrom, dateTo });
+    if (error) {
+      return NextResponse.json({ error, items: [] }, { status: 503 });
+    }
     return NextResponse.json({ items });
   } catch (e) {
     const message = e instanceof Error ? e.message : "加载失败";

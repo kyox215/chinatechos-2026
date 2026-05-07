@@ -172,6 +172,15 @@ export async function registerInventoryIdempotencyAfterCreate(input: {
   return { outcome: "replayed", id: winner.id, publicNo: winner.public_no };
 }
 
+function normalizeInventoryRow(row: Record<string, unknown>): InventoryItemRow {
+  const qa = row.qa_report;
+  const qa_report =
+    qa != null && typeof qa === "object" && !Array.isArray(qa)
+      ? (qa as Record<string, unknown>)
+      : {};
+  return { ...row, qa_report } as InventoryItemRow;
+}
+
 export async function listInventoryItems(opts: {
   q?: string;
   channel?: string;
@@ -179,53 +188,58 @@ export async function listInventoryItems(opts: {
   dateFrom?: string;
   dateTo?: string;
   limit?: number;
-}): Promise<{ items: InventoryItemRow[] }> {
-  const storeId = await resolveStoreId();
-  if (!storeId) return { items: [] };
+}): Promise<{ items: InventoryItemRow[]; error?: string }> {
+  try {
+    const storeId = await resolveStoreId();
+    if (!storeId) return { items: [] };
 
-  const supabase = createSupabaseServerClient();
-  let q = supabase
-    .from("inventory_items")
-    .select("*")
-    .eq("store_id", storeId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(opts.limit ?? 200);
+    const supabase = createSupabaseServerClient();
+    let q = supabase
+      .from("inventory_items")
+      .select("*")
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(opts.limit ?? 200);
 
-  if (opts.channel && opts.channel !== "all") {
-    q = q.eq("product_channel", opts.channel);
-  }
-  if (opts.status && opts.status !== "all") {
-    q = q.eq("lifecycle_status", opts.status);
-  }
-  if (opts.dateFrom?.trim()) {
-    q = q.gte("created_at", `${opts.dateFrom.trim()}T00:00:00.000Z`);
-  }
-  if (opts.dateTo?.trim()) {
-    q = q.lte("created_at", `${opts.dateTo.trim()}T23:59:59.999Z`);
-  }
+    if (opts.channel && opts.channel !== "all") {
+      q = q.eq("product_channel", opts.channel);
+    }
+    if (opts.status && opts.status !== "all") {
+      q = q.eq("lifecycle_status", opts.status);
+    }
+    if (opts.dateFrom?.trim()) {
+      q = q.gte("created_at", `${opts.dateFrom.trim()}T00:00:00.000Z`);
+    }
+    if (opts.dateTo?.trim()) {
+      q = q.lte("created_at", `${opts.dateTo.trim()}T23:59:59.999Z`);
+    }
 
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
+    const { data, error } = await q;
+    if (error) return { items: [], error: error.message };
 
-  let rows = (data ?? []) as InventoryItemRow[];
-  const needle = opts.q?.trim().toLowerCase();
-  if (needle) {
-    rows = rows.filter((r) => {
-      const hay = [
-        r.public_no,
-        r.brand,
-        r.model,
-        r.imei_or_serial ?? "",
-        r.notes ?? "",
-      ]
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(needle);
-    });
+    let rows = (data ?? []).map((r) => normalizeInventoryRow(r as Record<string, unknown>));
+    const needle = opts.q?.trim().toLowerCase();
+    if (needle) {
+      rows = rows.filter((r) => {
+        const hay = [
+          r.public_no,
+          r.brand,
+          r.model,
+          r.imei_or_serial ?? "",
+          r.notes ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(needle);
+      });
+    }
+
+    return { items: rows };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "加载失败";
+    return { items: [], error: message };
   }
-
-  return { items: rows };
 }
 
 /** Active inventory = not sold/cancelled (same rule as IMEI duplicate check). */
@@ -339,7 +353,7 @@ export async function listInventoryItemsForExport(opts: {
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
-  let rows = (data ?? []) as InventoryItemRow[];
+  let rows = (data ?? []).map((r) => normalizeInventoryRow(r as Record<string, unknown>));
   const needle = opts.q?.trim().toLowerCase();
   if (needle) {
     rows = rows.filter((r) => {
@@ -373,7 +387,8 @@ export async function getInventoryItem(id: string): Promise<InventoryItemRow | n
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data as InventoryItemRow | null;
+  if (!data) return null;
+  return normalizeInventoryRow(data as Record<string, unknown>);
 }
 
 export type CreateInventoryInput = {
