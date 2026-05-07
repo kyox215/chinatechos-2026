@@ -49,7 +49,12 @@ export type OrderListFilters = {
 
 const ORDER_SEARCH_Q_MAX_LEN = 200;
 
-/** Safe fragment for PostgREST `.or(...)` ilike patterns: drop chars that break filters or LIKE wildcards. */
+/**
+ * Safe fragment for PostgREST `.or(...)` ilike patterns.
+ * - Strip `,` `%` `\` `"` `()` — break CSV-like filter syntax or user-injected wildcards.
+ * - Strip `+` — PostgREST logic tree treats `+` as boolean OR (breaks phone `+39…` searches).
+ * - Keep `_` — needed for IMEI 等；在 SQL ILIKE 中 `_` 为单字符通配符，属可接受的模糊匹配。
+ */
 export function sanitizeOrderSearchQ(raw: string): string {
   return raw
     .trim()
@@ -57,8 +62,6 @@ export function sanitizeOrderSearchQ(raw: string): string {
     .replace(/\\/g, "")
     .replace(/,/g, "")
     .replace(/%/g, "")
-    .replace(/_/g, "")
-    // PostgREST logic-tree parser treats `+` as boolean OR — breaks `ilike."…+39…"` even when quoted.
     .replace(/\+/g, "")
     .replace(/[()]/g, "")
     .replace(/"/g, "");
