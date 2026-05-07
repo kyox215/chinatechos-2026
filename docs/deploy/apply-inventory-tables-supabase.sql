@@ -9,6 +9,11 @@
 --   - public.stores、public.customers、public.repair_orders 已存在
 --   - public.current_store_id() 已存在（见 supabase/schema.sql）
 -- 若主库尚未初始化，请先执行仓库根目录 supabase/schema.sql 再跑本脚本。
+--
+-- 若报错「cannot insert multiple commands into a prepared statement」：
+--   多为 IDE/数据库插件用 prepared statement 一次只能一条。请改用浏览器打开
+--   Supabase Dashboard → SQL Editor 粘贴整段 Run；或依次执行分段脚本：
+--   apply-inventory-tables-part1-items-and-events.sql → part2 → part3（见同目录）。
 -- =============================================================================
 
 create extension if not exists pgcrypto;

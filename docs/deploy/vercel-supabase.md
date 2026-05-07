@@ -12,11 +12,19 @@
 
 **做法（任选其一）：**
 
-**A. 一键脚本（推荐）** — 在 **SQL Editor** 中打开并 **整段执行**（单次 Run）：
+**A. 一键脚本（推荐）** — 在 **浏览器**打开 Supabase **Dashboard → SQL Editor**（不要用 Cursor/VS Code 里只能跑 prepared statement 的 SQL 插件），粘贴并 **整段 Run**：
 
-- [`docs/deploy/apply-inventory-tables-supabase.sql`](apply-inventory-tables-supabase.sql)（已合并上述三份 migration，可直接复制文件全文）
+- [`docs/deploy/apply-inventory-tables-supabase.sql`](apply-inventory-tables-supabase.sql)（已合并上述三份 migration）
 
-**B. 增量迁移（需分段执行时）** — 按下面顺序 **分别执行** 每个文件的 **全文**（复制自本仓库）：
+若报错 **`cannot insert multiple commands into a prepared statement`**：说明当前工具一次只能提交一条语句。请 **改用浏览器 Supabase SQL Editor**，或按顺序分别执行下面三个分段脚本（每个文件仍含多句 SQL，必须在 **Dashboard SQL Editor** 或 `psql` 中整文件执行）：
+
+| 顺序 | 分段脚本 |
+|------|----------|
+| 1 | [`apply-inventory-tables-part1-items-and-events.sql`](apply-inventory-tables-part1-items-and-events.sql) |
+| 2 | [`apply-inventory-tables-part2-attachments.sql`](apply-inventory-tables-part2-attachments.sql) |
+| 3 | [`apply-inventory-tables-part3-idempotency.sql`](apply-inventory-tables-part3-idempotency.sql) |
+
+**B. 增量迁移（按 migration 文件分段）** — 按下面顺序 **分别执行** 每个文件的 **全文**（复制自本仓库）：
 
 | 顺序 | 文件 |
 |------|------|

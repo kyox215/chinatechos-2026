@@ -2,7 +2,7 @@
 
 面向门店后台（backoffice）的库存台账与回收合规能力，代码主要在 `apps/backoffice` 与 `supabase/migrations`。
 
-若部署时出现 **`Could not find the table 'public.inventory_items'`**，请在 Supabase 按文档顺序执行迁移：参见 [Vercel + Supabase 部署指南（§1.1 起）](../deploy/vercel-supabase.md)。
+若部署时出现 **`Could not find the table 'public.inventory_items'`**，请在 Supabase 按文档顺序执行迁移：参见 [Vercel + Supabase 部署指南（§1.1 起）](../deploy/vercel-supabase.md)。若在 Cursor/插件里执行 SQL 报 **`cannot insert multiple commands into a prepared statement`**，请改用 **浏览器 Supabase SQL Editor** 或文档中的 **part1→part2→part3** 分段脚本。
 
 ## 生命周期状态 `lifecycle_status`
 
