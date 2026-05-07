@@ -18,7 +18,7 @@ export default async function OrdersPage(props: {
   const dateFrom = normalizeQuery(searchParams.dateFrom);
   const dateTo = normalizeQuery(searchParams.dateTo);
 
-  const { items } = await listOrders({
+  const { items, error: listError } = await listOrders({
     q,
     status,
     orderType: "all",
@@ -37,6 +37,12 @@ export default async function OrdersPage(props: {
         <h1 className="text-xl font-semibold tracking-tight">工单</h1>
         <span className="text-sm text-neutral-500">共 {items.length} 条</span>
       </div>
+
+      {listError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+          列表加载失败：{listError}
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         <OrdersSearchControls

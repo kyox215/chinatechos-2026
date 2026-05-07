@@ -6,7 +6,7 @@ import { listOrders } from "@/lib/data/orders";
 
 export default async function DashboardPage() {
   const metrics = await getDashboardMetrics();
-  const { items } = await listOrders();
+  const { items, error: ordersListError } = await listOrders();
   const recent = items.slice(0, 6);
 
   return (
@@ -43,28 +43,34 @@ export default async function DashboardPage() {
       </div>
 
       <Panel title="最近活动" actionHref="/orders">
+          {ordersListError ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-900">
+              最近工单加载失败：{ordersListError}
+            </div>
+          ) : null}
           <div className="space-y-3 md:hidden">
-            {recent.length === 0 ? (
+            {!ordersListError && recent.length === 0 ? (
               <div className="rounded-xl border border-border px-3 py-6 text-sm text-neutral-500">
                 暂无数据（请先配置 Supabase 与导入/录入工单）。
               </div>
-            ) : (
-              recent.map((it) => (
-                <article key={it.id} className="rounded-xl border border-border bg-surface-2 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-neutral-900">{it.publicNo}</div>
-                    <OrderStatusBadge status={it.status} />
-                  </div>
-                  <div className="mt-2 text-sm text-neutral-900">
-                    {(it.customerName ?? "未命名客户") + (it.deviceLabel ? ` · ${it.deviceLabel}` : "")}
-                  </div>
-                  <div className="mt-1 line-clamp-1 text-xs text-neutral-500">
-                    {it.issue}
-                    {it.technicianName ? ` · ${it.technicianName}` : ""}
-                  </div>
-                </article>
-              ))
-            )}
+            ) : null}
+            {!ordersListError && recent.length > 0
+              ? recent.map((it) => (
+                  <article key={it.id} className="rounded-xl border border-border bg-surface-2 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-semibold text-neutral-900">{it.publicNo}</div>
+                      <OrderStatusBadge status={it.status} />
+                    </div>
+                    <div className="mt-2 text-sm text-neutral-900">
+                      {(it.customerName ?? "未命名客户") + (it.deviceLabel ? ` · ${it.deviceLabel}` : "")}
+                    </div>
+                    <div className="mt-1 line-clamp-1 text-xs text-neutral-500">
+                      {it.issue}
+                      {it.technicianName ? ` · ${it.technicianName}` : ""}
+                    </div>
+                  </article>
+                ))
+              : null}
           </div>
 
           <div className="hidden overflow-hidden rounded-xl border border-border md:block">
@@ -73,9 +79,10 @@ export default async function DashboardPage() {
               <div>客户/设备</div>
               <div className="text-right">状态</div>
             </div>
-            {recent.length === 0 ? (
+            {!ordersListError && recent.length === 0 ? (
               <div className="px-3 py-6 text-sm text-neutral-500">暂无数据（请先配置 Supabase 与导入/录入工单）。</div>
-            ) : (
+            ) : null}
+            {!ordersListError && recent.length > 0 ? (
               recent.map((it) => (
                 <div
                   key={it.id}
@@ -96,7 +103,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               ))
-            )}
+            ) : null}
           </div>
       </Panel>
     </div>

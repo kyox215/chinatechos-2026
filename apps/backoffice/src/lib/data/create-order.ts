@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
+import { normalizeInitialOrderStatus } from "@/lib/domain/order-status";
 import { generatePublicNo } from "@/lib/domain/public-no";
 import { writeOrderEvent } from "@/lib/data/order-events";
 
@@ -110,12 +111,14 @@ export async function createOrder(input: CreateOrderInput) {
   const deposit = Number.isFinite(input.depositAmount ?? NaN) ? Math.max(0, Number(input.depositAmount)) : 0;
   const balance = Math.max(0, quotation - deposit);
 
+  const initialStatus = normalizeInitialOrderStatus(input.initialStatus);
+
   // Create repair order
   const insertData: Record<string, unknown> = {
     store_id: storeId,
     public_no: publicNo,
     order_type: input.orderType ?? "dropoff_repair",
-    status: input.initialStatus ?? "new",
+    status: initialStatus,
     customer_id: customerId,
     device_id: deviceId,
     issue_description: input.issueDescription,

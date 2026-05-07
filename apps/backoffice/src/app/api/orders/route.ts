@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ORDER_STATUS_ALLOWED_FOR_CREATE } from "@/lib/domain/order-status";
 import { createOrder } from "@/lib/data/create-order";
 
 function parseNonNegativeNumber(value: unknown): number | undefined {
@@ -32,7 +33,12 @@ export async function POST(request: NextRequest) {
   const internalTag = String(body.internalTag ?? "");
   const warrantyText = String(body.warrantyText ?? "6个月");
   const originalOrderId = body.originalOrderId ? String(body.originalOrderId) : undefined;
-  const initialStatus = body.initialStatus ? String(body.initialStatus) : undefined;
+  const rawInitial =
+    body.initialStatus != null && String(body.initialStatus).trim() !== ""
+      ? String(body.initialStatus).trim()
+      : undefined;
+  const initialStatus =
+    rawInitial && ORDER_STATUS_ALLOWED_FOR_CREATE.has(rawInitial) ? rawInitial : undefined;
   const isRework = initialStatus === "rework";
 
   if (!customerPhone.trim()) {

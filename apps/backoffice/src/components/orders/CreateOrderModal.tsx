@@ -161,11 +161,15 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
 
   useEffect(() => {
     if (!printedPublicNo) return;
+    const pub = printedPublicNo;
     const id = requestAnimationFrame(() => {
       triggerOrderSheetPrint(defaultPrintOptions, () => {
         setPrintedPublicNo(null);
         onClose();
-        router.refresh();
+        const qs = new URLSearchParams();
+        qs.set("status", "new");
+        qs.set("q", pub);
+        router.push(`/orders?${qs.toString()}`);
       });
     });
     return () => cancelAnimationFrame(id);
@@ -211,6 +215,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderType: "dropoff_repair",
+          initialStatus: "new",
           customerPhone: customerPhone.trim(),
           customerName: customerName.trim() || undefined,
           brand: finalBrand,
@@ -230,7 +235,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
       if (pub) setPrintedPublicNo(pub);
       else {
         onClose();
-        router.refresh();
+        router.push("/orders?status=new");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");

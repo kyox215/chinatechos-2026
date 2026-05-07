@@ -47,7 +47,30 @@ export type OrderListFilters = {
   dateTo?: string;
 };
 
-export async function listOrders(filters: OrderListFilters = {}) {
+const ORDER_SEARCH_Q_MAX_LEN = 200;
+
+/** Safe fragment for PostgREST `.or(...)` ilike patterns: drop chars that break filters or LIKE wildcards. */
+export function sanitizeOrderSearchQ(raw: string): string {
+  return raw
+    .trim()
+    .slice(0, ORDER_SEARCH_Q_MAX_LEN)
+    .replace(/\\/g, "")
+    .replace(/,/g, "")
+    .replace(/%/g, "")
+    .replace(/_/g, "");
+}
+
+/** PostgREST filter value: quote so `.` and other chars in search text do not break `col.op.value` parsing. */
+function postgrestQuoted(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+export type ListOrdersResult = {
+  items: OrderListItem[];
+  error?: string;
+};
+
+export async function listOrders(filters: OrderListFilters = {}): Promise<ListOrdersResult> {
   const storeId = await resolveStoreId();
   if (!env.supabaseUrl || !storeId) {
     return { items: [] as OrderListItem[] };
@@ -127,19 +150,20 @@ export async function listOrders(filters: OrderListFilters = {}) {
     query = query.in("status", ["repaired", "notified", "unfixed_pickup"]).lte("completed_at", cutoff);
   }
 
-  if (filters.q) {
-    const escaped = filters.q.replace(/[,%]/g, "");
-    const like = `%${escaped}%`;
+  const qSafe = filters.q ? sanitizeOrderSearchQ(filters.q) : "";
+  if (qSafe.length > 0) {
+    const like = `%${qSafe}%`;
+    const qv = postgrestQuoted(like);
     query = query.or(
       [
-        `public_no.ilike.${like}`,
-        `issue_description.ilike.${like}`,
-        `technician_name.ilike.${like}`,
-        `customers.name.ilike.${like}`,
-        `customers.phone_e164.ilike.${like}`,
-        `devices.brand.ilike.${like}`,
-        `devices.model.ilike.${like}`,
-        `devices.serial_or_imei.ilike.${like}`,
+        `public_no.ilike.${qv}`,
+        `issue_description.ilike.${qv}`,
+        `technician_name.ilike.${qv}`,
+        `customers.name.ilike.${qv}`,
+        `customers.phone_e164.ilike.${qv}`,
+        `devices.brand.ilike.${qv}`,
+        `devices.model.ilike.${qv}`,
+        `devices.serial_or_imei.ilike.${qv}`,
       ].join(","),
     );
   }
@@ -147,7 +171,10 @@ export async function listOrders(filters: OrderListFilters = {}) {
   const res = await query.limit(5000);
 
   if (res.error) {
-    throw new Error(res.error.message);
+    return {
+      items: [],
+      error: res.error.message || "工单列表查询失败",
+    };
   }
 
   const rows = res.data ?? [];

@@ -89,13 +89,22 @@ export function OrdersSearchControls(props: Props) {
 
   useEffect(() => {
     const keyword = q.trim();
-    if (keyword.length < 2) return;
+    if (keyword.length < 2) {
+      queueMicrotask(() => setSuggestions([]));
+      return;
+    }
     const timer = setTimeout(async () => {
       setLoadingSuggest(true);
       try {
         const response = await fetch(`/api/customers/suggest?q=${encodeURIComponent(keyword)}&limit=10`);
+        if (!response.ok) {
+          setSuggestions([]);
+          return;
+        }
         const json = (await response.json()) as { items?: Suggestion[] };
         setSuggestions(json.items ?? []);
+      } catch {
+        setSuggestions([]);
       } finally {
         setLoadingSuggest(false);
       }

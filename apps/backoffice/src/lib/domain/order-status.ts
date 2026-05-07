@@ -69,6 +69,16 @@ export const ORDER_STATUS_SELECT_SEQUENCE = [
   "cancelled",
 ] as const;
 
+/** Subset of enum for `initialStatus` on create — same as full select list; invalid input falls back to `new`. */
+export const ORDER_STATUS_ALLOWED_FOR_CREATE = new Set<string>(
+  ORDER_STATUS_SELECT_SEQUENCE as readonly string[],
+);
+
+export function normalizeInitialOrderStatus(raw: string | undefined): string {
+  if (raw && ORDER_STATUS_ALLOWED_FOR_CREATE.has(raw)) return raw;
+  return "new";
+}
+
 export function getOrderStatusSelectOptions(): { value: string; label: string }[] {
   return ORDER_STATUS_SELECT_SEQUENCE.map((value) => ({
     value,
