@@ -255,63 +255,65 @@ const GroupSection = memo(function GroupSection({
               return (
               <article
                 key={it.id}
-                className={`rounded-xl border border-border bg-surface px-2.5 py-2 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : ""}`}
+                className={`min-w-0 rounded-xl border border-border bg-surface px-2.5 py-2 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : ""}`}
               >
-                <div className="flex items-start gap-2">
+                <div className="flex min-w-0 items-start gap-2">
                   <input
                     checked={selected.has(it.id)}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300"
                     onChange={() => onToggleSelect(it.id)}
                     type="checkbox"
                   />
-                  <div className="flex min-w-0 flex-1 gap-2">
-                    <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-start justify-between gap-3">
                       <StatusPopover orderId={it.id} status={it.status} />
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="min-w-0 truncate text-sm font-semibold text-neutral-900">
-                          {it.deviceLabel || "-"}
-                        </div>
-                        <ReworkWarrantyBadges item={it} />
-                      </div>
-                      <div className="text-[11px] text-neutral-500">{it.customerName ?? "-"}</div>
-                      <div className="break-words text-[11px] leading-snug text-neutral-400 line-clamp-1">{it.issue || "-"}</div>
-                      <div className="space-y-1 text-[11px] leading-snug text-neutral-600">
-                        <div className="flex min-w-0 gap-1.5">
-                          <span className="shrink-0 text-neutral-400">技师</span>
-                          <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
-                        </div>
-                        <div className="flex min-w-0 items-start gap-1.5">
-                          <span className="mt-0.5 shrink-0 text-neutral-400">供应商</span>
-                          <button
-                            className={`inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
-                            title="点击选择供应商"
-                            type="button"
-                            onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
+                      <div className="min-w-0 flex-1">
+                        {phoneHref ? (
+                          <a
+                            className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800 no-underline underline-offset-2 hover:underline active:opacity-80"
+                            href={phoneHref}
                           >
-                            {it.supplierShortName ? (
-                              <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
-                            ) : (
-                              <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
-                            )}
-                          </button>
-                        </div>
+                            {it.customerPhone || "-"}
+                          </a>
+                        ) : (
+                          <span className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800">
+                            {it.customerPhone || "-"}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex w-[min(42%,9rem)] min-w-[6rem] shrink-0 flex-col items-end gap-1 border-l border-border/70 pl-2">
-                      {phoneHref ? (
-                        <a
-                          className="max-w-full text-right text-sm font-semibold tabular-nums leading-snug text-neutral-900 underline-offset-2 hover:underline active:opacity-80"
-                          href={phoneHref}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="min-w-0 truncate text-sm font-semibold text-neutral-900">
+                        {it.deviceLabel || "-"}
+                      </div>
+                      <ReworkWarrantyBadges item={it} />
+                    </div>
+                    <div className="text-[11px] text-neutral-500">{it.customerName ?? "-"}</div>
+                    <div className="break-words text-[11px] leading-snug text-neutral-400 line-clamp-1">{it.issue || "-"}</div>
+                    <div className="space-y-1.5 text-[11px] leading-snug text-neutral-600">
+                      <div className="flex min-w-0 gap-1.5">
+                        <span className="shrink-0 text-neutral-400">技师</span>
+                        <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
+                      </div>
+                      <div className="flex min-w-0 items-start gap-1.5">
+                        <span className="mt-0.5 shrink-0 text-neutral-400">供应商</span>
+                        <button
+                          className={`inline-flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted/70 active:bg-muted`}
+                          title="点击选择供应商"
+                          type="button"
+                          onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                         >
-                          {it.customerPhone || "-"}
-                        </a>
-                      ) : (
-                        <span className="max-w-full text-right text-sm font-semibold tabular-nums leading-snug text-neutral-900">
-                          {it.customerPhone || "-"}
-                        </span>
-                      )}
+                          {it.supplierShortName ? (
+                            <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
+                          ) : (
+                            <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="w-full min-w-0">
                       <OrderListMoneyCell
-                        className="justify-end"
+                        className="justify-start"
                         compact
                         money={{
                           quotationAmount: it.quotationAmount,
@@ -319,15 +321,15 @@ const GroupSection = memo(function GroupSection({
                           balanceAmount: it.balanceAmount,
                         }}
                       />
-                      <div className="mt-auto flex w-full flex-col items-end gap-1 border-t border-border/60 pt-1">
-                        <span className="text-[10px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
-                        <Link
-                          className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
-                          href={`/orders/${it.id}`}
-                        >
-                          详情
-                        </Link>
-                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
+                      <Link
+                        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
+                        href={`/orders/${it.id}`}
+                      >
+                        详情
+                      </Link>
                     </div>
                   </div>
                 </div>

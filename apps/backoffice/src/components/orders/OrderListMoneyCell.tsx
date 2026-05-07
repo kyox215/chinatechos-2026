@@ -5,7 +5,7 @@ type Props = {
   money: OrderFinancialSnapshot;
   /** Single-line / wrap-friendly summary for dense mobile cards */
   compact?: boolean;
-  /** Extra classes on the compact row (e.g. justify-end for right column layout) */
+  /** Extra classes on the compact row (e.g. justify-start for single-column cards) */
   className?: string;
 };
 
@@ -26,7 +26,7 @@ export function OrderListMoneyCell({ money, compact, className }: Props) {
   if (compact) {
     return (
       <div
-        className={`flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] leading-tight tabular-nums ${className ?? ""}`}
+        className={`flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[10px] leading-tight tabular-nums ${className ?? ""}`}
       >
         <span className="text-neutral-500">总金额</span>
         <span className="text-neutral-900">{formatOrderEUR(money.quotationAmount)}</span>
