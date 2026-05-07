@@ -159,7 +159,7 @@ body {
 
 @media print {
   @page {
-    size: A5;
+    size: auto;
     margin: 5mm;
   }
 
@@ -183,8 +183,8 @@ body {
   body.printing-order-sheet .order-print-sheet {
     display: block !important;
     position: static !important;
-    width: 138mm !important;
-    height: 200mm !important;
+    width: var(--print-content-width, 200mm) !important;
+    height: var(--print-content-height, 138mm) !important;
     margin: 0 auto !important;
     padding: 0 !important;
     overflow: visible !important;
@@ -193,11 +193,25 @@ body {
   }
 
   body.printing-order-sheet .order-print-sheet > article {
-    width: 200mm !important;
-    height: 138mm !important;
+    width: 100% !important;
+    height: 100% !important;
     max-width: none !important;
     margin: 0 !important;
-    transform-origin: top left !important;
-    transform: translateX(138mm) rotate(-90deg) !important;
+    transform: none !important;
+  }
+
+  body.printing-order-sheet[data-print-density="compact"] .order-print-sheet > article {
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+  }
+
+  body.printing-order-sheet[data-print-density="normal"] .order-print-sheet > article {
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+  }
+
+  body.printing-order-sheet[data-print-density="relaxed"] .order-print-sheet > article {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
   }
 }
