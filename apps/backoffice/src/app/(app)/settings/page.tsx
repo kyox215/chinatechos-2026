@@ -1,4 +1,5 @@
 import { SettingsForm } from "@/components/settings/SettingsForm";
+import { ImportSection } from "@/components/settings/ImportSection";
 import { getStoreSettings } from "@/lib/data/store-settings";
 
 export default async function SettingsPage() {
@@ -18,6 +19,8 @@ export default async function SettingsPage() {
           无法加载门店设置。请检查数据库连接和 stores 表数据。
         </div>
       )}
+
+      <ImportSection />
     </div>
   );
 }
