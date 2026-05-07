@@ -13,6 +13,7 @@ import { OrderPrintSheet } from "@/components/orders/OrderPrintSheet";
 import { FaultPriceLineInputs, FinancialSummaryThree } from "@/components/orders/QuoteFinanceBlocks";
 import { buildFaultPriceLinesItalian, buildIssueItalianFromFaults } from "@/lib/domain/fault-print-it";
 import { FAULT_TYPES, buildIssueFromFaults } from "@/lib/domain/fault-types";
+import { triggerOrderSheetPrint } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 
 type Props = { open: boolean; onClose: () => void; initialPhone?: string; initialName?: string };
@@ -136,10 +137,11 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   useEffect(() => {
     if (!printedPublicNo) return;
     const id = requestAnimationFrame(() => {
-      window.print();
-      setPrintedPublicNo(null);
-      onClose();
-      router.refresh();
+      triggerOrderSheetPrint(() => {
+        setPrintedPublicNo(null);
+        onClose();
+        router.refresh();
+      });
     });
     return () => cancelAnimationFrame(id);
   }, [printedPublicNo, onClose, router]);
@@ -167,7 +169,9 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   function handleDraftPrint() {
     setError(null);
     if (!validateForSubmit()) return;
-    requestAnimationFrame(() => window.print());
+    requestAnimationFrame(() => {
+      triggerOrderSheetPrint();
+    });
   }
 
   async function handleSubmit() {

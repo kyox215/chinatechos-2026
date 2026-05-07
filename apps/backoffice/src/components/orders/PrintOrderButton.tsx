@@ -1,6 +1,7 @@
 "use client";
 
 import { OrderPrintSheet } from "@/components/orders/OrderPrintSheet";
+import { triggerOrderSheetPrint } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 
 export function PrintOrderButton(props: {
@@ -11,7 +12,7 @@ export function PrintOrderButton(props: {
   const label = props.label ?? "打印";
 
   function handlePrint() {
-    requestAnimationFrame(() => window.print());
+    triggerOrderSheetPrint();
   }
 
   return (

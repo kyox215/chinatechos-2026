@@ -168,20 +168,23 @@ body {
     background: white !important;
   }
 
-  body > * {
+  body.printing-order-sheet > * {
     display: none !important;
   }
 
-  body > *:has(.order-print-sheet) {
+  body.printing-order-sheet .printing-order-host {
     display: block !important;
   }
 
-  body > *:has(.order-print-sheet) * {
+  body.printing-order-sheet .printing-order-host * {
     display: none !important;
   }
 
-  body > *:has(.order-print-sheet) .order-print-sheet,
-  body > *:has(.order-print-sheet) .order-print-sheet * {
+  body.printing-order-sheet .order-print-sheet {
+    display: block !important;
+  }
+
+  body.printing-order-sheet .order-print-sheet * {
     display: revert !important;
   }
 
