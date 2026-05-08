@@ -13,8 +13,8 @@ import { resolveStatusLabel } from "@/lib/domain/order-ui-config";
 
 type SupplierOption = { id: string; short_name: string; color: string };
 
-/** 与桌面菜单最大宽度一致，用于避免贴边 */
-const MENU_LAYOUT_W = 520;
+/** 与桌面菜单最大宽度一致，用于避免贴边（8 列状态网格） */
+const MENU_LAYOUT_W = 680;
 const GAP = 4;
 const EDGE = 8;
 
@@ -151,7 +151,7 @@ export function StatusPopover({
       <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
       <div
         ref={menuRef}
-        className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),560px)] rounded-xl border border-border bg-surface p-3 shadow-lg"
+        className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),680px)] rounded-xl border border-border bg-surface p-3 shadow-lg sm:p-4"
         style={{ top: pos.top, left: pos.left }}
       >
         {progressGrid}
@@ -178,7 +178,7 @@ export function StatusPopover({
             </svg>
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 overflow-y-auto px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {progressGrid}
         </div>
       </div>

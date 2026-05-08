@@ -17,10 +17,13 @@ export function StatusProgressRail(props: {
     props;
   const curIdx = statusOrder.indexOf(currentStatus);
 
+  const cellShell =
+    "flex min-h-11 w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-center sm:min-h-10 sm:py-2";
+
   return (
     <div
       aria-label="工单状态进度"
-      className={`grid w-full grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-x-1 gap-y-2 ${className ?? ""}`}
+      className={`touch-manipulation grid w-full grid-cols-2 gap-2 sm:grid-cols-8 sm:gap-x-2 sm:gap-y-3 sm:border-t sm:border-border sm:pt-3 ${className ?? ""}`}
       role="list"
     >
       {statusOrder.map((s, i) => {
@@ -39,7 +42,7 @@ export function StatusProgressRail(props: {
         ].join(" ");
 
         const labelClass = [
-          "line-clamp-2 w-full text-[10px] leading-tight sm:text-[11px]",
+          "line-clamp-2 w-full text-xs leading-tight sm:text-[11px]",
           isCurrent ? "font-semibold text-neutral-900" : isPast ? "text-neutral-600" : "text-neutral-500",
           danger && !isCurrent ? "text-rose-700" : "",
         ].join(" ");
@@ -49,7 +52,7 @@ export function StatusProgressRail(props: {
             <div
               key={s}
               aria-current="step"
-              className="flex min-h-10 w-full flex-col items-center justify-center gap-1 rounded-xl border border-primary/40 bg-surface-2 px-0.5 py-2 text-center ring-2 ring-primary ring-offset-2 ring-offset-surface"
+              className={`${cellShell} border border-primary/40 bg-surface-2 ring-2 ring-primary ring-offset-2 ring-offset-surface`}
               role="listitem"
             >
               <span aria-hidden className={dotClass} />
@@ -67,7 +70,7 @@ export function StatusProgressRail(props: {
           <button
             key={s}
             aria-label={`切换到 ${label}`}
-            className={`flex min-h-10 w-full flex-col items-center justify-center gap-1 rounded-xl border px-0.5 py-2 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${btnSurface}`}
+            className={`${cellShell} border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${btnSurface}`}
             disabled={!canPress}
             onClick={() => action && onStepPress(action.toStatus)}
             role="listitem"
