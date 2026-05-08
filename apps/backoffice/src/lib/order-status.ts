@@ -57,8 +57,8 @@ const PRESENTATION: Record<RepairOrderStatus, StatusPresentation> = {
     rowBg: "bg-violet-50",
   },
   waiting_approval: {
-    label: "报价",
-    badgeTitle: "待客户确认报价",
+    label: "报价待确认",
+    badgeTitle: "已发送报价，待客户确认",
     dotColor: "bg-violet-500",
     textColor: "text-violet-700",
     rowBg: "bg-violet-50",

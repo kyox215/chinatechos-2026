@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
-import { getNextActions } from "@/lib/domain/order-status";
+import { StatusProgressRail } from "@/components/orders/StatusProgressRail";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
+import { getNextActions } from "@/lib/domain/order-status";
+import { resolveStatusLabel } from "@/lib/domain/order-ui-config";
 
 type SupplierOption = { id: string; short_name: string; color: string };
 
-const MENU_W = 176;
+/** 与桌面菜单 min/max 宽度一致，用于避免贴边 */
+const MENU_LAYOUT_W = 320;
 const GAP = 4;
 const EDGE = 8;
 
@@ -44,7 +47,7 @@ export function StatusPopover({
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const ui = useResolvedOrderUi();
-  const { primary, secondary } = getNextActions(status, ui.statusLabels);
+  const { primary, secondary } = getNextActions(status, ui.statusLabels, ui.statusOrder);
 
   useEffect(() => {
     if (!supplierPicker) return;
@@ -62,7 +65,7 @@ export function StatusPopover({
       rect.bottom + GAP + mH > window.innerHeight - EDGE
         ? Math.max(EDGE, rect.top - mH - GAP)
         : rect.bottom + GAP;
-    const left = Math.min(Math.max(EDGE, rect.left), window.innerWidth - MENU_W - EDGE);
+    const left = Math.min(Math.max(EDGE, rect.left), window.innerWidth - MENU_LAYOUT_W - EDGE);
     setPos({ top, left });
   }, []);
 
@@ -170,14 +173,26 @@ export function StatusPopover({
     </>
   );
 
+  const progressRail = (variant: "horizontal" | "vertical") => (
+    <StatusProgressRail
+      currentStatus={status}
+      labelFor={(s) => resolveStatusLabel(s, ui)}
+      scrollActiveIntoView={open}
+      statusOrder={ui.statusOrder}
+      variant={variant}
+    />
+  );
+
   const desktopMenu = open && !isMobile && (
     <>
       <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
       <div
         ref={menuRef}
-        className="fixed z-50 w-44 rounded-xl border border-border bg-surface p-1 shadow-lg"
+        className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),380px)] rounded-xl border border-border bg-surface p-2 shadow-lg"
         style={{ top: pos.top, left: pos.left }}
       >
+        {progressRail("horizontal")}
+        <div className="mb-2 border-b border-border" />
         {actionButtons(false)}
       </div>
     </>
@@ -185,8 +200,8 @@ export function StatusPopover({
 
   const mobileSheet = open && isMobile && (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
-      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
+      <div className="fixed inset-0 z-40 bg-black/35" onClick={() => setOpen(false)} />
+      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-neutral-900">切换状态</span>
@@ -201,6 +216,9 @@ export function StatusPopover({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        </div>
+        <div className="max-h-[38vh] shrink-0 overflow-y-auto border-b border-border px-3 py-2">
+          {progressRail("vertical")}
         </div>
         <div className="flex-1 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {actionButtons(true)}
