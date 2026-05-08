@@ -115,6 +115,12 @@ export function triggerOrderSheetPrint(
   let finalized = false;
   /** DOM lib 下为 number；与 Node Timeout 合并时需避免混用 */
   let fallbackTimer: number | undefined;
+  /**
+   * 移动端在系统打印面板内切换纸张/份数时，`matchMedia("print")` 常会短暂变为 `false`，
+   * 若立即 finalize 会拆掉 portal，预览会变成整页 App。仅在离开打印态稳定后再清理。
+   */
+  let printExitDebounce: number | undefined;
+  const PRINT_EXIT_DEBOUNCE_MS = 1600;
   const mql = window.matchMedia("print");
 
   const cleanupListeners = () => {
@@ -123,6 +129,10 @@ export function triggerOrderSheetPrint(
     if (fallbackTimer !== undefined) {
       window.clearTimeout(fallbackTimer);
       fallbackTimer = undefined;
+    }
+    if (printExitDebounce !== undefined) {
+      window.clearTimeout(printExitDebounce);
+      printExitDebounce = undefined;
     }
   };
 
@@ -144,8 +154,20 @@ export function triggerOrderSheetPrint(
   }
 
   function onPrintMediaChange() {
-    /** 打印预览关闭后 matches 回到 false（移动 Safari 等对 afterprint 不可靠时依赖此项） */
-    if (!mql.matches) finalize();
+    if (mql.matches) {
+      if (printExitDebounce !== undefined) {
+        window.clearTimeout(printExitDebounce);
+        printExitDebounce = undefined;
+      }
+      return;
+    }
+    if (printExitDebounce !== undefined) {
+      window.clearTimeout(printExitDebounce);
+    }
+    printExitDebounce = window.setTimeout(() => {
+      printExitDebounce = undefined;
+      if (!mql.matches) finalize();
+    }, PRINT_EXIT_DEBOUNCE_MS);
   }
 
   requestAnimationFrame(() => {
