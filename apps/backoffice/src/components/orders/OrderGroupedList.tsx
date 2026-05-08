@@ -46,7 +46,9 @@ function macroGroups(items: OrderListItem[], resolved: ResolvedOrderUi): StatusG
   const assigned = new Set<string>();
   for (const spec of resolved.macroGroups) {
     const statusSet = new Set(spec.statuses);
-    const raw = items.filter((it) => statusSet.has(it.status));
+    const raw = items.filter(
+      (it) => statusSet.has(it.status) && !assigned.has(it.id),
+    );
     for (const it of raw) assigned.add(it.id);
     groups.push({
       key: spec.id,
