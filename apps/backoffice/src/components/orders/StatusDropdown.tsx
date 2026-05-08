@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { postOrderTransition } from "@/lib/api/order-transition-client";
 
 type ActionItem = {
   toStatus: string;
@@ -21,6 +22,7 @@ export function StatusDropdown({ orderId, actions }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [supplierPicker, setSupplierPicker] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState("");
@@ -36,19 +38,21 @@ export function StatusDropdown({ orderId, actions }: Props) {
   async function handleTransition(action: ActionItem, supplierId?: string) {
     if (!confirm(action.confirmText)) return;
     setPending(true);
+    setError(null);
     try {
-      const payload: Record<string, string> = { toStatus: action.toStatus };
-      if (supplierId) payload.supplierId = supplierId;
-      await fetch(`/api/orders/${orderId}/transition`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await postOrderTransition(orderId, {
+        toStatus: action.toStatus,
+        supplierId,
       });
       router.refresh();
-    } finally {
-      setPending(false);
       setOpen(false);
       setSupplierPicker(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "状态流转失败";
+      setError(msg);
+      console.error("[StatusDropdown] transition failed", e);
+    } finally {
+      setPending(false);
     }
   }
 
@@ -68,15 +72,19 @@ export function StatusDropdown({ orderId, actions }: Props) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex flex-col items-end gap-1">
       <button
         className="ui-btn ui-btn-secondary h-9 px-3 text-xs"
         disabled={pending}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setError(null);
+          setOpen((v) => !v);
+        }}
         type="button"
       >
         更多操作 ▾
       </button>
+      {error ? <div className="max-w-[14rem] text-right text-[11px] text-rose-600">{error}</div> : null}
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />

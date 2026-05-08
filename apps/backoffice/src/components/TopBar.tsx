@@ -1,5 +1,7 @@
 "use client";
 
+import { AuthControls } from "@/components/auth/AuthControls";
+
 export function TopBar(props: {
   onMenuClick: () => void;
   onToggleDesktopSidebar: () => void;
@@ -8,7 +10,7 @@ export function TopBar(props: {
   storeCode?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-3 py-2.5 md:px-4">
+    <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface px-3 py-2.5 md:px-4">
       <button
         aria-label="打开菜单"
         aria-expanded={props.mobileSidebarOpen}
@@ -26,7 +28,7 @@ export function TopBar(props: {
         {props.sidebarCollapsed ? "▸" : "◂"}
       </button>
 
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate text-sm font-semibold text-neutral-900">ChinaTechOS</span>
         {props.storeCode ? (
           <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
@@ -34,6 +36,8 @@ export function TopBar(props: {
           </span>
         ) : null}
       </div>
+
+      <AuthControls />
     </div>
   );
 }

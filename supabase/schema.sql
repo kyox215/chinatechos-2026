@@ -62,6 +62,7 @@ begin
   if not exists (select 1 from pg_type where typname = 'repair_order_status') then
     create type public.repair_order_status as enum (
       'new',
+      'rework',
       'mail_in_progress',
       'diagnosing',
       'quoted',
@@ -180,7 +181,11 @@ returns uuid
 language sql
 stable
 as $$
-  select nullif(auth.jwt() ->> 'store_id', '')::uuid
+  select coalesce(
+    nullif(auth.jwt() ->> 'store_id', '')::uuid,
+    nullif(auth.jwt() -> 'app_metadata' ->> 'store_id', '')::uuid,
+    nullif(auth.jwt() -> 'user_metadata' ->> 'store_id', '')::uuid
+  )
 $$;
 
 drop policy if exists "stores_read" on public.stores;

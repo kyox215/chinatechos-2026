@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { postOrderTransition } from "@/lib/api/order-transition-client";
 import { STORE_NAME, STORE_ADDRESS } from "@/lib/domain/store-info";
 import { buildWhatsAppLink } from "@/lib/domain/whatsapp";
 
@@ -62,13 +63,7 @@ export function SendQuoteModal(props: Props) {
       if (!updateRes.ok) throw new Error(updateData.error ?? "报价金额更新失败");
 
       // Transition to waiting_approval
-      const res = await fetch(`/api/orders/${props.orderId}/transition`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ toStatus: "waiting_approval" }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "状态流转失败");
+      await postOrderTransition(props.orderId, { toStatus: "waiting_approval" });
 
       // Record message log
       await fetch(`/api/orders/${props.orderId}/messages/draft`, {

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { postOrderTransition } from "@/lib/api/order-transition-client";
 
 export function OrderTransitionButton(props: {
   orderId: string;
@@ -30,23 +31,10 @@ export function OrderTransitionButton(props: {
     setPending(true);
     setError(null);
     try {
-      const res = await fetch(`/api/orders/${props.orderId}/transition`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          toStatus: props.toStatus,
-          operatorName: "frontdesk",
-          ...(props.reasonField ? { [props.reasonField]: reason } : {}),
-        }),
+      await postOrderTransition(props.orderId, {
+        toStatus: props.toStatus,
+        ...(props.reasonField && reason ? { [props.reasonField]: reason } : {}),
       });
-
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        throw new Error(data.error ?? "状态流转失败");
-      }
 
       router.refresh();
     } catch (e) {

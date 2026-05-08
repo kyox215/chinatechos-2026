@@ -7,6 +7,7 @@ import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { StatusProgressRail } from "@/components/orders/StatusProgressRail";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
+import { postOrderTransition } from "@/lib/api/order-transition-client";
 import type { ActionItem } from "@/lib/domain/order-status";
 import { getNextActions } from "@/lib/domain/order-status";
 import { resolveStatusLabel } from "@/lib/domain/order-ui-config";
@@ -40,6 +41,7 @@ export function StatusPopover({
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [supplierPicker, setSupplierPicker] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState("");
@@ -92,25 +94,28 @@ export function StatusPopover({
   }, [open, isMobile, recalcPos]);
 
   function openPopover() {
+    setError(null);
     setOpen(true);
   }
 
   async function handleTransition(toStatus: string, confirmText: string, supplierId?: string) {
     if (!confirm(confirmText)) return;
     setPending(true);
+    setError(null);
     try {
-      const payload: Record<string, string> = { toStatus, operatorName: "frontdesk" };
-      if (supplierId) payload.supplierId = supplierId;
-      await fetch(`/api/orders/${orderId}/transition`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await postOrderTransition(orderId, {
+        toStatus,
+        supplierId,
       });
       router.refresh();
-    } finally {
-      setPending(false);
       setOpen(false);
       setSupplierPicker(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "状态流转失败";
+      setError(msg);
+      console.error("[StatusPopover] transition failed", e);
+    } finally {
+      setPending(false);
     }
   }
 
@@ -194,19 +199,22 @@ export function StatusPopover({
 
   return (
     <div className="relative">
-      <button
-        ref={btnRef}
-        className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-neutral-100"
-        disabled={pending}
-        onClick={() => (open ? setOpen(false) : openPopover())}
-        type="button"
-      >
-        {pending ? (
-          <span className="text-xs text-neutral-400">切换中...</span>
-        ) : (
-          <OrderStatusBadge status={status} />
-        )}
-      </button>
+      <div className="flex min-w-0 flex-col items-start gap-0.5">
+        <button
+          ref={btnRef}
+          className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-neutral-100"
+          disabled={pending}
+          onClick={() => (open ? setOpen(false) : openPopover())}
+          type="button"
+        >
+          {pending ? (
+            <span className="text-xs text-neutral-400">切换中...</span>
+          ) : (
+            <OrderStatusBadge status={status} />
+          )}
+        </button>
+        {error ? <span className="max-w-[12rem] text-[10px] leading-tight text-rose-600">{error}</span> : null}
+      </div>
 
       {typeof document !== "undefined" && createPortal(portalContent, document.body)}
 
