@@ -2,18 +2,19 @@
 
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { StatusProgressRail } from "@/components/orders/StatusProgressRail";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
+import type { ActionItem } from "@/lib/domain/order-status";
 import { getNextActions } from "@/lib/domain/order-status";
 import { resolveStatusLabel } from "@/lib/domain/order-ui-config";
 
 type SupplierOption = { id: string; short_name: string; color: string };
 
-/** 与桌面菜单 min/max 宽度一致，用于避免贴边 */
-const MENU_LAYOUT_W = 320;
+/** 与桌面菜单最大宽度一致，用于避免贴边 */
+const MENU_LAYOUT_W = 520;
 const GAP = 4;
 const EDGE = 8;
 
@@ -47,7 +48,13 @@ export function StatusPopover({
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const ui = useResolvedOrderUi();
-  const { primary, secondary } = getNextActions(status, ui.statusLabels, ui.statusOrder);
+
+  const transitions = useMemo(() => {
+    const { primary, secondary } = getNextActions(status, ui.statusLabels, ui.statusOrder);
+    const m = new Map<string, ActionItem>();
+    for (const a of [...primary, ...secondary]) m.set(a.toStatus, a);
+    return m;
+  }, [status, ui.statusLabels, ui.statusOrder]);
 
   useEffect(() => {
     if (!supplierPicker) return;
@@ -116,70 +123,26 @@ export function StatusPopover({
     handleTransition(toStatus, confirmText);
   }
 
+  function handleStepPress(toStatus: string) {
+    const action = transitions.get(toStatus);
+    if (!action) return;
+    handleClick(action.toStatus, action.confirmText);
+  }
+
   function handleSupplierConfirm() {
-    const action = [...primary, ...secondary].find((a) => a.toStatus === "parts_ordered");
+    const action = transitions.get("parts_ordered");
     if (!action) return;
     handleTransition(action.toStatus, action.confirmText, selectedSupplier || undefined);
   }
 
-  const actionButtons = (mobile: boolean) => (
-    <>
-      {primary.length > 0 && (
-        <div className={mobile ? "space-y-1" : "mb-1"}>
-          {primary.map((action) => (
-            <button
-              key={action.toStatus}
-              className={
-                mobile
-                  ? "flex w-full items-center gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-700 active:bg-indigo-100"
-                  : "flex w-full items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-left text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-              }
-              onClick={() => handleClick(action.toStatus, action.confirmText)}
-              type="button"
-            >
-              <svg className={mobile ? "h-4 w-4" : "h-3.5 w-3.5"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-              {action.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {secondary.length > 0 && primary.length > 0 && (
-        <div className="my-1 border-t border-border" />
-      )}
-
-      <div className={mobile ? "space-y-1" : "max-h-48 overflow-y-auto"}>
-        {secondary.map((action) => (
-          <button
-            key={action.toStatus}
-            className={
-              mobile
-                ? `flex w-full items-center rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
-                    action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
-                  }`
-                : `block w-full rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
-                    action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
-                  }`
-            }
-            onClick={() => handleClick(action.toStatus, action.confirmText)}
-            type="button"
-          >
-            {action.label}
-          </button>
-        ))}
-      </div>
-    </>
-  );
-
-  const progressRail = (variant: "horizontal" | "vertical") => (
+  const progressGrid = (
     <StatusProgressRail
       currentStatus={status}
       labelFor={(s) => resolveStatusLabel(s, ui)}
-      scrollActiveIntoView={open}
+      pending={pending}
       statusOrder={ui.statusOrder}
-      variant={variant}
+      transitions={transitions}
+      onStepPress={handleStepPress}
     />
   );
 
@@ -188,12 +151,10 @@ export function StatusPopover({
       <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
       <div
         ref={menuRef}
-        className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),380px)] rounded-xl border border-border bg-surface p-2 shadow-lg"
+        className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),560px)] rounded-xl border border-border bg-surface p-3 shadow-lg"
         style={{ top: pos.top, left: pos.left }}
       >
-        {progressRail("horizontal")}
-        <div className="mb-2 border-b border-border" />
-        {actionButtons(false)}
+        {progressGrid}
       </div>
     </>
   );
@@ -217,11 +178,8 @@ export function StatusPopover({
             </svg>
           </button>
         </div>
-        <div className="max-h-[38vh] shrink-0 overflow-y-auto border-b border-border px-3 py-2">
-          {progressRail("vertical")}
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {actionButtons(true)}
+        <div className="flex-1 overflow-y-auto px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {progressGrid}
         </div>
       </div>
     </>
