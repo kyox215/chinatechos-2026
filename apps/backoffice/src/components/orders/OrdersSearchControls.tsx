@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
@@ -218,88 +217,6 @@ export function OrdersSearchControls(props: Props) {
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-border/70 pt-2 md:pt-2.5">
-          <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-            <div className="min-w-0">
-              <div className="mb-1 text-[11px] font-medium text-neutral-400">风险</div>
-              <div className="flex flex-wrap gap-1.5">
-                <FilterChip
-                  active={props.approvalOverdue}
-                  label="待确认超时"
-                  variant="risk"
-                  onClick={() => {
-                    const on = !props.approvalOverdue;
-                    applyFilters({
-                      approvalOverdue: on,
-                      pickupOverdue: on ? false : props.pickupOverdue,
-                      ...(on ? { status: "all" } : {}),
-                    });
-                  }}
-                />
-                <FilterChip
-                  active={props.pickupOverdue}
-                  label="超期未取件"
-                  variant="risk"
-                  onClick={() => {
-                    const on = !props.pickupOverdue;
-                    applyFilters({
-                      pickupOverdue: on,
-                      approvalOverdue: on ? false : props.approvalOverdue,
-                      ...(on ? { status: "all" } : {}),
-                    });
-                  }}
-                />
-              </div>
-            </div>
-            <div className="min-w-0">
-              <div className="mb-1 text-[11px] font-medium text-neutral-400">账款</div>
-              <div className="flex flex-wrap gap-1.5">
-                <FilterChip
-                  active={props.paid === "no"}
-                  label="未结清"
-                  variant="accent"
-                  onClick={() => applyFilters({ paid: props.paid === "no" ? "all" : "no" })}
-                />
-              </div>
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="mb-1 text-[11px] font-medium text-neutral-400">状态捷径</div>
-              <div className="flex flex-wrap gap-1.5">
-                <FilterChip
-                  active={props.status === "waiting_approval"}
-                  label="等回复"
-                  variant="accent"
-                  onClick={() =>
-                    applyFilters({
-                      status: props.status === "waiting_approval" ? "all" : "waiting_approval",
-                      approvalOverdue: false,
-                      pickupOverdue: false,
-                    })
-                  }
-                />
-                <FilterChip
-                  active={props.status === "parts_ordered"}
-                  label="等配件"
-                  variant="accent"
-                  onClick={() =>
-                    applyFilters({
-                      status: props.status === "parts_ordered" ? "all" : "parts_ordered",
-                      approvalOverdue: false,
-                      pickupOverdue: false,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <Link
-              className="ml-auto text-xs font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
-              href="/orders"
-            >
-              清空筛选
-            </Link>
-          </div>
-        </div>
-
         {advancedOpen ? (
           <div className="rounded-lg border border-border bg-surface-2 p-2.5 md:p-3">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
@@ -370,27 +287,3 @@ export function OrdersSearchControls(props: Props) {
   );
 }
 
-function FilterChip(props: {
-  label: string;
-  active: boolean;
-  variant: "risk" | "accent";
-  onClick: () => void;
-}) {
-  const activeRisk = "border-amber-200 bg-amber-50 text-amber-800";
-  const activeAccent = "border-indigo-200 bg-indigo-50 text-indigo-900";
-  const inactive = "border-border bg-muted/80 text-neutral-700 hover:bg-muted";
-  const activeCls = props.variant === "risk" ? activeRisk : activeAccent;
-  return (
-    <button
-      className={[
-        "inline-flex h-7 max-w-full shrink-0 items-center rounded-full border px-2.5 text-xs font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
-        props.active ? activeCls : inactive,
-      ].join(" ")}
-      onClick={props.onClick}
-      type="button"
-    >
-      {props.label}
-    </button>
-  );
-}
