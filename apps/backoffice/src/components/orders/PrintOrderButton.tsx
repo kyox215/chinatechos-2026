@@ -5,6 +5,8 @@ import type { PrintOptions } from "@/lib/domain/print-mode";
 import { triggerOrderSheetPrint } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 
+const ORDER_DETAIL_PRINT_SELECTOR = "#order-repair-print-sheet";
+
 export function PrintOrderButton(props: {
   payload: OrderPrintPayload;
   defaultPrintOptions?: PrintOptions;
@@ -14,7 +16,10 @@ export function PrintOrderButton(props: {
   const label = props.label ?? "Stampa";
 
   function handlePrint() {
-    triggerOrderSheetPrint(props.defaultPrintOptions);
+    triggerOrderSheetPrint({
+      ...props.defaultPrintOptions,
+      sheetSelector: ORDER_DETAIL_PRINT_SELECTOR,
+    });
   }
 
   return (

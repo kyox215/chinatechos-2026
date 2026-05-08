@@ -18,6 +18,10 @@ import { triggerOrderSheetPrint } from "@/lib/domain/print-mode";
 import type { OrderPrintPayload } from "@/lib/domain/order-print-it";
 import { OverlayPortal } from "@/components/ui/OverlayPortal";
 
+/** 与工单详情页 `#order-repair-print-sheet` 区分，避免列表页误选隐藏节点 */
+const CREATE_ORDER_PRINT_SHEET_ID = "order-repair-print-sheet-create";
+const CREATE_ORDER_PRINT_SELECTOR = `#${CREATE_ORDER_PRINT_SHEET_ID}`;
+
 type Props = { open: boolean; onClose: () => void; initialPhone?: string; initialName?: string };
 
 function faultLinesFromMap(selected: Map<string, string[]>) {
@@ -163,7 +167,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     if (!printedPublicNo) return;
     const pub = printedPublicNo;
     const id = requestAnimationFrame(() => {
-      triggerOrderSheetPrint(defaultPrintOptions, () => {
+      triggerOrderSheetPrint({ ...defaultPrintOptions, sheetSelector: CREATE_ORDER_PRINT_SELECTOR }, () => {
         setPrintedPublicNo(null);
         onClose();
         const qs = new URLSearchParams();
@@ -199,7 +203,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     setError(null);
     if (!validateForSubmit()) return;
     requestAnimationFrame(() => {
-      triggerOrderSheetPrint(defaultPrintOptions);
+      triggerOrderSheetPrint({ ...defaultPrintOptions, sheetSelector: CREATE_ORDER_PRINT_SELECTOR });
     });
   }
 
@@ -250,7 +254,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
       className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
       onBackdropClick={onClose}
     >
-      <OrderPrintSheet payload={printPayload} />
+      <OrderPrintSheet payload={printPayload} sheetRootId={CREATE_ORDER_PRINT_SHEET_ID} />
 
       <div className="flex h-[100dvh] w-full flex-col rounded-t-2xl border-x-0 border-b-0 border-border bg-surface shadow-lg sm:max-h-[92dvh] sm:rounded-2xl sm:border md:h-[min(720px,calc(100vh-5rem))] md:min-h-[640px] md:max-h-[85vh] xl:max-w-6xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">

@@ -101,40 +101,62 @@ export function triggerOrderSheetPrint(
   const sheet = document.querySelector<HTMLElement>(sheetSelector);
   if (!sheet) return;
 
-  const originalParent = sheet.parentElement;
-  const originalNextSibling = sheet.nextSibling;
+  /** 使用克隆节点打印：移动真实 DOM 会与 React 协调冲突，移动端预览更易出现空白或不完整内容 */
+  const printSheet = sheet.cloneNode(true) as HTMLElement;
+  printSheet.removeAttribute("id");
 
   const portal = getPrintPortal();
-  portal.appendChild(sheet);
+  portal.appendChild(printSheet);
 
   const body = document.body;
   body.classList.add(PRINTING_CLASS);
   applyPrintConfig(body, options);
 
   let finalized = false;
+  /** DOM lib 下为 number；与 Node Timeout 合并时需避免混用 */
+  let fallbackTimer: number | undefined;
+  const mql = window.matchMedia("print");
+
+  const cleanupListeners = () => {
+    window.removeEventListener("afterprint", onAfterPrint);
+    mql.removeEventListener("change", onPrintMediaChange);
+    if (fallbackTimer !== undefined) {
+      window.clearTimeout(fallbackTimer);
+      fallbackTimer = undefined;
+    }
+  };
+
   const finalize = () => {
     if (finalized) return;
     finalized = true;
+    cleanupListeners();
 
     body.classList.remove(PRINTING_CLASS);
     clearPrintConfig(body);
 
-    if (originalParent) {
-      originalParent.insertBefore(sheet, originalNextSibling);
-    }
+    printSheet.remove();
 
     onAfter?.();
   };
 
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      window.addEventListener("afterprint", () => finalize(), { once: true });
+  function onAfterPrint() {
+    finalize();
+  }
 
-      try {
+  function onPrintMediaChange() {
+    /** 打印预览关闭后 matches 回到 false（移动 Safari 等对 afterprint 不可靠时依赖此项） */
+    if (!mql.matches) finalize();
+  }
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        window.addEventListener("afterprint", onAfterPrint);
+        mql.addEventListener("change", onPrintMediaChange);
+        fallbackTimer = window.setTimeout(() => finalize(), 60_000) as unknown as number;
+
         window.print();
-      } finally {
-        setTimeout(() => finalize(), 0);
-      }
-    }, 0);
+      }, 0);
+    });
   });
 }
