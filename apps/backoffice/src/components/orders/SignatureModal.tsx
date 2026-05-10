@@ -46,7 +46,7 @@ export function SignatureModal({ open, onClose, orderId, initialSignature }: Pro
     >
       <div className="flex max-h-[85dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:max-w-lg md:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-neutral-900">Firma del cliente</h3>
+          <h3 className="text-sm font-semibold text-foreground font-display">Firma del cliente</h3>
           <button
             className="ui-btn ui-btn-secondary flex h-8 w-8 items-center justify-center text-xs"
             onClick={onClose}
@@ -57,7 +57,7 @@ export function SignatureModal({ open, onClose, orderId, initialSignature }: Pro
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <p className="mb-3 text-xs text-neutral-500">
+          <p className="mb-3 text-xs text-muted-foreground">
             Il cliente firma qui per confermare la ricezione del dispositivo.
           </p>
           <SignaturePad
@@ -65,8 +65,8 @@ export function SignatureModal({ open, onClose, orderId, initialSignature }: Pro
             initialValue={initialSignature}
             height={200}
           />
-          {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
-          {pending && <p className="mt-2 text-xs text-neutral-500">Salvataggio in corso...</p>}
+          {error && <p className="mt-2 text-xs text-status-danger-foreground">{error}</p>}
+          {pending && <p className="mt-2 text-xs text-muted-foreground">Salvataggio in corso...</p>}
         </div>
       </div>
     </div>

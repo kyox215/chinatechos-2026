@@ -60,7 +60,7 @@ export function WhatsAppButton(props: Props) {
   return (
     <div>
       <button
-        className="h-8 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-60"
+        className="h-8 rounded-xl bg-status-success px-3 text-xs font-semibold text-primary-foreground hover:bg-status-success/80 disabled:opacity-60"
         onClick={() => setOpen(true)}
         type="button"
       >

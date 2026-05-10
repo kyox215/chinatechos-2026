@@ -22,11 +22,11 @@ const EVENT_ICONS: Record<string, ReactNode> = {
 };
 
 const EVENT_ICON_WRAP: Record<string, string> = {
-  created: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  created: "border-primary/20 bg-primary/10 text-primary",
   status_changed: "border-blue-200 bg-blue-50 text-blue-700",
-  qa_saved: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  qa_saved: "border-status-success bg-status-success text-status-success-foreground",
   imei_check_updated: "border-violet-200 bg-violet-50 text-violet-800",
-  attachment_added: "border-amber-200 bg-amber-50 text-amber-900",
+  attachment_added: "border-status-warn bg-status-warn text-status-warn-foreground",
   print_trade_in_agreement: "border-slate-200 bg-slate-50 text-slate-800",
 };
 
@@ -41,7 +41,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 export function InventoryTimeline({ events }: { events: InventoryEventVM[] }) {
   if (events.length === 0) {
-    return <div className="py-4 text-sm text-neutral-500">暂无操作记录</div>;
+    return <div className="py-4 text-sm text-muted-foreground">暂无操作记录</div>;
   }
 
   return (
@@ -53,23 +53,23 @@ export function InventoryTimeline({ events }: { events: InventoryEventVM[] }) {
           )}
           <div
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border [&_svg]:h-3.5 [&_svg]:w-3.5 ${
-              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-2 text-neutral-600"
+              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-2 text-muted-foreground"
             }`}
           >
             {EVENT_ICONS[evt.eventType] ?? <IconPencil className="h-3.5 w-3.5" />}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-neutral-900">
+              <span className="text-sm font-medium text-foreground">
                 {EVENT_LABELS[evt.eventType] ?? evt.eventType}
               </span>
-              <span className="text-xs text-neutral-400" title={evt.createdAt}>
+              <span className="text-xs text-muted-foreground" title={evt.createdAt}>
                 {formatRelativeTime(evt.createdAt)}
               </span>
             </div>
-            <div className="mt-0.5 text-xs text-neutral-600">{formatPayload(evt.eventType, evt.payload)}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">{formatPayload(evt.eventType, evt.payload)}</div>
             {evt.operatorName ? (
-              <div className="mt-0.5 text-xs text-neutral-400">操作人：{evt.operatorName}</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">操作人：{evt.operatorName}</div>
             ) : null}
           </div>
         </div>

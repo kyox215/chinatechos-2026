@@ -66,8 +66,8 @@ function macroGroups(items: OrderListItem[], resolved: ResolvedOrderUi): StatusG
       label: "其他",
       items: sortOrderItemsInGroup(misc, resolved),
       defaultOpen: true,
-      titleColor: "text-neutral-700",
-      bgColor: "bg-neutral-100",
+      titleColor: "text-foreground",
+      bgColor: "bg-muted",
     });
   }
   return groups;
@@ -78,19 +78,19 @@ function ReworkWarrantyBadges({ item }: { item: OrderListItem }) {
   const w = calcWarranty(item.originalOrderCompletedAt, item.originalOrderWarrantyText);
   return (
     <span className="flex shrink-0 flex-wrap items-center gap-1">
-      <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">返修</span>
+      <span className="rounded-full bg-status-danger px-1.5 py-0.5 text-[10px] font-medium text-status-danger-foreground">返修</span>
       {w ? (
         w.isInWarranty ? (
-          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">
+          <span className="rounded-full bg-status-success px-1.5 py-0.5 text-[10px] font-medium text-status-success-foreground">
             保修剩余 {w.remainingDays} 天
           </span>
         ) : (
-          <span className="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600">
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
             保修已过期
           </span>
         )
       ) : (
-        <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
+        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
           保修信息不全
         </span>
       )}
@@ -167,7 +167,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
 
       {selected.size > 0 && (
         <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg sm:gap-3">
-          <span className="text-sm font-medium text-neutral-900">已选 {selected.size} 个</span>
+          <span className="text-sm font-medium text-foreground">已选 {selected.size} 个</span>
           <select
             className="ui-input h-8 text-xs"
             onChange={(e) => setBatchStatus(e.target.value)}
@@ -181,7 +181,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             ))}
           </select>
           <button
-            className="h-8 rounded-lg bg-primary px-4 text-xs font-semibold text-white disabled:opacity-60"
+            className="h-8 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground disabled:opacity-60"
             disabled={!batchStatus || batchPending}
             onClick={handleBatchTransition}
             type="button"
@@ -189,7 +189,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             {batchPending ? "处理中..." : "批量切换"}
           </button>
           <button
-            className="h-8 rounded-lg border border-border px-3 text-xs text-neutral-600 hover:bg-muted"
+            className="h-8 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-muted"
             onClick={() => setSelected(new Set())}
             type="button"
           >
@@ -239,7 +239,7 @@ const GroupSection = memo(function GroupSection({
       <div className={`flex items-center px-3 py-2 ${group.bgColor}`}>
         <input
           checked={allSelected}
-          className="mr-3 h-4 w-4 rounded border-neutral-300"
+          className="mr-3 h-4 w-4 rounded border-border"
           onChange={onToggleGroup}
           type="checkbox"
         />
@@ -250,12 +250,12 @@ const GroupSection = memo(function GroupSection({
         >
           <div className="flex items-center gap-2">
             <span className={`text-sm font-semibold ${group.titleColor}`}>{group.label}</span>
-            <span className="rounded-lg bg-white/60 px-2 py-0.5 text-xs font-medium text-neutral-600">
+            <span className="rounded-lg bg-surface/60 px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {group.items.length}
             </span>
           </div>
           <svg
-            className={`h-4 w-4 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -265,7 +265,7 @@ const GroupSection = memo(function GroupSection({
 
       {open && (
         group.items.length === 0 ? (
-          <div className="border-t border-border bg-surface-2 px-3 py-8 text-center text-sm text-neutral-500">
+          <div className="border-t border-border bg-surface-2 px-3 py-8 text-center text-sm text-muted-foreground">
             本分组暂无工单
           </div>
         ) : (
@@ -292,7 +292,7 @@ const GroupSection = memo(function GroupSection({
                 <div className="flex min-w-0 items-start gap-2">
                   <input
                     checked={selected.has(it.id)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
                     onChange={() => onToggleSelect(it.id)}
                     type="checkbox"
                   />
@@ -303,13 +303,13 @@ const GroupSection = memo(function GroupSection({
                         <div className="min-w-0 flex-1">
                           {phoneHref ? (
                             <a
-                              className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800 no-underline underline-offset-2 hover:underline active:opacity-80"
+                              className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-foreground no-underline underline-offset-2 hover:underline active:opacity-80"
                               href={phoneHref}
                             >
                               {it.customerPhone || "-"}
                             </a>
                           ) : (
-                            <span className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800">
+                            <span className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-foreground">
                               {it.customerPhone || "-"}
                             </span>
                           )}
@@ -319,23 +319,23 @@ const GroupSection = memo(function GroupSection({
 
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="min-w-0 truncate text-base font-semibold leading-snug text-neutral-900">
+                        <div className="min-w-0 truncate text-base font-semibold leading-snug text-foreground">
                           {it.deviceLabel || "-"}
                         </div>
                         <ReworkWarrantyBadges item={it} />
                       </div>
-                      <p className="line-clamp-2 text-xs leading-snug text-neutral-600">{secondaryLine}</p>
+                      <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{secondaryLine}</p>
                     </div>
 
                     <div className="rounded-lg bg-muted/40 px-2 py-1.5">
-                      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-neutral-600">
-                        <span className="shrink-0 text-neutral-400">技师</span>
+                      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-muted-foreground">
+                        <span className="shrink-0 text-muted-foreground">技师</span>
                         <span className="min-w-0 max-w-[42%] truncate sm:max-w-[50%]">{it.technicianName ?? "-"}</span>
-                        <span className="shrink-0 text-neutral-300">·</span>
-                        <span className="shrink-0 text-neutral-400">供应商</span>
+                        <span className="shrink-0 text-muted-foreground">·</span>
+                        <span className="shrink-0 text-muted-foreground">供应商</span>
                         <button
                           aria-label={supplierLabel}
-                          className="inline-flex h-7 max-w-[min(65%,12rem)] shrink items-center gap-1 rounded-md border border-border bg-surface px-2 text-left text-[11px] font-medium text-neutral-700 transition-colors hover:bg-muted/80 active:bg-muted"
+                          className="inline-flex h-7 max-w-[min(65%,12rem)] shrink items-center gap-1 rounded-md border border-border bg-surface px-2 text-left text-[11px] font-medium text-foreground transition-colors hover:bg-muted/80 active:bg-muted"
                           type="button"
                           onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                         >
@@ -344,7 +344,7 @@ const GroupSection = memo(function GroupSection({
                               <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
                             </span>
                           ) : (
-                            <span className="text-neutral-500">选择</span>
+                            <span className="text-muted-foreground">选择</span>
                           )}
                         </button>
                       </div>
@@ -363,9 +363,9 @@ const GroupSection = memo(function GroupSection({
                     </div>
 
                     <div className="flex items-center justify-between gap-2 pt-0.5">
-                      <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">创建：{fmtDate(it.createdAt)}</span>
                       <Link
-                        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
+                        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-foreground hover:bg-muted"
                         href={`/orders/${it.id}`}
                       >
                         详情
@@ -379,7 +379,7 @@ const GroupSection = memo(function GroupSection({
           </div>
 
           <div className="hidden lg:block">
-              <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-neutral-500`}>
+              <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-muted-foreground`}>
                 <div />
                 <div>状态</div>
                 <div>电话</div>
@@ -395,7 +395,7 @@ const GroupSection = memo(function GroupSection({
                   key={it.id}
                   className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-2.5 ${
                     selected.has(it.id)
-                      ? "bg-indigo-50/50"
+                      ? "bg-primary/10"
                       : rowIdx % 2 === 1
                         ? "bg-muted/15"
                         : ""
@@ -404,7 +404,7 @@ const GroupSection = memo(function GroupSection({
                   <div className="flex items-center pt-1">
                     <input
                       checked={selected.has(it.id)}
-                      className="h-4 w-4 rounded border-neutral-300"
+                      className="h-4 w-4 rounded border-border"
                       onChange={() => onToggleSelect(it.id)}
                       type="checkbox"
                     />
@@ -412,16 +412,16 @@ const GroupSection = memo(function GroupSection({
                   <div className="flex items-start pt-1">
                     <StatusPopover orderId={it.id} status={it.status} />
                   </div>
-                  <div className="min-w-0 truncate pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
+                  <div className="min-w-0 truncate pt-1 text-xs font-medium leading-snug text-foreground">{it.customerPhone || "-"}</div>
                   <div className="min-w-0 space-y-0.5 pr-2 pt-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="min-w-0 truncate text-base font-semibold text-neutral-900">
+                      <span className="min-w-0 truncate text-base font-semibold text-foreground">
                         {it.deviceLabel || "-"}
                       </span>
                       <ReworkWarrantyBadges item={it} />
                     </div>
-                    <div className="truncate text-xs text-neutral-500">{it.customerName ?? "-"}</div>
-                    <div className="break-words text-xs leading-snug text-neutral-400 line-clamp-2">{it.issue || "-"}</div>
+                    <div className="truncate text-xs text-muted-foreground">{it.customerName ?? "-"}</div>
+                    <div className="break-words text-xs leading-snug text-muted-foreground line-clamp-2">{it.issue || "-"}</div>
                   </div>
                   <div className="min-w-0">
                     <OrderListMoneyCell
@@ -442,15 +442,15 @@ const GroupSection = memo(function GroupSection({
                       {it.supplierShortName ? (
                         <SupplierBadge color={it.supplierColor} name={it.supplierShortName} />
                       ) : (
-                        <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-neutral-100 text-neutral-400">选择</span>
+                        <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">选择</span>
                       )}
                     </button>
                   </div>
-                  <div className="truncate pt-1 text-xs text-neutral-500">{it.technicianName ?? "-"}</div>
+                  <div className="truncate pt-1 text-xs text-muted-foreground">{it.technicianName ?? "-"}</div>
                   <div className="flex items-center justify-end gap-2 pt-1">
-                    <span className="whitespace-nowrap text-xs text-neutral-500">{fmtDate(it.createdAt)}</span>
+                    <span className="whitespace-nowrap text-xs text-muted-foreground">{fmtDate(it.createdAt)}</span>
                     <Link
-                      className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium leading-7 text-neutral-600 hover:bg-muted"
+                      className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium leading-7 text-muted-foreground hover:bg-muted"
                       href={`/orders/${it.id}`}
                     >
                       详情

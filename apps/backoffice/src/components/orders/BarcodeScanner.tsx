@@ -141,7 +141,7 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
     >
       <div className="flex w-full max-w-md flex-col rounded-t-2xl bg-surface pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <span className="text-sm font-semibold text-neutral-900">扫描 IMEI / 条形码</span>
+          <span className="text-sm font-semibold text-foreground font-display">扫描 IMEI / 条形码</span>
           <button
             className="ui-btn ui-btn-secondary flex h-9 w-9 items-center justify-center text-xs"
             onClick={() => {
@@ -162,9 +162,9 @@ export function BarcodeScanner({ open, onScan, onClose }: Props) {
           </div>
         </div>
 
-        {error && <div className="px-4 py-3 text-xs text-rose-600">{error}</div>}
+        {error && <div className="px-4 py-3 text-xs text-status-danger-foreground">{error}</div>}
 
-        <div className="px-4 py-3 text-center text-xs text-neutral-500">
+        <div className="px-4 py-3 text-center text-xs text-muted-foreground">
           {nativeBarcode ? "将条形码对准框内，自动识别" : "兼容模式：请将条码对准取景框并保持清晰稳定"}
         </div>
       </div>

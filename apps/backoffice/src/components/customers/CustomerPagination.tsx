@@ -32,14 +32,14 @@ export function CustomerPagination({ page, totalPages }: { page: number; totalPa
 
       {pages.map((p, i) =>
         p === "..." ? (
-          <span key={`ellipsis-${i}`} className="px-1 text-sm text-neutral-400">...</span>
+          <span key={`ellipsis-${i}`} className="px-1 text-sm text-muted-foreground">...</span>
         ) : (
           <button
             key={p}
             className={`h-9 min-w-[36px] rounded-lg px-2 text-sm font-medium ${
               p === page
-                ? "bg-primary text-white"
-                : "text-neutral-700 hover:bg-muted"
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-muted"
             }`}
             onClick={() => goTo(p as number)}
             type="button"

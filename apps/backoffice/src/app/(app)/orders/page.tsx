@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
 import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
 import { listOrders } from "@/lib/data/orders";
+
+export const metadata: Metadata = {
+  title: "工单 — ChinaTechOS",
+  description: "管理和筛选所有工单",
+};
 
 type QueryValue = string | string[] | undefined;
 
@@ -32,14 +38,16 @@ export default async function OrdersPage(props: {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">工单</h1>
-        <span className="text-sm text-neutral-500">共 {items.length} 条</span>
+        <h1 className="font-display text-xl font-semibold tracking-tight">工单</h1>
+        <span className="text-sm text-muted-foreground">
+          共 <span className="font-mono tabular-nums">{items.length}</span> 条
+        </span>
       </div>
 
       {listError ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+        <div className="rounded-xl border border-border bg-status-danger/10 px-3 py-2 text-sm text-status-danger-foreground">
           列表加载失败：{listError}
         </div>
       ) : null}

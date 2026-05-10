@@ -10,7 +10,7 @@ export function DeliverButton({ orderId, deliveredAt }: { orderId: string; deliv
 
   if (deliveredAt) {
     return (
-      <div className="text-xs text-emerald-700">
+      <div className="text-xs text-status-success-foreground">
         ✓ 已交付 ({new Intl.DateTimeFormat("it-IT", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(deliveredAt))})
       </div>
     );
@@ -41,14 +41,14 @@ export function DeliverButton({ orderId, deliveredAt }: { orderId: string; deliv
   return (
     <div>
       <button
-        className="h-8 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 disabled:opacity-60"
+        className="h-8 rounded-xl border border-status-success bg-status-success px-3 text-xs font-semibold text-status-success-foreground disabled:opacity-60"
         disabled={pending}
         onClick={handleDeliver}
         type="button"
       >
         {pending ? "处理中..." : "确认交付"}
       </button>
-      {error && <div className="mt-1 text-[11px] text-rose-600">{error}</div>}
+      {error && <div className="mt-1 text-[11px] text-status-danger-foreground">{error}</div>}
     </div>
   );
 }

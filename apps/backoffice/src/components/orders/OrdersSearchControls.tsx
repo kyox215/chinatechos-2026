@@ -181,9 +181,9 @@ export function OrdersSearchControls(props: Props) {
             {searchFocused && q.trim().length >= 2 ? (
               <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-surface p-1.5 shadow-sm">
                 {loadingSuggest ? (
-                  <div className="px-2 py-2 text-xs text-neutral-500">搜索中...</div>
+                  <div className="px-2 py-2 text-xs text-muted-foreground">搜索中...</div>
                 ) : suggestions.length === 0 ? (
-                  <div className="px-2 py-2 text-xs text-neutral-500">无匹配客户，继续输入可按关键词查工单</div>
+                  <div className="px-2 py-2 text-xs text-muted-foreground">无匹配客户，继续输入可按关键词查工单</div>
                 ) : (
                   suggestions.map((it) => (
                     <button
@@ -197,8 +197,8 @@ export function OrdersSearchControls(props: Props) {
                       }}
                       type="button"
                     >
-                      <div className="text-sm font-medium text-neutral-900">{it.name ?? "未命名客户"}</div>
-                      <div className="text-xs text-neutral-500">{it.phoneE164}</div>
+                      <div className="text-sm font-medium text-foreground">{it.name ?? "未命名客户"}</div>
+                      <div className="text-xs text-muted-foreground">{it.phoneE164}</div>
                     </button>
                   ))
                 )}
@@ -221,7 +221,7 @@ export function OrdersSearchControls(props: Props) {
         <div className="space-y-2 border-t border-border/70 pt-2 md:pt-2.5">
           <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
             <div className="min-w-0">
-              <div className="mb-1 text-[11px] font-medium text-neutral-400">风险</div>
+              <div className="mb-1 text-[11px] font-medium text-muted-foreground">风险</div>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip
                   active={props.approvalOverdue}
@@ -252,7 +252,7 @@ export function OrdersSearchControls(props: Props) {
               </div>
             </div>
             <div className="min-w-0">
-              <div className="mb-1 text-[11px] font-medium text-neutral-400">账款</div>
+              <div className="mb-1 text-[11px] font-medium text-muted-foreground">账款</div>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip
                   active={props.paid === "no"}
@@ -263,7 +263,7 @@ export function OrdersSearchControls(props: Props) {
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="mb-1 text-[11px] font-medium text-neutral-400">状态捷径</div>
+              <div className="mb-1 text-[11px] font-medium text-muted-foreground">状态捷径</div>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip
                   active={props.status === "waiting_approval"}
@@ -292,7 +292,7 @@ export function OrdersSearchControls(props: Props) {
               </div>
             </div>
             <Link
-              className="ml-auto text-xs font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+              className="ml-auto text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               href="/orders"
             >
               清空筛选
@@ -376,9 +376,9 @@ function FilterChip(props: {
   variant: "risk" | "accent";
   onClick: () => void;
 }) {
-  const activeRisk = "border-amber-200 bg-amber-50 text-amber-800";
-  const activeAccent = "border-indigo-200 bg-indigo-50 text-indigo-900";
-  const inactive = "border-border bg-muted/80 text-neutral-700 hover:bg-muted";
+  const activeRisk = "border-status-warn bg-status-warn text-status-warn-foreground";
+  const activeAccent = "border-primary/30 bg-primary/10 text-primary";
+  const inactive = "border-border bg-muted/80 text-foreground hover:bg-muted";
   const activeCls = props.variant === "risk" ? activeRisk : activeAccent;
   return (
     <button

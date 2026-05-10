@@ -58,8 +58,8 @@ export function OrderTransitionButton(props: {
 
   const btnClass =
     props.variant === "danger"
-      ? "h-8 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-      : "h-8 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60";
+      ? "h-8 rounded-xl border border-status-danger bg-status-danger px-3 text-xs font-semibold text-status-danger-foreground disabled:cursor-not-allowed disabled:opacity-60"
+      : "h-8 rounded-xl border border-primary/20 bg-primary/10 px-3 text-xs font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -71,7 +71,7 @@ export function OrderTransitionButton(props: {
       >
         {pending ? "处理中..." : props.label}
       </button>
-      {error ? <div className="text-[11px] text-rose-600">{error}</div> : null}
+      {error ? <div className="text-[11px] text-status-danger-foreground">{error}</div> : null}
     </div>
   );
 }

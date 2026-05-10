@@ -85,7 +85,7 @@ export function StatusDropdown({ orderId, actions }: Props) {
               <button
                 key={action.toStatus}
                 className={`block w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-muted ${
-                  action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
+                  action.variant === "danger" ? "text-status-danger-foreground" : "text-foreground"
                 }`}
                 onClick={() => handleClick(action)}
                 type="button"
@@ -101,7 +101,7 @@ export function StatusDropdown({ orderId, actions }: Props) {
         <>
           <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setSupplierPicker(false)} />
           <div className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-4 shadow-xl">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-900">选择供应商</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground font-display">选择供应商</h3>
             <select
               className="ui-input w-full mb-3"
               onChange={(e) => setSelectedSupplier(e.target.value)}

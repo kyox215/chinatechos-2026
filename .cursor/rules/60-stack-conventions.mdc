@@ -1,0 +1,39 @@
+---
+description: Next.js App Router 技术栈硬性约定
+alwaysApply: true
+---
+
+# 技术栈约定
+
+## 路由
+
+- 使用 Next.js App Router，页面位于 `apps/backoffice/src/app/`。
+- 应用壳布局在 `(app)/layout.tsx`，认证页在 `(auth)/`。
+- 动态路由使用 `[param]` 语法：如 `orders/[id]/page.tsx`。
+- 导航统一 `next/navigation`：`Link` / `useRouter` / `usePathname` / `redirect`。
+- `(app)/layout.tsx` 为应用壳（已含 AppShell + OrderUiProvider），新页面不要重复包裹。
+
+## 数据
+
+- Server Component 直接调用 `src/lib/data/*.ts`（服务端数据访问层）。
+- Client Component 交互通过 `fetch` 调用 `/api/*` 路由 + `router.refresh()`。
+- Mock 数据 / fixtures 在需要时放 `src/lib/mock/`。
+
+## 服务端逻辑
+
+- API Routes 在 `src/app/api/` 目录下，使用 `route.ts` 文件。
+- 副作用 / API key 在 route handler 内读取 `process.env`。
+- Webhook / cron 走 `src/app/api/` 公开路由，必须验签。
+
+## 错误 / 404
+
+- 全局错误页通过 `error.tsx` / `not-found.tsx` 处理。
+- 含数据加载的页面要本地处理 notFound() 调用。
+
+## 后端
+
+需要数据库 / 鉴权 / 文件存储 / 邮件时使用 **Supabase**。
+
+## 验收
+
+- 每次改动后浏览器自查 `/dashboard`、`/orders`、当前修改的页面在亮 + 暗主题、桌面 + 750px 移动端均无 hidden bug。

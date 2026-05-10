@@ -179,14 +179,14 @@ const FaultButton = memo(function FaultButton({
       >
         <button
           className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
-            selectedSubs.includes("_self") ? "bg-primary-2 text-primary" : "text-neutral-500 hover:bg-muted"
+            selectedSubs.includes("_self") ? "bg-primary-2 text-primary" : "text-muted-foreground hover:bg-muted"
           }`}
           onClick={() => onSubToggle("_self")}
           type="button"
         >
           <span
             className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-              selectedSubs.includes("_self") ? "border-primary bg-primary text-white" : "border-neutral-300"
+              selectedSubs.includes("_self") ? "border-primary bg-primary text-primary-foreground" : "border-border"
             }`}
           >
             {selectedSubs.includes("_self") && (
@@ -204,14 +204,14 @@ const FaultButton = memo(function FaultButton({
             <button
               key={sub.key}
               className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors ${
-                checked ? "bg-primary-2 text-primary" : "text-neutral-700 hover:bg-muted"
+                checked ? "bg-primary-2 text-primary" : "text-foreground hover:bg-muted"
               }`}
               onClick={() => onSubToggle(sub.key)}
               type="button"
             >
               <span
                 className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                  checked ? "border-primary bg-primary text-white" : "border-neutral-300"
+                  checked ? "border-primary bg-primary text-primary-foreground" : "border-border"
                 }`}
               >
                 {checked && (
@@ -226,7 +226,7 @@ const FaultButton = memo(function FaultButton({
         })}
         <div className="mt-1 border-t border-border pt-1">
           <button
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-rose-600 hover:bg-rose-50"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-status-danger-foreground hover:bg-status-danger"
             onClick={onRemove}
             type="button"
           >
@@ -242,7 +242,7 @@ const FaultButton = memo(function FaultButton({
         className={`flex min-h-[36px] w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
           active
             ? "border-primary bg-primary-2 text-primary"
-            : "border-border bg-surface-2 text-neutral-600 hover:bg-muted"
+            : "border-border bg-surface-2 text-muted-foreground hover:bg-muted"
         }`}
         onClick={onMainClick}
         type="button"
@@ -250,12 +250,12 @@ const FaultButton = memo(function FaultButton({
         <span className="flex h-4 w-4 shrink-0 items-center justify-center">{fault.icon}</span>
         <span className="text-xs leading-tight">{fault.label}</span>
         {hasSubs && subCount > 0 && (
-          <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+          <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground">
             {subCount}
           </span>
         )}
         {hasSubs && subCount === 0 && (
-          <svg className="ml-auto h-3 w-3 shrink-0 text-neutral-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <svg className="ml-auto h-3 w-3 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         )}

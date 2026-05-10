@@ -71,14 +71,14 @@ export function InventoryAttachmentsSection(props: {
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
-      <h2 className="mb-3 text-sm font-semibold">附件</h2>
-      <p className="mb-3 text-xs text-neutral-500">
+      <h2 className="mb-3 font-display text-sm font-semibold">附件</h2>
+      <p className="mb-3 text-xs text-muted-foreground">
         回收合规凭证（证件默认仅店长账号可预览完整图像）。单文件最大 10MB。
       </p>
 
       <form className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end" onSubmit={(e) => void onSubmit(e)}>
         <div className="min-w-[140px] flex-1">
-          <label className="mb-0.5 block text-[11px] text-neutral-400">类型</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">类型</label>
           <select
             className="ui-input h-10 w-full md:h-9"
             disabled={busy}
@@ -93,7 +93,7 @@ export function InventoryAttachmentsSection(props: {
           </select>
         </div>
         <div className="min-w-[180px] flex-[2]">
-          <label className="mb-0.5 block text-[11px] text-neutral-400">文件</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">文件</label>
           <input
             accept="image/*,.pdf,application/pdf"
             className="block w-full text-xs file:mr-2 file:rounded-lg file:border file:border-border file:bg-surface-2 file:px-2 file:py-1"
@@ -107,17 +107,17 @@ export function InventoryAttachmentsSection(props: {
         </button>
       </form>
 
-      {error ? <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">{error}</div> : null}
+      {error ? <div className="mb-3 rounded-xl border border-status-danger bg-status-danger px-3 py-2 text-xs text-status-danger-foreground">{error}</div> : null}
 
       {props.attachments.length === 0 ? (
-        <div className="py-2 text-sm text-neutral-500">暂无附件</div>
+        <div className="py-2 text-sm text-muted-foreground">暂无附件</div>
       ) : (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {props.attachments.map((a) => (
             <li className="rounded-xl border border-border bg-surface-2 p-3" key={a.id}>
-              <div className="text-xs font-medium text-neutral-700">{kindLabel(a.kind)}</div>
-              <div className="mt-0.5 text-[11px] text-neutral-500">{a.file_name ?? "—"}</div>
-              <div className="mt-0.5 text-[11px] text-neutral-400">
+              <div className="text-xs font-medium text-foreground">{kindLabel(a.kind)}</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">{a.file_name ?? "—"}</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
                 {new Intl.DateTimeFormat("it-IT", {
                   dateStyle: "short",
                   timeStyle: "short",
@@ -125,9 +125,9 @@ export function InventoryAttachmentsSection(props: {
                 }).format(new Date(a.created_at))}
               </div>
               {a.masked ? (
-                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-4 text-center text-xs text-amber-900">
+                <div className="mt-2 rounded-lg border border-status-warn bg-status-warn px-2 py-4 text-center text-xs text-status-warn-foreground">
                   证件类附件已上传；当前操作角色不可预览图像（需设置环境变量{" "}
-                  <code className="rounded bg-white px-1">BACKOFFICE_INVENTORY_DOC_ROLE=manager</code>）。
+                  <code className="rounded bg-surface px-1">BACKOFFICE_INVENTORY_DOC_ROLE=manager</code>）。
                 </div>
               ) : a.signedUrl && looksLikeImage(a.file_name) ? (
                 // eslint-disable-next-line @next/next/no-img-element -- signed Supabase URL
@@ -146,7 +146,7 @@ export function InventoryAttachmentsSection(props: {
                   打开文件
                 </a>
               ) : (
-                <div className="mt-2 text-xs text-neutral-500">链接不可用</div>
+                <div className="mt-2 text-xs text-muted-foreground">链接不可用</div>
               )}
             </li>
           ))}

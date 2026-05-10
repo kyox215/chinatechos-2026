@@ -19,7 +19,7 @@ export function SignatureSection({ orderId, customerSignature }: Props) {
             <img
               src={customerSignature}
               alt="Firma cliente"
-              className="h-10 rounded border border-border bg-white object-contain px-2"
+              className="h-10 rounded border border-border bg-surface object-contain px-2"
             />
             <button
               type="button"

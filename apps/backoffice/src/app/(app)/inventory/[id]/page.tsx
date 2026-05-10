@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { InventoryDetailClient, type InventoryDetailVm } from "@/components/inventory/InventoryDetailClient";
 import type { InventoryEventVM } from "@/components/inventory/InventoryTimeline";
@@ -5,6 +6,15 @@ import { canSellInventory } from "@/lib/inventory/sellable";
 import { listInventoryAttachmentsWithUrls } from "@/lib/data/inventory-attachments";
 import { getInventoryItem, listInventoryEvents } from "@/lib/data/inventory";
 import { getCustomerDetail } from "@/lib/data/customer-detail";
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await props.params;
+  const item = await getInventoryItem(id);
+  return {
+    title: item ? `${item.brand} ${item.model} — ChinaTechOS` : "库存详情 — ChinaTechOS",
+    description: item ? `查看 ${item.brand} ${item.model} 库存详情` : "查看库存商品详情",
+  };
+}
 
 export default async function InventoryDetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -64,5 +74,9 @@ export default async function InventoryDetailPage(props: { params: Promise<{ id:
 
   const canSell = canSellInventory(item);
 
-  return <InventoryDetailClient attachments={attachments} canSell={canSell} events={events} item={vm} />;
+  return (
+    <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
+      <InventoryDetailClient attachments={attachments} canSell={canSell} events={events} item={vm} />
+    </div>
+  );
 }

@@ -59,10 +59,10 @@ export function EditableRepairCard(props: Props) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-900">维修信息</h2>
+        <h2 className="text-sm font-semibold text-foreground font-display">维修信息</h2>
         {props.isEditable && !editing && (
           <button
-            className="text-xs text-indigo-600 hover:underline"
+            className="text-xs text-primary hover:underline"
             onClick={() => setEditing(true)}
             type="button"
           >
@@ -135,7 +135,7 @@ export function EditableRepairCard(props: Props) {
           </Field>
 
           {error && (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            <div className="rounded-lg border border-status-danger bg-status-danger px-3 py-2 text-xs text-status-danger-foreground">
               {error}
             </div>
           )}
@@ -186,7 +186,7 @@ export function EditableRepairCard(props: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-neutral-500">{label}</label>
+      <label className="mb-1 block text-xs text-muted-foreground">{label}</label>
       {children}
     </div>
   );
@@ -195,8 +195,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex items-start justify-between py-1.5 text-sm">
-      <span className="text-neutral-500">{label}</span>
-      <span className={highlight ? "font-medium text-amber-700" : "text-neutral-900 text-right max-w-[60%]"}>
+      <span className="text-muted-foreground">{label}</span>
+      <span className={highlight ? "font-medium text-status-warn-foreground" : "text-foreground text-right max-w-[60%]"}>
         {value}
       </span>
     </div>

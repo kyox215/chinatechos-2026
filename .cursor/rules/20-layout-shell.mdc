@@ -1,0 +1,48 @@
+---
+description: 应用外壳结构（侧栏 + AppBar + 内容区）
+alwaysApply: true
+---
+
+# 应用外壳
+
+`apps/backoffice/src/app/(app)/layout.tsx` 已固定，**不要再包一层 Sidebar / Header**。新页面只写 `<main>` 里的内容。
+
+```tsx
+<AppShell storeCode={...}>
+  <BackgroundOrbs/>               // z-index -1，只在内容区
+  <TopBar onOpenCommand={…}/>     // sticky top-0，含面包屑 + ⌘K + ThemeToggle
+  <main>
+    <RouteTransition>
+      {children}                  // 页面内容
+    </RouteTransition>
+  </main>
+</AppShell>
+```
+
+## 内容容器（每个页面都用）
+
+```tsx
+<div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
+  …页面内容…
+</div>
+```
+
+## 侧栏规则
+
+- 组件：`src/components/Sidebar.tsx`
+- **实色**：禁止 `bg-transparent` / `backdrop-blur*`
+- 激活态：`bg-sidebar-accent text-sidebar-accent-foreground` + 左侧 2px 渐变指示条
+- 新增导航：编辑 `Nav.tsx` 的 `items` 数组 + 同步在 `command-palette.tsx` 注册
+- 移动端通过抽屉弹出；触发器在 `TopBar` 的菜单按钮
+
+## 顶部条 AppBar
+
+- 左：SidebarTrigger（移动端 `Menu`、桌面 `PanelLeft`）+ 面包屑
+- 右：⌘K 搜索按钮 → `CommandPalette`、`ThemeToggle`、门店 chip
+
+## 响应式断点
+
+- 移动 < `sm` (640)：单列、Sheet 侧栏、隐藏面包屑
+- `sm` ~ `lg`：双列 KPI / 紧凑表格
+- `lg` (1024) +：三列图表、侧栏常驻、显示门店 chip
+- 内容最大宽度 `max-w-7xl` (1280)

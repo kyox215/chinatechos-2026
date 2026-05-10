@@ -46,7 +46,7 @@ export function ImeiImageRecognizer({ open, onClose, onPick }: Props) {
     >
       <div className="w-full max-w-md rounded-t-2xl bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-4">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-900">OCR 图片识别 IMEI</h3>
+          <h3 className="text-sm font-semibold text-foreground">OCR 图片识别 IMEI</h3>
           <button
             className="ui-btn ui-btn-secondary flex h-9 w-9 items-center justify-center text-xs"
             onClick={onClose}
@@ -74,11 +74,11 @@ export function ImeiImageRecognizer({ open, onClose, onPick }: Props) {
           {loading ? "识别中..." : "上传图片开始识别"}
         </button>
 
-        {error ? <div className="mt-3 text-xs text-rose-600">{error}</div> : null}
+        {error ? <div className="mt-3 text-xs text-status-danger-foreground">{error}</div> : null}
 
         {candidates.length > 1 ? (
           <div className="mt-3 space-y-2">
-            <div className="text-xs text-neutral-500">识别到多个候选，请选择：</div>
+            <div className="text-xs text-muted-foreground">识别到多个候选，请选择：</div>
             {candidates.map((imei) => (
               <button
                 key={imei}

@@ -37,10 +37,10 @@ export function OrderFormCustomerDevice(props: {
   return (
     <div className="space-y-4">
       <fieldset className="space-y-2">
-        <legend className="text-xs font-semibold text-neutral-500">客户信息</legend>
+        <legend className="text-xs font-semibold text-muted-foreground">客户信息</legend>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div className="relative">
-            <label className="mb-0.5 block text-[11px] text-neutral-400">电话</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">电话</label>
             <input
               className={`ui-input w-full ${ic}`}
               value={props.customerPhone}
@@ -62,15 +62,15 @@ export function OrderFormCustomerDevice(props: {
                     }}
                     type="button"
                   >
-                    <span className="font-medium text-neutral-900">{c.name ?? "未命名"}</span>
-                    <span className="text-neutral-500">{c.phoneE164}</span>
+                    <span className="font-medium text-foreground">{c.name ?? "未命名"}</span>
+                    <span className="text-muted-foreground">{c.phoneE164}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">姓名</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">姓名</label>
             <input
               className={`ui-input w-full ${ic}`}
               value={props.customerName}
@@ -82,10 +82,10 @@ export function OrderFormCustomerDevice(props: {
       </fieldset>
 
       <fieldset className="space-y-2">
-        <legend className="text-xs font-semibold text-neutral-500">设备信息</legend>
+        <legend className="text-xs font-semibold text-muted-foreground">设备信息</legend>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">品牌</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">品牌</label>
             <select className={`ui-input w-full ${ic}`} value={props.brand} onChange={(e) => props.setBrand(e.target.value)}>
               <option value="">选择品牌</option>
               {ORDER_FORM_BRANDS.map((b) => (
@@ -102,7 +102,7 @@ export function OrderFormCustomerDevice(props: {
             )}
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">型号</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">型号</label>
             <input
               className={`ui-input w-full ${ic}`}
               value={props.model}
@@ -112,7 +112,7 @@ export function OrderFormCustomerDevice(props: {
           </div>
         </div>
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">IMEI / 序列号</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">IMEI / 序列号</label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input className={`ui-input flex-1 ${ic}`} value={props.serialOrImei} onChange={(e) => props.setSerialOrImei(e.target.value)} placeholder="可选" />
             <button
@@ -159,17 +159,17 @@ export function OrderFormFaultSection(props: {
   return (
     <div className="space-y-4 overflow-x-hidden">
       {!props.hideHeading && props.title ? (
-        <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground font-display">
           {props.titleIcon}
           <span>{props.title}</span>
         </div>
       ) : null}
       {!props.hideHeading && !props.title ? (
-        <div className="text-xs font-semibold text-neutral-500">故障诊断</div>
+        <div className="text-xs font-semibold text-muted-foreground">故障诊断</div>
       ) : null}
       <FaultSelector selected={props.selectedFaults} onChange={props.setSelectedFaults} />
       <div>
-        <label className="mb-0.5 block text-[11px] text-neutral-400">故障备注 / 其他问题</label>
+        <label className="mb-0.5 block text-[11px] text-muted-foreground">故障备注 / 其他问题</label>
         <textarea
           className={`ui-input min-h-[60px] w-full py-2 ${ic}`}
           placeholder={props.faultNotePlaceholder ?? "详细描述故障情况..."}
@@ -198,11 +198,11 @@ export function OrderFormServiceMeta(props: {
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">技术员</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">技术员</label>
           <input className={`ui-input w-full ${ic}`} value={props.technician} onChange={(e) => props.setTechnician(e.target.value)} placeholder="可选" />
         </div>
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">保修</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">保修</label>
           <select className={`ui-input w-full ${ic}`} value={props.warranty} onChange={(e) => props.setWarranty(e.target.value)}>
             <option value="3个月">3个月</option>
             <option value="6个月">6个月</option>
@@ -211,7 +211,7 @@ export function OrderFormServiceMeta(props: {
         </div>
       </div>
       <div>
-        <label className="mb-0.5 block text-[11px] text-neutral-400">配件标签</label>
+        <label className="mb-0.5 block text-[11px] text-muted-foreground">配件标签</label>
         <input
           className={`ui-input w-full ${ic}`}
           value={props.internalTag}
@@ -221,7 +221,7 @@ export function OrderFormServiceMeta(props: {
       </div>
       {props.showPauseReason ? (
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">暂停原因</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">暂停原因</label>
           <input
             className={`ui-input w-full ${ic}`}
             value={props.pauseReason ?? ""}

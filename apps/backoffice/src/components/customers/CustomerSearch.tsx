@@ -59,7 +59,7 @@ function chipClass(active: boolean) {
   return [
     "ui-btn h-10 rounded-xl border px-3 text-sm font-medium md:h-9",
     active
-      ? "border-amber-100 bg-amber-50 text-amber-700"
-      : "border-border bg-muted text-neutral-700",
+      ? "border-status-warn bg-status-warn text-status-warn-foreground"
+      : "border-border bg-muted text-foreground",
   ].join(" ");
 }

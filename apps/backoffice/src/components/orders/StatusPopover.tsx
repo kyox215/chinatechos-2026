@@ -128,8 +128,8 @@ export function StatusPopover({
               key={action.toStatus}
               className={
                 mobile
-                  ? "flex w-full items-center gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-700 active:bg-indigo-100"
-                  : "flex w-full items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-left text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                  ? "flex w-full items-center gap-3 rounded-xl bg-primary/10 px-4 py-3 text-left text-sm font-semibold text-primary active:bg-primary/20"
+                  : "flex w-full items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-left text-xs font-semibold text-primary hover:bg-primary/20"
               }
               onClick={() => handleClick(action.toStatus, action.confirmText)}
               type="button"
@@ -154,10 +154,10 @@ export function StatusPopover({
             className={
               mobile
                 ? `flex w-full items-center rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
-                    action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
+                    action.variant === "danger" ? "text-status-danger-foreground" : "text-foreground"
                   }`
                 : `block w-full rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
-                    action.variant === "danger" ? "text-rose-600" : "text-neutral-700"
+                    action.variant === "danger" ? "text-status-danger-foreground" : "text-foreground"
                   }`
             }
             onClick={() => handleClick(action.toStatus, action.confirmText)}
@@ -189,11 +189,11 @@ export function StatusPopover({
       <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-900">切换状态</span>
+            <span className="text-sm font-semibold text-foreground font-display">切换状态</span>
             <OrderStatusBadge status={status} />
           </div>
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
             onClick={() => setOpen(false)}
             type="button"
           >
@@ -220,13 +220,13 @@ export function StatusPopover({
     <div className="relative">
       <button
         ref={btnRef}
-        className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-neutral-100"
+        className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-accent"
         disabled={pending}
         onClick={() => (open ? setOpen(false) : openPopover())}
         type="button"
       >
         {pending ? (
-          <span className="text-xs text-neutral-400">切换中...</span>
+          <span className="text-xs text-muted-foreground">切换中...</span>
         ) : (
           <OrderStatusBadge status={status} />
         )}
@@ -238,7 +238,7 @@ export function StatusPopover({
         <>
           <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setSupplierPicker(false)} />
           <div className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-4 shadow-xl">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-900">选择供应商</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground font-display">选择供应商</h3>
             <SupplierSelect
               className="ui-input mb-3 w-full text-sm"
               emptyLabel="不指定供应商"

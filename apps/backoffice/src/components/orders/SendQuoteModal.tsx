@@ -96,25 +96,25 @@ export function SendQuoteModal(props: Props) {
     >
       <div className="flex max-h-[80dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:max-w-lg md:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-neutral-900">发送报价给客户</h3>
+          <h3 className="text-sm font-semibold text-foreground font-display">发送报价给客户</h3>
           <button className="ui-btn ui-btn-secondary h-8 w-8 flex items-center justify-center text-xs" onClick={props.onClose} type="button">✕</button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-          <div className="text-xs text-neutral-500">以下消息将通过 WhatsApp 发送给客户：</div>
+          <div className="text-xs text-muted-foreground">以下消息将通过 WhatsApp 发送给客户：</div>
 
-          <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs text-neutral-700 whitespace-pre-line leading-relaxed">
+          <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs text-foreground whitespace-pre-line leading-relaxed">
             {messageText}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>发送至:</span>
-            <span className="font-medium text-neutral-900">{props.customerPhone}</span>
+            <span className="font-medium text-foreground">{props.customerPhone}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <div>{error && <span className="text-xs text-rose-600">{error}</span>}</div>
+          <div>{error && <span className="text-xs text-status-danger-foreground">{error}</span>}</div>
           <div className="flex gap-2">
             <button className="ui-btn ui-btn-secondary h-9 px-3 text-xs" onClick={props.onClose} type="button">取消</button>
             <button

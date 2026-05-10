@@ -51,12 +51,12 @@ const PALETTE_STYLES: Record<
   PaletteKey,
   { titleColor: string; bgColor: string }
 > = {
-  rose: { titleColor: "text-rose-700", bgColor: "bg-rose-50" },
-  blue: { titleColor: "text-blue-700", bgColor: "bg-blue-50" },
-  amber: { titleColor: "text-amber-800", bgColor: "bg-amber-50" },
-  teal: { titleColor: "text-teal-800", bgColor: "bg-teal-50" },
-  emerald: { titleColor: "text-emerald-800", bgColor: "bg-emerald-50" },
-  neutral: { titleColor: "text-neutral-600", bgColor: "bg-neutral-50" },
+  rose: { titleColor: "text-status-danger-foreground", bgColor: "bg-status-danger" },
+  blue: { titleColor: "text-status-info-foreground", bgColor: "bg-status-info" },
+  amber: { titleColor: "text-status-warn-foreground", bgColor: "bg-status-warn" },
+  teal: { titleColor: "text-status-success-foreground", bgColor: "bg-status-success" },
+  emerald: { titleColor: "text-status-success-foreground", bgColor: "bg-status-success" },
+  neutral: { titleColor: "text-muted-foreground", bgColor: "bg-muted" },
 };
 
 const MACRO_IDS = ["mail_in", "rework", "new", "processing", "pickup", "completed", "cancelled"] as const;

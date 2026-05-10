@@ -81,15 +81,15 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-4">
-      <h2 className="mb-1 text-sm font-semibold text-neutral-900">工单列表与状态文案</h2>
-      <p className="mb-4 text-xs text-neutral-500">
+      <h2 className="mb-1 font-display text-sm font-semibold text-foreground">工单列表与状态文案</h2>
+      <p className="mb-4 text-xs text-muted-foreground">
         门店维度配置：列表大分组标题与顺序、状态下拉顺序、徽标旁文案等；保存后立即作用于工单列表与导出。
       </p>
 
       {/* 状态与排序（合并） */}
       <div className="mb-6 rounded-xl border border-border bg-surface-2 p-3 md:p-4">
-        <h3 className="text-xs font-semibold text-neutral-900">状态与排序</h3>
-        <p className="mt-1 text-[11px] leading-relaxed text-neutral-600">
+        <h3 className="font-display text-xs font-semibold text-foreground">状态与排序</h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
           列表与下拉的先后顺序以下方顺序为准；允许多个枚举值共用同一展示名（例如不同阶段都显示「报价」）。
         </p>
 
@@ -101,12 +101,12 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
               className="rounded-xl border border-border bg-surface p-3"
             >
               <div className="mb-2 flex items-start justify-between gap-2">
-                <span className="break-all font-mono text-xs font-medium text-neutral-800">{key}</span>
-                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] tabular-nums text-neutral-600">
+                <span className="break-all font-mono text-xs font-medium text-foreground">{key}</span>
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] tabular-nums text-muted-foreground">
                   {i + 1}/{statusOrder.length}
                 </span>
               </div>
-              <label className="mb-1 block text-[11px] text-neutral-500">展示名</label>
+              <label className="mb-1 block text-[11px] text-muted-foreground">展示名</label>
               <input
                 className="ui-input h-10 w-full text-sm md:h-9"
                 value={draft.statusLabels?.[key] ?? ""}
@@ -155,7 +155,7 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
         <div className="mt-3 hidden max-h-[min(28rem,65vh)] overflow-auto rounded-lg border border-border md:block">
           <table className="w-full text-xs">
             <thead className="sticky top-0 z-[1] bg-muted/90 backdrop-blur-sm">
-              <tr className="text-left text-neutral-600">
+              <tr className="text-left text-muted-foreground">
                 <th className="w-10 whitespace-nowrap px-2 py-2 font-medium">#</th>
                 <th className="min-w-[6rem] px-2 py-2 font-medium">枚举键</th>
                 <th className="min-w-[10rem] px-2 py-2 font-medium">展示名</th>
@@ -165,8 +165,8 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
             <tbody>
               {statusOrder.map((key, i) => (
                 <tr key={key} className="border-t border-border">
-                  <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-neutral-500">{i + 1}</td>
-                  <td className="break-all px-2 py-1.5 font-mono text-neutral-700">{key}</td>
+                  <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-muted-foreground">{i + 1}</td>
+                  <td className="break-all px-2 py-1.5 font-mono text-foreground">{key}</td>
                   <td className="px-2 py-1">
                     <input
                       className="ui-input h-9 w-full text-xs"
@@ -220,11 +220,11 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
 
       {/* 大分组 */}
       <div className="mb-6 space-y-3 border-t border-border pt-6">
-        <h3 className="text-xs font-semibold text-neutral-800">列表大分组</h3>
+        <h3 className="font-display text-xs font-semibold text-foreground">列表大分组</h3>
         {macros.map((mg, mi) => (
           <div key={mg.id} className="rounded-lg border border-border bg-surface-2 p-3">
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[11px] font-semibold text-neutral-600">{mg.id}</span>
+              <span className="font-mono text-[11px] font-semibold text-muted-foreground">{mg.id}</span>
               <button
                 className="ui-btn ui-btn-secondary h-7 px-2 text-[11px]"
                 disabled={mi === 0}
@@ -254,7 +254,7 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
             </div>
             <div className="grid gap-2 md:grid-cols-2">
               <div>
-                <label className="mb-0.5 block text-[11px] text-neutral-500">分组标题</label>
+                <label className="mb-0.5 block text-[11px] text-muted-foreground">分组标题</label>
                 <input
                   className="ui-input w-full text-sm"
                   value={mg.label ?? ""}
@@ -269,7 +269,7 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
                 />
               </div>
               <div>
-                <label className="mb-0.5 block text-[11px] text-neutral-500">配色</label>
+                <label className="mb-0.5 block text-[11px] text-muted-foreground">配色</label>
                 <select
                   className="ui-input w-full text-sm"
                   value={mg.palette ?? "neutral"}
@@ -290,7 +290,7 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="flex cursor-pointer items-center gap-2 text-[11px] text-neutral-600">
+                <label className="flex cursor-pointer items-center gap-2 text-[11px] text-muted-foreground">
                   <input
                     checked={mg.defaultOpenDesktop ?? false}
                     onChange={(e) =>
@@ -307,7 +307,7 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
                 </label>
               </div>
               <div className="md:col-span-2">
-                <label className="mb-0.5 block text-[11px] text-neutral-500">包含的状态（只读，高级划分请在导出模板或后续版本中扩展）</label>
+                <label className="mb-0.5 block text-[11px] text-muted-foreground">包含的状态（只读，高级划分请在导出模板或后续版本中扩展）</label>
                 <input
                   readOnly
                   className="ui-input w-full bg-muted/40 font-mono text-[11px]"
@@ -323,8 +323,8 @@ function OrderUiSettingsSectionInner(props: { resolved: ResolvedOrderUi }) {
         <div
           className={`mb-3 rounded-lg px-3 py-2 text-xs ${
             message.type === "success"
-              ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
-              : "border border-red-200 bg-red-50 text-red-900"
+              ? "border border-status-success bg-status-success text-status-success-foreground"
+              : "border border-status-danger bg-status-danger text-status-danger-foreground"
           }`}
         >
           {message.text}

@@ -34,7 +34,7 @@ function faultLinesFromMap(selected: Map<string, string[]>) {
 
 function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+    <div className="flex items-center gap-2 text-sm font-semibold text-foreground font-display">
       {icon}
       <span>{title}</span>
     </div>
@@ -255,8 +255,8 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
       <div className="flex h-[100dvh] w-full flex-col rounded-t-2xl border-x-0 border-b-0 border-border bg-surface shadow-lg sm:max-h-[92dvh] sm:rounded-2xl sm:border md:h-[min(720px,calc(100vh-5rem))] md:min-h-[640px] md:max-h-[85vh] xl:max-w-6xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <h2 className="text-base font-semibold text-neutral-900">新建维修订单</h2>
-            <p className="text-xs text-neutral-500">填写客户和设备信息以创建新工单</p>
+            <h2 className="text-base font-semibold text-foreground font-display">新建维修订单</h2>
+            <p className="text-xs text-muted-foreground">填写客户和设备信息以创建新工单</p>
           </div>
           <button className="ui-btn ui-btn-secondary flex h-9 w-9 items-center justify-center" onClick={onClose} type="button">
             ✕
@@ -296,12 +296,12 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
                 selectedFaults={selectedFaults}
                 setSelectedFaults={setSelectedFaults}
                 title="故障诊断"
-                titleIcon={<IconSearch className="h-4 w-4 text-neutral-600" />}
+                titleIcon={<IconSearch className="h-4 w-4 text-muted-foreground" />}
               />
             </div>
 
             <div className="space-y-4 overflow-x-hidden xl:min-h-0 xl:h-full xl:overflow-y-auto xl:pl-1">
-              <SectionTitle icon={<IconMoney className="h-4 w-4 text-neutral-600" />} title="报价 & 服务" />
+              <SectionTitle icon={<IconMoney className="h-4 w-4 text-muted-foreground" />} title="报价 & 服务" />
               <FaultPriceLineInputs
                 lines={faultLines}
                 prices={faultPrices}
@@ -335,7 +335,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="min-w-0 flex-1">{error && <span className="text-xs text-rose-600">{error}</span>}</div>
+          <div className="min-w-0 flex-1">{error && <span className="text-xs text-status-danger-foreground">{error}</span>}</div>
           <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
             <button className="ui-btn ui-btn-secondary h-10 flex-1 px-4 md:h-9 sm:flex-none" onClick={handleDraftPrint} type="button">
               打印草稿

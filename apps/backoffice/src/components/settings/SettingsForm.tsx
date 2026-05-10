@@ -52,10 +52,10 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
     <div className="space-y-4">
       {/* Store info */}
       <section className="rounded-2xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">门店信息</h2>
+        <h2 className="mb-3 font-display text-sm font-semibold text-foreground">门店信息</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">门店名称</label>
+            <label className="mb-1 block text-xs text-muted-foreground">门店名称</label>
             <input
               className="ui-input w-full"
               onChange={(e) => setName(e.target.value)}
@@ -63,7 +63,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">门店短号 (store_code)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">门店短号 (store_code)</label>
             <input
               className="ui-input w-full"
               onChange={(e) => setStoreCode(e.target.value)}
@@ -71,7 +71,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">时区</label>
+            <label className="mb-1 block text-xs text-muted-foreground">时区</label>
             <select
               className="ui-input w-full"
               onChange={(e) => setTimezone(e.target.value)}
@@ -86,7 +86,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">门店 ID</label>
+            <label className="mb-1 block text-xs text-muted-foreground">门店 ID</label>
             <input
               className="ui-input w-full bg-muted"
               disabled
@@ -98,10 +98,10 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
 
       {/* Automation params */}
       <section className="rounded-2xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">自动化参数</h2>
+        <h2 className="mb-3 font-display text-sm font-semibold text-foreground">自动化参数</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">
+            <label className="mb-1 block text-xs text-muted-foreground">
               报价确认超时提醒（小时）
             </label>
             <input
@@ -111,12 +111,12 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
               type="number"
               value={approvalHours}
             />
-            <div className="mt-1 text-xs text-neutral-400">
+            <div className="mt-1 text-xs text-muted-foreground">
               客户在 waiting_approval 状态超过此时间后，Dashboard 高亮显示
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">
+            <label className="mb-1 block text-xs text-muted-foreground">
               未取件超时提醒（天）
             </label>
             <input
@@ -126,7 +126,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
               type="number"
               value={pickupDays}
             />
-            <div className="mt-1 text-xs text-neutral-400">
+            <div className="mt-1 text-xs text-muted-foreground">
               完工后超过此天数未取件，Dashboard 高亮显示
             </div>
           </div>
@@ -135,10 +135,10 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
 
       {/* Print defaults */}
       <section className="rounded-2xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">打印默认参数</h2>
+        <h2 className="mb-3 font-display text-sm font-semibold text-foreground">打印默认参数</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">纸张</label>
+            <label className="mb-1 block text-xs text-muted-foreground">纸张</label>
             <select
               className="ui-input w-full"
               onChange={(e) => setPrintPaper(e.target.value as "A5" | "A4")}
@@ -149,7 +149,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">方向</label>
+            <label className="mb-1 block text-xs text-muted-foreground">方向</label>
             <select
               className="ui-input w-full"
               onChange={(e) => setPrintOrientation(e.target.value as "landscape" | "portrait")}
@@ -160,7 +160,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">密度</label>
+            <label className="mb-1 block text-xs text-muted-foreground">密度</label>
             <select
               className="ui-input w-full"
               onChange={(e) => setPrintDensity(e.target.value as "compact" | "normal" | "relaxed")}
@@ -172,7 +172,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-neutral-500">边距</label>
+            <label className="mb-1 block text-xs text-muted-foreground">边距</label>
             <select
               className="ui-input w-full"
               onChange={(e) => setPrintMarginMm(Number(e.target.value) as 3 | 5 | 8)}
@@ -198,7 +198,7 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
         </button>
         {message && (
           <span
-            className={`text-sm ${message.type === "success" ? "text-emerald-600" : "text-rose-600"}`}
+            className={`text-sm ${message.type === "success" ? "text-status-success-foreground" : "text-status-danger-foreground"}`}
           >
             {message.text}
           </span>

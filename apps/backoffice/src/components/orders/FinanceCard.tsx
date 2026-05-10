@@ -120,7 +120,7 @@ export function FinanceCard(props: Props) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-900">财务信息</h2>
+        <h2 className="text-sm font-semibold text-foreground font-display">财务信息</h2>
         {props.isEditable && !editing && (
           <button
             className="ui-btn ui-btn-secondary h-8 min-h-[32px] px-3 text-xs font-medium"
@@ -134,7 +134,7 @@ export function FinanceCard(props: Props) {
 
       {editing ? (
         <div className="space-y-4">
-          <div className="text-xs font-medium text-neutral-500">报价明细</div>
+          <div className="text-xs font-medium text-muted-foreground">报价明细</div>
           {faultItems.length > 0 ? (
             <FaultPriceLineInputs
               lines={faultItems}
@@ -142,7 +142,7 @@ export function FinanceCard(props: Props) {
               onPriceChange={(key, value) => setPrices((prev) => ({ ...prev, [key]: value }))}
             />
           ) : (
-            <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-neutral-600">
+            <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
               当前无结构化故障分项；订单总金额取自数据库总额。
             </div>
           )}
@@ -150,7 +150,7 @@ export function FinanceCard(props: Props) {
           <FinancialSummaryThree
             depositInput={
               <div className="flex items-center gap-1">
-                <span className="text-xs text-neutral-400">&euro;</span>
+                <span className="text-xs text-muted-foreground">&euro;</span>
                 <input
                   className="ui-input h-8 max-w-[140px] flex-1 text-xs"
                   onChange={(e) => setDeposit(e.target.value)}
@@ -164,17 +164,17 @@ export function FinanceCard(props: Props) {
             receivable={remaining}
           />
 
-          <label className="flex items-center gap-2 text-xs text-neutral-700">
+          <label className="flex items-center gap-2 text-xs text-foreground">
             <input
               checked={isPaid}
               onChange={(e) => setIsPaid(e.target.checked)}
               type="checkbox"
-              className="h-4 w-4 rounded border-neutral-300"
+              className="h-4 w-4 rounded border-border"
             />
             已全额结清
           </label>
 
-          {error && <div className="text-xs text-rose-600">{error}</div>}
+          {error && <div className="text-xs text-status-danger-foreground">{error}</div>}
 
           <div className="flex flex-wrap gap-2 border-t border-border pt-3">
             {props.customerPhone && faultItems.length > 0 && quotation > 0 && (
@@ -208,14 +208,14 @@ export function FinanceCard(props: Props) {
           {props.quotationAmount != null && (
             <div className="mb-2 rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-xs">
               <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4">
-                <span className="font-medium text-neutral-700">金额摘要</span>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-neutral-800">
+                <span className="font-medium text-foreground">金额摘要</span>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-foreground">
                   <span>
                     合计{" "}
                     <span className="tabular-nums font-semibold">{formatEUR(props.quotationAmount)}</span>
                   </span>
                   {receivableDisplay != null && Number(receivableDisplay) > 0 && !props.isPaid && (
-                    <span className="text-rose-700">
+                    <span className="text-status-danger-foreground">
                       待收{" "}
                       <span className="tabular-nums font-semibold">{formatEUR(receivableDisplay)}</span>
                     </span>
@@ -228,8 +228,8 @@ export function FinanceCard(props: Props) {
             <div className="mb-2 space-y-1 border-b border-border pb-2">
               {faultItems.map((item) => (
                 <div key={item.key} className="grid grid-cols-[1fr_auto] gap-x-3 text-xs">
-                  <span className="min-w-0 text-neutral-600">{item.label}</span>
-                  <span className="shrink-0 tabular-nums text-neutral-700">
+                  <span className="min-w-0 text-muted-foreground">{item.label}</span>
+                  <span className="shrink-0 tabular-nums text-foreground font-mono">
                     {prices[item.key] ? `€${Number(prices[item.key]).toFixed(2)}` : "-"}
                   </span>
                 </div>
@@ -240,13 +240,13 @@ export function FinanceCard(props: Props) {
           <Row label="定金" numeric value={formatEUR(props.depositAmount)} />
           <Row label="应收金额" numeric value={formatEUR(props.balanceAmount ?? (remaining || null))} />
           <div className="grid grid-cols-1 gap-0.5 py-1 text-sm sm:grid-cols-[minmax(5.25rem,7rem)_1fr] sm:gap-x-3 sm:items-center">
-            <span className="text-neutral-500">结清状态</span>
+            <span className="text-muted-foreground">结清状态</span>
             <div className="flex sm:justify-end">
               <span
                 className={
                   props.isPaid
-                    ? "inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800"
-                    : "inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800"
+                    ? "inline-flex rounded-full bg-status-success px-2 py-0.5 text-xs font-medium text-status-success-foreground"
+                    : "inline-flex rounded-full bg-status-danger px-2 py-0.5 text-xs font-medium text-status-danger-foreground"
                 }
               >
                 {props.isPaid ? "已结清" : "未结清"}
@@ -278,9 +278,9 @@ export function FinanceCard(props: Props) {
 function Row(props: { label: string; value: string; numeric?: boolean }) {
   return (
     <div className="grid grid-cols-1 gap-0.5 py-1 text-sm sm:grid-cols-[minmax(5.25rem,7rem)_1fr] sm:gap-x-3 sm:items-baseline">
-      <span className="text-neutral-500">{props.label}</span>
+      <span className="text-muted-foreground">{props.label}</span>
       <span
-        className={`min-w-0 text-neutral-900 sm:text-right ${props.numeric ? "tabular-nums" : ""}`}
+        className={`min-w-0 text-foreground sm:text-right ${props.numeric ? "font-mono tabular-nums" : ""}`}
       >
         {props.value}
       </span>

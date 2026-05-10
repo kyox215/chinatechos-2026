@@ -35,8 +35,8 @@ type Props = {
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-1 gap-0.5 text-sm sm:grid-cols-[minmax(5.25rem,7rem)_1fr] sm:gap-x-3 sm:items-baseline">
-      <span className="shrink-0 text-neutral-500">{label}</span>
-      <div className="min-w-0 text-neutral-900">{children}</div>
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <div className="min-w-0 text-foreground">{children}</div>
     </div>
   );
 }
@@ -164,8 +164,8 @@ export function OrderInfoCard(props: Props) {
     return (
       <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">编辑工单信息</h2>
-          <button className="text-xs text-neutral-500 hover:text-neutral-700" onClick={() => setEditing(false)} type="button">
+          <h2 className="text-sm font-semibold text-foreground font-display">编辑工单信息</h2>
+          <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setEditing(false)} type="button">
             取消
           </button>
         </div>
@@ -194,7 +194,7 @@ export function OrderInfoCard(props: Props) {
           />
 
           <fieldset className="space-y-2">
-            <legend className="text-xs font-semibold text-neutral-500">故障 & 维修</legend>
+            <legend className="text-xs font-semibold text-muted-foreground">故障 & 维修</legend>
             <OrderFormFaultSection
               faultNote={faultNote}
               faultNotePlaceholder="补充故障描述..."
@@ -217,7 +217,7 @@ export function OrderInfoCard(props: Props) {
               inputClass="text-xs"
             />
             <div className="space-y-1 pt-1">
-              <label className="text-xs font-medium text-neutral-600" htmlFor="order-supplier-edit">
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="order-supplier-edit">
                 配件来源
               </label>
               <SupplierSelect
@@ -229,7 +229,7 @@ export function OrderInfoCard(props: Props) {
             </div>
           </fieldset>
 
-          {error && <div className="text-xs text-rose-600">{error}</div>}
+          {error && <div className="text-xs text-status-danger-foreground">{error}</div>}
 
           <div className="flex gap-2 border-t border-border pt-3">
             <button
@@ -252,7 +252,7 @@ export function OrderInfoCard(props: Props) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-900">工单信息</h2>
+        <h2 className="text-sm font-semibold text-foreground font-display">工单信息</h2>
         {props.isEditable && (
           <button
             className="ui-btn ui-btn-secondary h-8 min-h-[32px] px-3 text-xs font-medium"
@@ -266,11 +266,11 @@ export function OrderInfoCard(props: Props) {
 
       <div className="space-y-3">
         <div>
-          <div className="mb-1 text-[11px] font-medium text-neutral-400">客户</div>
+          <div className="mb-1 text-[11px] font-medium text-muted-foreground">客户</div>
           <div className="space-y-1.5">
             <InfoRow label="姓名">
               {props.customer ? (
-                <Link href={`/customers/${props.customer.id}`} className="text-indigo-600 hover:underline">
+                <Link href={`/customers/${props.customer.id}`} className="text-primary hover:underline">
                   {props.customer.name ?? "未命名客户"}
                 </Link>
               ) : (
@@ -282,7 +282,7 @@ export function OrderInfoCard(props: Props) {
         </div>
 
         <div className="border-t border-border pt-3">
-          <div className="mb-1 text-[11px] font-medium text-neutral-400">设备</div>
+          <div className="mb-1 text-[11px] font-medium text-muted-foreground">设备</div>
           <div className="space-y-1.5">
             <InfoRow label="品牌">{props.device?.brand ?? "-"}</InfoRow>
             <InfoRow label="型号">{props.device?.model ?? "-"}</InfoRow>
@@ -291,11 +291,11 @@ export function OrderInfoCard(props: Props) {
         </div>
 
         <div className="border-t border-border pt-3">
-          <div className="mb-1 text-[11px] font-medium text-neutral-400">故障 & 维修</div>
+          <div className="mb-1 text-[11px] font-medium text-muted-foreground">故障 & 维修</div>
           <div className="space-y-2 text-sm">
             <div className="space-y-1">
-              <div className="text-neutral-500">问题描述</div>
-              <p className="whitespace-pre-wrap break-words leading-relaxed text-neutral-900">{props.issueDescription || "-"}</p>
+              <div className="text-muted-foreground">问题描述</div>
+              <p className="whitespace-pre-wrap break-words leading-relaxed text-foreground">{props.issueDescription || "-"}</p>
             </div>
             <InfoRow label="技师">{props.technicianName ?? "-"}</InfoRow>
             <InfoRow label="配件来源">
@@ -309,7 +309,7 @@ export function OrderInfoCard(props: Props) {
             <InfoRow label="保修">{props.warrantyText ?? "-"}</InfoRow>
             {props.pauseReason && (
               <InfoRow label="暂停原因">
-                <span className="font-medium text-rose-600">{props.pauseReason}</span>
+                <span className="font-medium text-status-danger-foreground">{props.pauseReason}</span>
               </InfoRow>
             )}
           </div>
