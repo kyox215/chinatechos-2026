@@ -85,7 +85,22 @@ function OrderTypeTag({ type }: { type: string }) {
   );
 }
 
-function KpiPill({ label, value, accentVar }: { label: string; value: number; accentVar: string }) {
+type KpiTone = "violet" | "cyan" | "warn";
+
+function kpiGlowColor(tone: KpiTone): string {
+  switch (tone) {
+    case "violet":
+      return "var(--color-brand-violet)";
+    case "cyan":
+      return "var(--color-brand-cyan)";
+    case "warn":
+      return "var(--status-warn-foreground)";
+  }
+}
+
+/** 列表页 KPI：与规划稿一致，仅用语义 / 品牌 Token（不写死 hex） */
+function KpiPill({ label, value, tone }: { label: string; value: number; tone: KpiTone }) {
+  const glow = kpiGlowColor(tone);
   return (
     <motion.div
       whileHover={{ y: -2 }}
@@ -96,11 +111,11 @@ function KpiPill({ label, value, accentVar }: { label: string; value: number; ac
         aria-hidden
         className="pointer-events-none absolute -right-6 -top-6 size-16 rounded-full opacity-50 blur-2xl transition-opacity group-hover:opacity-80"
         style={{
-          background: `radial-gradient(circle, var(${accentVar}) / 0.45, transparent 70%)`,
+          background: `radial-gradient(circle, color-mix(in oklab, ${glow} 55%, transparent) 0%, transparent 70%)`,
         }}
       />
       <div className="relative flex items-center gap-3">
-        <span className="size-1.5 rounded-full" style={{ background: `var(${accentVar})` }} />
+        <span className="size-1.5 shrink-0 rounded-full" style={{ background: glow }} />
         <div>
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground/70">{label}</div>
           <div className="font-display text-lg font-semibold tabular-nums leading-none">
@@ -210,28 +225,28 @@ export function OrdersListShell(props: Props) {
   );
 
   return (
-    <div className="space-y-5">
-      <motion.div
+    <div className="space-y-6">
+      <motion.header
         animate="show"
-        className="mb-1 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
         initial="hidden"
         variants={stagger(0.05)}
       >
         <motion.div variants={fadeUp}>
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">工作台 / 工单</p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight md:text-3xl">
             <span className="gradient-text">工单</span>
             <span className="ml-2 align-middle text-base font-normal text-muted-foreground">
               共 <span className="font-mono tabular-nums">{items.length}</span> 条
             </span>
           </h1>
         </motion.div>
-        <motion.div className="flex flex-wrap items-center gap-2" variants={fadeUp}>
-          <KpiPill accentVar="--color-brand-violet" label="今日新建" value={kpiToday} />
-          <KpiPill accentVar="--color-brand-cyan" label="进行中" value={kpiInProgress} />
-          <KpiPill accentVar="--color-brand-violet" label="未结清" value={kpiUnpaid} />
+        <motion.div className="flex flex-wrap items-stretch gap-2 sm:justify-end" variants={fadeUp}>
+          <KpiPill label="今日新增" tone="violet" value={kpiToday} />
+          <KpiPill label="进行中" tone="cyan" value={kpiInProgress} />
+          <KpiPill label="未结清" tone="warn" value={kpiUnpaid} />
         </motion.div>
-      </motion.div>
+      </motion.header>
 
       {listError ? (
         <div className="rounded-xl border border-border bg-status-danger/10 px-3 py-2 text-sm text-status-danger-foreground">
@@ -239,12 +254,13 @@ export function OrdersListShell(props: Props) {
         </div>
       ) : null}
 
-      <div className="glass-card space-y-3 p-3">
+      {/* 配方 2：筛选条 — glass-card + 工具栏 */}
+      <div className="glass-card flex flex-col gap-3 p-3 shadow-[var(--shadow-card)] sm:p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="ui-input h-9 w-full pl-8 text-sm"
+              className="ui-input h-9 w-full border-border/60 bg-surface-muted/50 pl-8 text-sm md:h-9"
               onChange={(e) => setLocalQ(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -258,15 +274,24 @@ export function OrdersListShell(props: Props) {
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <button
-              className="ui-btn ui-btn-secondary inline-flex h-9 items-center gap-1.5 px-3 text-sm md:hidden"
-              onClick={() => setAdvancedOpen((v) => !v)}
+              className="ui-btn ui-btn-secondary inline-flex h-9 items-center gap-1.5 px-3 text-sm"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+                  document.getElementById("orders-advanced-filters")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                  });
+                } else {
+                  setAdvancedOpen((v) => !v);
+                }
+              }}
               type="button"
             >
               <SlidersHorizontal className="size-3.5" />
               筛选
             </button>
             <button
-              className="ui-btn ui-btn-secondary hidden h-9 items-center gap-1.5 px-3 text-sm sm:inline-flex"
+              className="ui-btn ui-btn-secondary inline-flex h-9 items-center gap-1.5 px-3 text-sm"
               onClick={() => toast.message("导出功能即将上线")}
               type="button"
             >
@@ -276,16 +301,18 @@ export function OrdersListShell(props: Props) {
           </div>
         </div>
 
-        <div className="hidden border-t border-border/60 pt-3 md:block">{filtersSlot}</div>
+        <div className="hidden border-t border-border/60 pt-3 md:block" id="orders-advanced-filters">
+          {filtersSlot}
+        </div>
         <div className={cn("border-t border-border/60 pt-3 md:hidden", !advancedOpen && "hidden")}>{filtersSlot}</div>
 
         <div className="flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border/60 bg-surface-muted/40 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border/60 bg-surface-muted/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabLinks.map((t) => (
               <Link
                 key={t.key}
                 className={cn(
-                  "relative shrink-0 whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "relative shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   t.active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
                 href={t.href}
@@ -293,8 +320,9 @@ export function OrdersListShell(props: Props) {
               >
                 {t.active ? (
                   <motion.span
-                    className="absolute inset-0 -z-10 rounded-md bg-primary/15 ring-1 ring-inset ring-primary/25"
+                    className="absolute inset-0 -z-10 rounded-md ring-1 ring-inset ring-border/40"
                     layoutId="orders-tab-indicator"
+                    style={{ background: "var(--gradient-brand-soft)" }}
                     transition={{ damping: 32, stiffness: 400, type: "spring" }}
                   />
                 ) : null}
@@ -303,7 +331,7 @@ export function OrdersListShell(props: Props) {
             ))}
           </div>
           <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-            选中 <span className="text-foreground">{selected.size}</span>
+            选中 <span className="font-mono text-foreground">{selected.size}</span>
           </span>
         </div>
       </div>
@@ -326,7 +354,7 @@ export function OrdersListShell(props: Props) {
           </motion.div>
         ) : (
           <>
-            <div className="glass-card hidden overflow-hidden md:block">
+            <div className="glass-card hidden overflow-hidden shadow-[var(--shadow-card)] md:block">
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground">
                   <tr className="border-b border-border/40">
