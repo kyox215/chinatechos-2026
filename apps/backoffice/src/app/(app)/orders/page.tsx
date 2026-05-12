@@ -45,7 +45,7 @@ export default async function OrdersPage(props: {
 
   const todayStr = new Date().toDateString();
   const kpiToday = items.filter((o) => new Date(o.createdAt).toDateString() === todayStr).length;
-  const inProgressSet = new Set(ORDER_LIST_IN_PROGRESS_STATUSES);
+  const inProgressSet = new Set<string>(ORDER_LIST_IN_PROGRESS_STATUSES);
   const kpiInProgress = items.filter((o) => inProgressSet.has(o.status)).length;
   const kpiUnpaid = items.filter((o) => !o.isPaid).length;
 
