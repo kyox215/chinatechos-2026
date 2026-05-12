@@ -11,10 +11,11 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AnimatedNumber } from "@/components/animated-number";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
+import { OrdersListSearchDraftProvider } from "@/components/orders/orders-list-search-draft-context";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { postOrdersBatchTransition } from "@/lib/api/order-transition-client";
@@ -27,6 +28,13 @@ import { getOrderStatusSelectOptionsResolved } from "@/lib/domain/order-ui-confi
 import { calcWarranty } from "@/lib/domain/warranty-calc";
 import { fadeUp, stagger } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+
+type CustomerSuggestion = {
+  id: string;
+  name: string | null;
+  phoneE164: string;
+  lastOrderAt: string | null;
+};
 
 const TABS: OrderStatusTab[] = [
   "all",
@@ -151,12 +159,41 @@ export function OrdersListShell(props: Props) {
   const [batchPending, setBatchPending] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const searchListboxId = useId();
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState<CustomerSuggestion[]>([]);
+  const [loadingSuggest, setLoadingSuggest] = useState(false);
 
   const spString = sp.toString();
 
   useEffect(() => {
     setLocalQ(sp.get("q") ?? "");
   }, [sp]);
+
+  useEffect(() => {
+    const keyword = localQ.trim();
+    if (keyword.length < 2) {
+      queueMicrotask(() => setSuggestions([]));
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setLoadingSuggest(true);
+      try {
+        const response = await fetch(`/api/customers/suggest?q=${encodeURIComponent(keyword)}&limit=10`);
+        if (!response.ok) {
+          setSuggestions([]);
+          return;
+        }
+        const json = (await response.json()) as { items?: CustomerSuggestion[] };
+        setSuggestions(json.items ?? []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggest(false);
+      }
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [localQ]);
 
   useEffect(() => {
     if (!mobileFiltersOpen) return;
@@ -289,8 +326,14 @@ export function OrdersListShell(props: Props) {
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
+              aria-autocomplete="list"
+              aria-controls={searchFocused && localQ.trim().length >= 2 ? searchListboxId : undefined}
+              aria-expanded={Boolean(searchFocused && localQ.trim().length >= 2)}
+              autoComplete="off"
               className="ui-input h-9 w-full border-border/60 bg-surface-muted/50 pl-8 text-sm transition-shadow focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25 md:h-9"
+              onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
               onChange={(e) => setLocalQ(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -298,8 +341,45 @@ export function OrdersListShell(props: Props) {
                 }
               }}
               placeholder="搜索工单号、客户姓名、电话或 IMEI"
+              role="combobox"
+              type="search"
               value={localQ}
             />
+            {searchFocused && localQ.trim().length >= 2 ? (
+              <div
+                className="absolute z-[60] mt-1 w-full rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-[var(--shadow-elevated)]"
+                id={searchListboxId}
+                role="listbox"
+              >
+                {loadingSuggest ? (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">搜索中...</div>
+                ) : suggestions.length === 0 ? (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">无匹配客户，继续输入可按关键词查工单</div>
+                ) : (
+                  suggestions.map((it) => (
+                    <button
+                      key={it.id}
+                      className="block w-full rounded-md px-2 py-1.5 text-left hover:bg-muted"
+                      onClick={() => {
+                        const keyword = it.phoneE164 || it.name || "";
+                        setLocalQ(keyword);
+                        setSearchFocused(false);
+                        const p = new URLSearchParams(spString);
+                        if (keyword.trim()) p.set("q", keyword.trim());
+                        else p.delete("q");
+                        const s = p.toString();
+                        router.push(s ? `/orders?${s}` : "/orders");
+                      }}
+                      role="option"
+                      type="button"
+                    >
+                      <div className="text-sm font-medium text-foreground">{it.name ?? "未命名客户"}</div>
+                      <div className="text-xs text-muted-foreground">{it.phoneE164}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <button
@@ -366,7 +446,7 @@ export function OrdersListShell(props: Props) {
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:flex-none md:overflow-visible md:px-0 md:pb-0 md:pt-0">
-            {filtersSlot}
+            <OrdersListSearchDraftProvider draftQ={localQ}>{filtersSlot}</OrdersListSearchDraftProvider>
           </div>
           <div className="shrink-0 border-t border-border p-3 md:hidden">
             <button

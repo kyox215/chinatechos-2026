@@ -5,22 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
+import { useOrdersListSearchDraft } from "@/components/orders/orders-list-search-draft-context";
+import type { OrderStatusTab } from "@/lib/domain/order-list-tabs";
 import { getOrderStatusSelectOptionsResolved } from "@/lib/domain/order-ui-config";
-
-type Suggestion = {
-  id: string;
-  name: string | null;
-  phoneE164: string;
-  lastOrderAt: string | null;
-};
 
 type SupplierOption = {
   id: string;
   short_name: string;
   color: string;
 };
-
-import type { OrderStatusTab } from "@/lib/domain/order-list-tabs";
 
 type Props = {
   q?: string;
@@ -39,7 +32,7 @@ type Props = {
 export function OrdersSearchControls(props: Props) {
   const orderUi = useResolvedOrderUi();
   const router = useRouter();
-  const [q, setQ] = useState(props.q ?? "");
+  const listSearchDraft = useOrdersListSearchDraft();
   const [status, setStatus] = useState(props.status);
   const [technician, setTechnician] = useState(props.technician === "all" ? "" : props.technician);
   const [paid, setPaid] = useState(props.paid);
@@ -49,31 +42,18 @@ export function OrdersSearchControls(props: Props) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [supplierOptions, setSupplierOptions] = useState<SupplierOption[]>([]);
 
   // Keep local fields in sync when URL changes (浏览器前进/后退、分享链接).
   /* eslint-disable react-hooks/set-state-in-effect -- controlled sync from server props */
   useEffect(() => {
-    setQ(props.q ?? "");
     setStatus(props.status);
     setTechnician(props.technician === "all" ? "" : props.technician);
     setPaid(props.paid);
     setSupplier(props.supplier ?? "all");
     setDateFrom(props.dateFrom ?? "");
     setDateTo(props.dateTo ?? "");
-  }, [
-    props.q,
-    props.tab,
-    props.status,
-    props.technician,
-    props.paid,
-    props.supplier,
-    props.dateFrom,
-    props.dateTo,
-  ]);
+  }, [props.tab, props.status, props.technician, props.paid, props.supplier, props.dateFrom, props.dateTo]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
@@ -97,31 +77,6 @@ export function OrdersSearchControls(props: Props) {
     return count;
   }, [status, paid, supplier, technician, dateFrom, dateTo]);
 
-  useEffect(() => {
-    const keyword = q.trim();
-    if (keyword.length < 2) {
-      queueMicrotask(() => setSuggestions([]));
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setLoadingSuggest(true);
-      try {
-        const response = await fetch(`/api/customers/suggest?q=${encodeURIComponent(keyword)}&limit=10`);
-        if (!response.ok) {
-          setSuggestions([]);
-          return;
-        }
-        const json = (await response.json()) as { items?: Suggestion[] };
-        setSuggestions(json.items ?? []);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setLoadingSuggest(false);
-      }
-    }, 280);
-    return () => clearTimeout(timer);
-  }, [q]);
-
   function applyFilters(next: {
     q?: string;
     status?: string;
@@ -134,8 +89,9 @@ export function OrdersSearchControls(props: Props) {
     pickupOverdue?: boolean;
   }) {
     const params = new URLSearchParams();
-    const qValue = next.q ?? q;
-    if (qValue.trim()) params.set("q", qValue.trim());
+    const qRaw = next.q ?? listSearchDraft ?? props.q ?? "";
+    const qValue = qRaw.trim();
+    if (qValue) params.set("q", qValue);
     const statusValue = next.status ?? status;
     const paidValue = next.paid ?? paid;
     const supplierValue = next.supplier ?? supplier;
@@ -175,60 +131,13 @@ export function OrdersSearchControls(props: Props) {
   return (
     <>
       <div className="ui-panel flex flex-col gap-2 md:gap-3 !p-2.5 md:!p-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <input
-              className={`${compactInput} max-md:text-[13px]`}
-              onChange={(e) => setQ(e.target.value)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 100)}
-              onFocus={() => setSearchFocused(true)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  applyFilters({ q });
-                }
-              }}
-              placeholder="实时搜索：电话 / 客户名 / 工单号 / IMEI"
-              value={q}
-            />
-            {searchFocused && q.trim().length >= 2 ? (
-              <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-surface p-1.5 shadow-sm">
-                {loadingSuggest ? (
-                  <div className="px-2 py-2 text-xs text-muted-foreground">搜索中...</div>
-                ) : suggestions.length === 0 ? (
-                  <div className="px-2 py-2 text-xs text-muted-foreground">无匹配客户，继续输入可按关键词查工单</div>
-                ) : (
-                  suggestions.map((it) => (
-                    <button
-                      key={it.id}
-                      className="block w-full rounded-md px-2 py-1.5 text-left hover:bg-muted"
-                      onClick={() => {
-                        const keyword = it.phoneE164 || it.name || "";
-                        setQ(keyword);
-                        setSearchFocused(false);
-                        applyFilters({ q: keyword });
-                      }}
-                      type="button"
-                    >
-                      <div className="text-sm font-medium text-foreground">{it.name ?? "未命名客户"}</div>
-                      <div className="text-xs text-muted-foreground">{it.phoneE164}</div>
-                    </button>
-                  ))
-                )}
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            <button className={`${compactBtn} ui-btn-primary`} onClick={() => applyFilters({ q })} type="button">
-              搜索
-            </button>
-            <button className={`${compactBtn} ui-btn-secondary`} onClick={() => setAdvancedOpen((v) => !v)} type="button">
-              高级筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
-            </button>
-            <button className={`${compactBtn} ui-btn-primary`} onClick={() => setCreateOpen(true)} type="button">
-              新建工单
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <button className={`${compactBtn} ui-btn-secondary`} onClick={() => setAdvancedOpen((v) => !v)} type="button">
+            高级筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
+          </button>
+          <button className={`${compactBtn} ui-btn-primary`} onClick={() => setCreateOpen(true)} type="button">
+            新建工单
+          </button>
         </div>
 
         <div className="space-y-2 border-t border-border/70 pt-2 md:pt-2.5">
