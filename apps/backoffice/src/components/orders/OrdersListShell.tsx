@@ -145,7 +145,7 @@ export function OrdersListShell(props: Props) {
   const statusOptions = getOrderStatusSelectOptionsResolved(ui);
 
   const [localQ, setLocalQ] = useState(() => sp.get("q") ?? "");
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
@@ -157,6 +157,35 @@ export function OrdersListShell(props: Props) {
   useEffect(() => {
     setLocalQ(sp.get("q") ?? "");
   }, [sp]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileFiltersOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const closeIfDesktop = () => {
+      if (mq.matches) setMobileFiltersOpen(false);
+    };
+    closeIfDesktop();
+    mq.addEventListener("change", closeIfDesktop);
+    return () => mq.removeEventListener("change", closeIfDesktop);
+  }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileFiltersOpen]);
 
   const applySearch = useCallback(() => {
     const p = new URLSearchParams(spString);
@@ -234,7 +263,7 @@ export function OrdersListShell(props: Props) {
       >
         <motion.div variants={fadeUp}>
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">工作台 / 工单</p>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight md:text-3xl">
+          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight md:text-4xl">
             <span className="gradient-text">工单</span>
             <span className="ml-2 align-middle text-base font-normal text-muted-foreground">
               共 <span className="font-mono tabular-nums">{items.length}</span> 条
@@ -242,7 +271,7 @@ export function OrdersListShell(props: Props) {
           </h1>
         </motion.div>
         <motion.div className="flex flex-wrap items-stretch gap-2 sm:justify-end" variants={fadeUp}>
-          <KpiPill label="今日新增" tone="violet" value={kpiToday} />
+          <KpiPill label="今日新建" tone="violet" value={kpiToday} />
           <KpiPill label="进行中" tone="cyan" value={kpiInProgress} />
           <KpiPill label="未结清" tone="warn" value={kpiUnpaid} />
         </motion.div>
@@ -260,7 +289,7 @@ export function OrdersListShell(props: Props) {
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="ui-input h-9 w-full border-border/60 bg-surface-muted/50 pl-8 text-sm md:h-9"
+              className="ui-input h-9 w-full border-border/60 bg-surface-muted/50 pl-8 text-sm transition-shadow focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25 md:h-9"
               onChange={(e) => setLocalQ(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -282,7 +311,7 @@ export function OrdersListShell(props: Props) {
                     block: "nearest",
                   });
                 } else {
-                  setAdvancedOpen((v) => !v);
+                  setMobileFiltersOpen(true);
                 }
               }}
               type="button"
@@ -291,7 +320,7 @@ export function OrdersListShell(props: Props) {
               筛选
             </button>
             <button
-              className="ui-btn ui-btn-secondary inline-flex h-9 items-center gap-1.5 px-3 text-sm"
+              className="ui-btn ui-btn-secondary hidden h-9 items-center gap-1.5 px-3 text-sm sm:inline-flex"
               onClick={() => toast.message("导出功能即将上线")}
               type="button"
             >
@@ -301,10 +330,54 @@ export function OrdersListShell(props: Props) {
           </div>
         </div>
 
-        <div className="hidden border-t border-border/60 pt-3 md:block" id="orders-advanced-filters">
-          {filtersSlot}
+        {mobileFiltersOpen ? (
+          <button
+            aria-label="关闭筛选"
+            className="fixed inset-0 z-40 bg-background/70 md:hidden"
+            onClick={() => setMobileFiltersOpen(false)}
+            type="button"
+          />
+        ) : null}
+
+        <div
+          aria-labelledby="orders-filter-sheet-title"
+          aria-modal={mobileFiltersOpen ? true : undefined}
+          className={cn(
+            "border-t border-border/60 pt-3",
+            "fixed inset-y-0 right-0 z-50 flex max-h-dvh w-full max-w-sm flex-col border-l border-border bg-card shadow-[var(--shadow-elevated)] transition-transform duration-200 motion-reduce:transition-none md:static md:z-auto md:max-h-none md:max-w-none md:translate-x-0 md:border-0 md:bg-transparent md:shadow-none",
+            mobileFiltersOpen ? "translate-x-0" : "translate-x-full md:translate-x-0",
+            !mobileFiltersOpen && "pointer-events-none md:pointer-events-auto",
+          )}
+          id="orders-advanced-filters"
+          role={mobileFiltersOpen ? "dialog" : undefined}
+        >
+          <h2 className="sr-only" id="orders-filter-sheet-title">
+            筛选
+          </h2>
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5 md:hidden">
+            <span className="text-sm font-semibold text-foreground">高级筛选</span>
+            <button
+              aria-label="关闭筛选面板"
+              className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+              onClick={() => setMobileFiltersOpen(false)}
+              type="button"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:flex-none md:overflow-visible md:px-0 md:pb-0 md:pt-0">
+            {filtersSlot}
+          </div>
+          <div className="shrink-0 border-t border-border p-3 md:hidden">
+            <button
+              className="ui-btn ui-btn-primary h-10 w-full text-sm font-semibold"
+              onClick={() => setMobileFiltersOpen(false)}
+              type="button"
+            >
+              完成
+            </button>
+          </div>
         </div>
-        <div className={cn("border-t border-border/60 pt-3 md:hidden", !advancedOpen && "hidden")}>{filtersSlot}</div>
 
         <div className="flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border/60 bg-surface-muted/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -312,7 +385,7 @@ export function OrdersListShell(props: Props) {
               <Link
                 key={t.key}
                 className={cn(
-                  "relative shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  "relative shrink-0 whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   t.active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
                 href={t.href}
@@ -358,7 +431,7 @@ export function OrdersListShell(props: Props) {
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground">
                   <tr className="border-b border-border/40">
-                    <th className="w-10 px-3 py-2.5">
+                    <th className="w-10 px-4 py-2.5">
                       <input
                         aria-label="全选"
                         checked={allSelected}
@@ -378,7 +451,7 @@ export function OrdersListShell(props: Props) {
                     <th className="w-10 px-2 py-2.5" />
                   </tr>
                 </thead>
-                <motion.tbody animate="show" initial="hidden" variants={stagger(0.03)}>
+                <motion.tbody animate="show" initial="hidden" variants={stagger(0.025)}>
                   {items.map((o) => {
                     const checked = selected.has(o.id);
                     const imeiTail = o.deviceImei && o.deviceImei.length >= 8 ? o.deviceImei.slice(-8) : "—";
@@ -391,7 +464,7 @@ export function OrdersListShell(props: Props) {
                         )}
                         variants={fadeUp}
                       >
-                        <td className="relative px-3 py-2.5">
+                        <td className="relative px-4 py-2.5">
                           <span
                             aria-hidden
                             className={cn(
@@ -433,7 +506,7 @@ export function OrdersListShell(props: Props) {
                           <div className="text-foreground">{o.deviceLabel || "—"}</div>
                           <div className="font-mono text-[11px] text-muted-foreground">{imeiTail}</div>
                         </td>
-                        <td className="max-w-[200px] truncate px-3 py-2.5 text-muted-foreground">{o.issue || "—"}</td>
+                        <td className="max-w-[260px] truncate px-3 py-2.5 text-muted-foreground">{o.issue || "—"}</td>
                         <td className="px-3 py-2.5">
                           <StatusPopover orderId={o.id} status={o.status} />
                         </td>

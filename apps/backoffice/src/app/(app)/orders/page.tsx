@@ -50,7 +50,7 @@ export default async function OrdersPage(props: {
   const kpiUnpaid = items.filter((o) => !o.isPaid).length;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <OrdersListShell
         filtersSlot={
           <OrdersSearchControls
