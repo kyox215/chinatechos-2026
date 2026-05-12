@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { OrdersListShell } from "@/components/orders/OrdersListShell";
 import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
-import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
 import { listOrders } from "@/lib/data/orders";
+import {
+  ORDER_LIST_IN_PROGRESS_STATUSES,
+  parseOrderStatusTab,
+} from "@/lib/domain/order-list-tabs";
 
 export const metadata: Metadata = {
   title: "工单 — ChinaTechOS",
@@ -15,6 +19,7 @@ export default async function OrdersPage(props: {
 }) {
   const searchParams = (await props.searchParams) ?? {};
   const q = normalizeQuery(searchParams.q);
+  const tab = parseOrderStatusTab(normalizeQuery(searchParams.tab));
   const status = normalizeQuery(searchParams.status) ?? "all";
   const technician = normalizeQuery(searchParams.technician) ?? "all";
   const paid = normalizePaid(normalizeQuery(searchParams.paid));
@@ -26,6 +31,7 @@ export default async function OrdersPage(props: {
 
   const { items, error: listError } = await listOrders({
     q,
+    statusTab: tab,
     status,
     orderType: "all",
     technician,
@@ -37,36 +43,36 @@ export default async function OrdersPage(props: {
     dateTo,
   });
 
+  const todayStr = new Date().toDateString();
+  const kpiToday = items.filter((o) => new Date(o.createdAt).toDateString() === todayStr).length;
+  const inProgressSet = new Set(ORDER_LIST_IN_PROGRESS_STATUSES);
+  const kpiInProgress = items.filter((o) => inProgressSet.has(o.status)).length;
+  const kpiUnpaid = items.filter((o) => !o.isPaid).length;
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
-      <div className="flex items-baseline justify-between">
-        <h1 className="font-display text-xl font-semibold tracking-tight">工单</h1>
-        <span className="text-sm text-muted-foreground">
-          共 <span className="font-mono tabular-nums">{items.length}</span> 条
-        </span>
-      </div>
-
-      {listError ? (
-        <div className="rounded-xl border border-border bg-status-danger/10 px-3 py-2 text-sm text-status-danger-foreground">
-          列表加载失败：{listError}
-        </div>
-      ) : null}
-
-      <div className="space-y-3">
-        <OrdersSearchControls
-          approvalOverdue={approvalOverdue}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          paid={paid}
-          pickupOverdue={pickupOverdue}
-          q={q}
-          status={status}
-          supplier={supplier}
-          technician={technician}
-        />
-
-        <OrderGroupedList items={items} />
-      </div>
+      <OrdersListShell
+        filtersSlot={
+          <OrdersSearchControls
+            approvalOverdue={approvalOverdue}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            paid={paid}
+            pickupOverdue={pickupOverdue}
+            q={q}
+            status={status}
+            supplier={supplier}
+            tab={tab}
+            technician={technician}
+          />
+        }
+        items={items}
+        kpiInProgress={kpiInProgress}
+        kpiToday={kpiToday}
+        kpiUnpaid={kpiUnpaid}
+        listError={listError}
+        tab={tab}
+      />
     </div>
   );
 }

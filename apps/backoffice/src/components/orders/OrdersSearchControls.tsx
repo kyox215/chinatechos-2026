@@ -20,8 +20,11 @@ type SupplierOption = {
   color: string;
 };
 
+import type { OrderStatusTab } from "@/lib/domain/order-list-tabs";
+
 type Props = {
   q?: string;
+  tab: OrderStatusTab;
   status: string;
   orderType?: string;
   technician: string;
@@ -63,6 +66,7 @@ export function OrdersSearchControls(props: Props) {
     setDateTo(props.dateTo ?? "");
   }, [
     props.q,
+    props.tab,
     props.status,
     props.technician,
     props.paid,
@@ -133,19 +137,28 @@ export function OrdersSearchControls(props: Props) {
     const qValue = next.q ?? q;
     if (qValue.trim()) params.set("q", qValue.trim());
     const statusValue = next.status ?? status;
-    if (statusValue !== "all") params.set("status", statusValue);
     const paidValue = next.paid ?? paid;
-    if (paidValue !== "all") params.set("paid", paidValue);
     const supplierValue = next.supplier ?? supplier;
-    if (supplierValue !== "all") params.set("supplier", supplierValue);
     const technicianValue = (next.technician ?? technician).trim();
-    if (technicianValue) params.set("technician", technicianValue);
     const dateFromValue = next.dateFrom ?? dateFrom;
-    if (dateFromValue) params.set("dateFrom", dateFromValue);
     const dateToValue = next.dateTo ?? dateTo;
-    if (dateToValue) params.set("dateTo", dateToValue);
     const aOverdue = next.approvalOverdue !== undefined ? next.approvalOverdue : props.approvalOverdue;
     const pOverdue = next.pickupOverdue !== undefined ? next.pickupOverdue : props.pickupOverdue;
+    const riskActive = Boolean(aOverdue || pOverdue);
+
+    if (!riskActive) {
+      if (statusValue !== "all") {
+        params.set("status", statusValue);
+      } else if (props.tab && props.tab !== "all") {
+        params.set("tab", props.tab);
+      }
+    }
+
+    if (paidValue !== "all") params.set("paid", paidValue);
+    if (supplierValue !== "all") params.set("supplier", supplierValue);
+    if (technicianValue) params.set("technician", technicianValue);
+    if (dateFromValue) params.set("dateFrom", dateFromValue);
+    if (dateToValue) params.set("dateTo", dateToValue);
     /** 指定「状态」筛选时不再附带风险参数（与 listOrders 逻辑一致，避免 URL 误导） */
     const riskAllowed = statusValue === "all";
     if (riskAllowed) {

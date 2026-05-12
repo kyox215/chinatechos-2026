@@ -8,6 +8,7 @@ import { BackgroundOrbs } from "@/components/background-orbs";
 import { CommandPalette } from "@/components/command-palette";
 import { RouteTransition } from "@/components/route-transition";
 import { MobileSidebarContext } from "@/components/MobileSidebarContext";
+import { Toaster } from "sonner";
 
 export function AppShell(props: { children: ReactNode; storeCode?: string }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -97,6 +98,7 @@ export function AppShell(props: { children: ReactNode; storeCode?: string }) {
         </div>
 
         <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+        <Toaster richColors position="top-center" />
       </div>
     </MobileSidebarContext.Provider>
   );

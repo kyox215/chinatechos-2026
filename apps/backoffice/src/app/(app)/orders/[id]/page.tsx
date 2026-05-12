@@ -10,6 +10,7 @@ import { OrderInfoCard } from "@/components/orders/OrderInfoCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { ReworkInfoBanner } from "@/components/orders/ReworkInfoBanner";
 import { StatusPopover } from "@/components/orders/StatusPopover";
+import { OrderDetailHero } from "@/components/orders/OrderDetailHero";
 import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
 import { SignatureSection } from "@/components/orders/SignatureSection";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
@@ -57,21 +58,23 @@ export default async function OrderDetailPage(props: {
   const gridAnim = hasBanner ? "order-detail-enter-d2" : "order-detail-enter-d1";
   const timelineAnim = hasBanner ? "order-detail-enter-d3" : "order-detail-enter-d2";
 
+  const deviceLabel = [order.device?.brand, order.device?.model].filter(Boolean).join(" ");
+  const subtitle = `${deviceLabel || "—"} · ${order.customer?.name ?? "未命名客户"} · 技师 ${order.technicianName ?? "—"}`;
+
   return (
     <div className="order-detail-page mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
-      {/* Header */}
-      <div className="order-detail-section order-detail-enter-d0 space-y-3">
-        <Link
-          href="/orders"
-          className="inline-flex rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent"
-        >
-          ← 返回列表
-        </Link>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 rounded-xl border border-primary/15 border-l-[3px] border-l-primary bg-primary-2/35 px-4 py-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-lg font-semibold tracking-tight text-foreground">{order.publicNo}</h1>
+      <div className="order-detail-section order-detail-enter-d0">
+        <OrderDetailHero
+          backLink={
+            <Link
+              className="inline-flex rounded-lg border border-border bg-surface px-2 py-1 text-foreground transition-colors hover:bg-accent"
+              href="/orders"
+            >
+              ← 返回列表
+            </Link>
+          }
+          badgeRow={
+            <>
               <StatusPopover orderId={order.id} status={order.status} />
               <OrderDetailPrint
                 balanceAmount={order.balanceAmount}
@@ -96,14 +99,12 @@ export default async function OrderDetailPage(props: {
                 originalCompletedAt={order.originalOrder?.completedAt}
                 originalWarrantyText={order.originalOrder?.warrantyText}
               />
-            </div>
-            <div className="mt-2 text-sm">
-              <span className="font-medium text-foreground">{order.customer?.name ?? "未命名客户"}</span>
-              <span className="text-muted-foreground"> · </span>
-              <span className="text-muted-foreground">{order.customer?.phoneE164 ?? "-"}</span>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          publicNo={order.publicNo}
+          quotationAmount={order.quotationAmount}
+          subtitle={subtitle}
+        />
       </div>
 
       {/* Rework info banner */}

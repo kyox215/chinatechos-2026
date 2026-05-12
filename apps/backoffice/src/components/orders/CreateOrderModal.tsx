@@ -256,20 +256,26 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
     >
       <OrderPrintSheet payload={printPayload} sheetRootId={CREATE_ORDER_PRINT_SHEET_ID} />
 
-      <div className="flex h-[100dvh] w-full flex-col rounded-t-2xl border-x-0 border-b-0 border-border bg-surface shadow-lg sm:max-h-[92dvh] sm:rounded-2xl sm:border md:h-[min(720px,calc(100vh-5rem))] md:min-h-[640px] md:max-h-[85vh] xl:max-w-6xl">
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+      <div className="flex h-[100dvh] w-full flex-col rounded-t-2xl border-x-0 border-b-0 border-border bg-background shadow-lg sm:max-h-[92dvh] sm:rounded-2xl sm:border md:h-[min(720px,calc(100vh-5rem))] md:min-h-[640px] md:max-h-[85vh] xl:max-w-6xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3">
           <div>
-            <h2 className="text-base font-semibold text-foreground font-display">新建维修订单</h2>
+            <h2 className="font-display text-base font-semibold text-foreground">新建维修订单</h2>
             <p className="text-xs text-muted-foreground">填写客户和设备信息以创建新工单</p>
           </div>
-          <button className="ui-btn ui-btn-secondary flex h-9 w-9 items-center justify-center" onClick={onClose} type="button">
+          <button
+            aria-label="关闭"
+            className="ui-btn ui-btn-secondary flex h-9 w-9 items-center justify-center"
+            onClick={onClose}
+            type="button"
+          >
             ✕
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-1 gap-4 px-4 py-4 pb-6 xl:min-h-full xl:grid-cols-3 xl:gap-5 xl:overflow-hidden xl:p-4">
-            <div className="xl:min-h-0 xl:h-full xl:overflow-y-auto xl:pr-1">
+          <div className="grid grid-cols-1 gap-4 px-4 py-4 pb-4 xl:min-h-full xl:grid-cols-3 xl:gap-5 xl:overflow-hidden xl:p-5">
+            <div className="glass-card space-y-3 rounded-2xl border border-border p-4 xl:min-h-0 xl:h-full xl:overflow-y-auto xl:pr-1">
+              <SectionTitle icon={<IconSearch className="h-4 w-4 text-muted-foreground" />} title="客户与设备" />
               <OrderFormCustomerDevice
                 brand={brand}
                 customBrand={customBrand}
@@ -292,20 +298,20 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
               />
             </div>
 
-            <div className="overflow-x-hidden xl:min-h-0 xl:h-full xl:overflow-y-auto xl:px-1">
+            <div className="glass-card space-y-3 overflow-x-hidden rounded-2xl border border-border p-4 xl:min-h-0 xl:h-full xl:overflow-y-auto xl:px-1">
               <OrderFormFaultSection
                 faultNote={faultNote}
                 faultNotePlaceholder="详细描述故障情况..."
                 setFaultNote={setFaultNote}
                 selectedFaults={selectedFaults}
                 setSelectedFaults={setSelectedFaults}
-                title="故障诊断"
+                title="故障与服务"
                 titleIcon={<IconSearch className="h-4 w-4 text-muted-foreground" />}
               />
             </div>
 
-            <div className="space-y-4 overflow-x-hidden xl:min-h-0 xl:h-full xl:overflow-y-auto xl:pl-1">
-              <SectionTitle icon={<IconMoney className="h-4 w-4 text-muted-foreground" />} title="报价 & 服务" />
+            <div className="glass-card space-y-4 overflow-x-hidden rounded-2xl border border-border p-4 xl:min-h-0 xl:h-full xl:overflow-y-auto xl:pl-1">
+              <SectionTitle icon={<IconMoney className="h-4 w-4 text-muted-foreground" />} title="报价与质保" />
               <FaultPriceLineInputs
                 lines={faultLines}
                 prices={faultPrices}
@@ -338,7 +344,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="sticky bottom-0 z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-elevated)]">
           <div className="min-w-0 flex-1">{error && <span className="text-xs text-status-danger-foreground">{error}</span>}</div>
           <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
             <button className="ui-btn ui-btn-secondary h-10 flex-1 px-4 md:h-9 sm:flex-none" onClick={handleDraftPrint} type="button">
@@ -347,7 +353,12 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
             <button className="ui-btn ui-btn-secondary h-10 flex-1 px-4 md:h-9 sm:flex-none" onClick={onClose} type="button">
               取消
             </button>
-            <button className="ui-btn ui-btn-primary h-10 flex-1 px-4 md:h-9 sm:flex-none disabled:opacity-60" disabled={pending} onClick={handleSubmit} type="button">
+            <button
+              className="ui-btn ui-btn-primary h-10 flex-1 px-4 md:h-9 sm:flex-none disabled:opacity-60"
+              disabled={pending}
+              onClick={handleSubmit}
+              type="button"
+            >
               {pending ? "创建中..." : "创建订单"}
             </button>
           </div>

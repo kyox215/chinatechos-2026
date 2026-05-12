@@ -10,6 +10,7 @@ import {
   defaultResolvedOrderUi,
   getStatusListSortIndexResolved,
 } from "@/lib/domain/order-ui-config";
+import { statusesForOrderStatusTab, type OrderStatusTab } from "@/lib/domain/order-list-tabs";
 
 export { sanitizeOrderSearchQ, sanitizePostgrestSearchTerm } from "@/lib/domain/order-search";
 
@@ -21,6 +22,7 @@ export type OrderListItem = {
   customerName: string | null;
   customerPhone: string;
   deviceLabel: string;
+  deviceImei: string | null;
   issue: string;
   /** Same as `repair_orders.quotation_amount` */
   quotationAmount: number | null;
@@ -38,10 +40,13 @@ export type OrderListItem = {
   /** From linked original order — used for rework warranty chips on list */
   originalOrderCompletedAt: string | null;
   originalOrderWarrantyText: string | null;
+  internalTag: string | null;
 };
 
 export type OrderListFilters = {
   q?: string;
+  /** 分段 Tab（多状态 `.in`）；与 `status` 同时存在时优先使用本字段（非 `all`） */
+  statusTab?: OrderStatusTab;
   status?: string;
   orderType?: string;
   technician?: string;
@@ -72,6 +77,7 @@ const REPAIR_ORDER_LIST_SELECT = `
       updated_at,
       approval_sent_at,
       completed_at,
+      internal_tag,
       technician_name,
       supplier_id,
       original_order_id,
@@ -104,6 +110,7 @@ type RepairOrderListRow = {
   is_paid: boolean;
   created_at: string;
   updated_at: string;
+  internal_tag: string | null;
   technician_name: string | null;
   supplier_id: string | null;
   original_order_id: string | null;
@@ -239,10 +246,16 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       q = q.in("id", idSubset);
     }
 
-    /** 风险筛选已限定 status，忽略 URL 中的 status，避免互斥条件导致 0 条 */
+    /** 风险筛选已限定 status，忽略 URL 中的 status / statusTab，避免互斥条件导致 0 条 */
     const riskActive = Boolean(filters.approvalOverdue || filters.pickupOverdue);
-    if (!riskActive && filters.status && filters.status !== "all") {
-      q = q.eq("status", filters.status);
+    if (!riskActive) {
+      const tab = filters.statusTab ?? "all";
+      const tabStatuses = statusesForOrderStatusTab(tab);
+      if (tabStatuses && tabStatuses.length > 0) {
+        q = q.in("status", tabStatuses);
+      } else if (filters.status && filters.status !== "all") {
+        q = q.eq("status", filters.status);
+      }
     }
 
     if (filters.orderType && filters.orderType !== "all") {
@@ -339,6 +352,7 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
     const brand = device?.brand ?? "";
     const model = device?.model ?? "";
     const deviceLabel = [brand, model].filter(Boolean).join(" ");
+    const deviceImei = device?.serial_or_imei ?? null;
     const oid = row.original_order_id ?? null;
     const orig = oid ? originalMeta.get(oid) : undefined;
 
@@ -350,6 +364,7 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       customerName: customer?.name ?? null,
       customerPhone: customer?.phone_e164 ?? "",
       deviceLabel,
+      deviceImei,
       issue: row.issue_description,
       quotationAmount: row.quotation_amount ?? null,
       depositAmount: row.deposit_amount ?? null,
@@ -364,6 +379,7 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       originalOrderId: oid ?? null,
       originalOrderCompletedAt: orig?.completed_at ?? null,
       originalOrderWarrantyText: orig?.warranty_text ?? null,
+      internalTag: row.internal_tag ?? null,
     };
   });
 
