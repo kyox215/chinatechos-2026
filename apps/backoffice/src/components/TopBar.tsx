@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Menu, PanelLeft, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthControls } from "@/components/auth/AuthControls";
 
 const breadcrumbLabels: Record<string, string> = {
   dashboard: "仪表盘",
@@ -30,7 +31,7 @@ export function TopBar(props: {
   const crumbs = segments.map((s) => breadcrumbLabels[s] ?? s);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5 shadow-[var(--shadow-card)] md:px-4">
+    <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-3 py-2.5 shadow-[var(--shadow-card)] md:px-4">
       <button
         aria-label="打开菜单"
         aria-expanded={props.mobileSidebarOpen}
@@ -82,6 +83,8 @@ export function TopBar(props: {
           </span>
         ) : null}
       </div>
+
+      <AuthControls />
     </div>
   );
 }

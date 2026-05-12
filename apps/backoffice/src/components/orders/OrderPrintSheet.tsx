@@ -19,7 +19,13 @@ function fmtDateOnly(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
-export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
+const DEFAULT_ORDER_PRINT_SHEET_ID = "order-repair-print-sheet";
+
+export function OrderPrintSheet(props: {
+  payload: OrderPrintPayload;
+  /** DOM id for `triggerOrderSheetPrint({ sheetSelector: '#…' })`；新建工单草稿请用独立 id */
+  sheetRootId?: string;
+}) {
   const p = props.payload;
   const title = p.isRework
     ? "Ricevuta riparazione in garanzia"
@@ -28,7 +34,7 @@ export function OrderPrintSheet(props: { payload: OrderPrintPayload }) {
       : "Ricevuta ordine di riparazione";
 
   return (
-    <div className="order-print-sheet">
+    <div className="order-print-sheet" id={props.sheetRootId ?? DEFAULT_ORDER_PRINT_SHEET_ID}>
       <article className="w-full border border-neutral-300 p-2 text-[8.5px] leading-tight text-neutral-900 print:border-neutral-300">
         <div className="grid h-full grid-cols-[1fr_auto_1fr] gap-2">
           <section className="min-w-0 space-y-1 pr-1">

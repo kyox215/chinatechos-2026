@@ -104,7 +104,7 @@ export function mapStatusToIt(status: string): string {
     new: "Nuovo",
     diagnosing: "In diagnosi",
     quoted: "Preventivo",
-    waiting_approval: "Preventivo",
+    waiting_approval: "Preventivo — attesa conferma cliente",
     repairing: "Preventivo confermato — in riparazione",
     parts_ordered: "Ricambi ordinati",
     parts_arrived: "Ricambi arrivati — cliente avvisato",

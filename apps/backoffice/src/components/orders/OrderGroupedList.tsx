@@ -15,6 +15,7 @@ import {
   type ResolvedOrderUi,
 } from "@/lib/domain/order-ui-config";
 import { calcWarranty } from "@/lib/domain/warranty-calc";
+import { postOrdersBatchTransition } from "@/lib/api/order-transition-client";
 
 type StatusGroup = {
   key: string;
@@ -106,6 +107,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
+  const [batchError, setBatchError] = useState<string | null>(null);
   const [supplierModalItem, setSupplierModalItem] = useState<OrderListItem | null>(null);
   const [supplierAnchorEl, setSupplierAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -137,16 +139,32 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
   async function handleBatchTransition() {
     if (selected.size === 0 || !batchStatus) return;
     setBatchPending(true);
+    setBatchError(null);
+    const orderIds = [...selected];
     try {
-      const res = await fetch("/api/orders/batch-transition", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderIds: [...selected], toStatus: batchStatus }),
+      const data = await postOrdersBatchTransition({
+        orderIds,
+        toStatus: batchStatus,
       });
-      await res.json();
-      setSelected(new Set());
-      setBatchStatus("");
+      const total = data.total ?? orderIds.length;
+      const okCount = data.successCount ?? 0;
+      if (okCount === total && total > 0) {
+        setSelected(new Set());
+        setBatchStatus("");
+        router.refresh();
+        return;
+      }
+      const failed = (data.results ?? []).filter((r) => !r.ok);
+      const sample = failed
+        .slice(0, 3)
+        .map((r) => r.error ?? r.id)
+        .join("；");
+      setBatchError(`部分失败：成功 ${okCount}/${total}${sample ? `（${sample}）` : ""}`);
       router.refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "批量流转失败";
+      setBatchError(msg);
+      console.error("[OrderGroupedList] batch transition failed", e);
     } finally {
       setBatchPending(false);
     }
@@ -183,11 +201,14 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
           <button
             className="h-8 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground disabled:opacity-60"
             disabled={!batchStatus || batchPending}
-            onClick={handleBatchTransition}
+            onClick={() => void handleBatchTransition()}
             type="button"
           >
             {batchPending ? "处理中..." : "批量切换"}
           </button>
+          {batchError ? (
+            <span className="w-full basis-full text-center text-[11px] text-rose-600 sm:w-auto">{batchError}</span>
+          ) : null}
           <button
             className="h-8 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-muted"
             onClick={() => setSelected(new Set())}
@@ -229,7 +250,7 @@ const GroupSection = memo(function GroupSection({
   /** 与 Tailwind `lg` 一致：<1024px 为移动端卡片列表，分组初始收起 */
   useLayoutEffect(() => {
     const mq = window.matchMedia("(max-width: 1023px)");
-    if (mq.matches) setOpen(false);
+    if (mq.matches) queueMicrotask(() => setOpen(false));
   }, [group.key]);
 
   const allSelected = group.items.length > 0 && group.items.every((i) => selected.has(i.id));

@@ -477,6 +477,53 @@ body {
   display: none;
 }
 
+/*
+ * iOS Safari：用户在系统打印面板里改纸张/方向时，预览会按 screen 再栅格化一次。
+ * 若仅把「只显示 #print-portal」写在 @media print 里，这一帧会退回整页 App（多页移动端布局）。
+ * html + body 双类提高优先级，避免 Tailwind 工具类盖住隐藏规则。
+ * JS 在打印会话同时在 documentElement 与 body 上挂 printing-order-sheet。
+ */
+html.printing-order-sheet body.printing-order-sheet > *:not(#print-portal) {
+  display: none !important;
+}
+
+html.printing-order-sheet body.printing-order-sheet #print-portal {
+  display: block !important;
+}
+
+html.printing-order-sheet body.printing-order-sheet .order-print-sheet {
+  display: block !important;
+  position: static !important;
+  width: var(--print-content-width, 200mm) !important;
+  height: var(--print-content-height, 138mm) !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html.printing-order-sheet body.printing-order-sheet .order-print-sheet > article {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+html.printing-order-sheet body.printing-order-sheet[data-print-density="compact"] .order-print-sheet > article {
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+}
+
+html.printing-order-sheet body.printing-order-sheet[data-print-density="normal"] .order-print-sheet > article {
+  font-size: 9px !important;
+  line-height: 1.25 !important;
+}
+
+html.printing-order-sheet body.printing-order-sheet[data-print-density="relaxed"] .order-print-sheet > article {
+  font-size: 10px !important;
+  line-height: 1.35 !important;
+}
+
 @media print {
   @page {
     size: auto;
@@ -493,15 +540,15 @@ body {
     color: black !important;
   }
 
-  body.printing-order-sheet > *:not(#print-portal) {
+  html.printing-order-sheet body.printing-order-sheet > *:not(#print-portal) {
     display: none !important;
   }
 
-  #print-portal {
+  html.printing-order-sheet #print-portal {
     display: block !important;
   }
 
-  body.printing-order-sheet .order-print-sheet {
+  html.printing-order-sheet body.printing-order-sheet .order-print-sheet {
     display: block !important;
     position: static !important;
     width: var(--print-content-width, 200mm) !important;
@@ -513,7 +560,7 @@ body {
     break-inside: avoid-page;
   }
 
-  body.printing-order-sheet .order-print-sheet > article {
+  html.printing-order-sheet body.printing-order-sheet .order-print-sheet > article {
     width: 100% !important;
     height: 100% !important;
     max-width: none !important;
@@ -521,17 +568,17 @@ body {
     transform: none !important;
   }
 
-  body.printing-order-sheet[data-print-density="compact"] .order-print-sheet > article {
+  html.printing-order-sheet body.printing-order-sheet[data-print-density="compact"] .order-print-sheet > article {
     font-size: 8px !important;
     line-height: 1.2 !important;
   }
 
-  body.printing-order-sheet[data-print-density="normal"] .order-print-sheet > article {
+  html.printing-order-sheet body.printing-order-sheet[data-print-density="normal"] .order-print-sheet > article {
     font-size: 9px !important;
     line-height: 1.25 !important;
   }
 
-  body.printing-order-sheet[data-print-density="relaxed"] .order-print-sheet > article {
+  html.printing-order-sheet body.printing-order-sheet[data-print-density="relaxed"] .order-print-sheet > article {
     font-size: 10px !important;
     line-height: 1.35 !important;
   }

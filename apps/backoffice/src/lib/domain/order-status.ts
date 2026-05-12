@@ -32,6 +32,8 @@ export const TERMINAL_STATUSES = new Set(["completed", "cancelled"]);
 
 const ALL_STATUSES = [...STATUS_ORDER, "waiting_pickup", "cancelled"] as const;
 
+const ALL_STATUSES_SET = new Set<string>(ALL_STATUSES as readonly string[]);
+
 /** 与徽标话术对齐；导出、下拉、批量切换同源使用 */
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   rework: "返修",
@@ -39,7 +41,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   mail_in_progress: "寄修中",
   diagnosing: "检测中",
   quoted: "报价",
-  waiting_approval: "报价",
+  waiting_approval: "报价待确认",
   repairing: "报价已确认",
   parts_ordered: "等配件",
   parts_arrived: "到货已通知",
@@ -107,40 +109,68 @@ export type ActionItem = {
 export function getNextActions(
   status: string,
   labels: Record<string, string> = ORDER_STATUS_LABELS,
+  statusOrder: readonly string[] = ORDER_STATUS_SELECT_SEQUENCE as readonly string[],
 ): {
   primary: ActionItem[];
   secondary: ActionItem[];
 } {
-  const allOther = ALL_STATUSES.filter((s) => s !== status);
-  const nonCancel = allOther.filter((s) => s !== "cancelled");
+  const lbl = (s: string) => labels[s] ?? ORDER_STATUS_LABELS[s] ?? s;
+
+  const ordered = statusOrder.filter((s) => ALL_STATUSES_SET.has(s));
+  const nonCancelTargets = ordered.filter((s) => s !== status && s !== "cancelled");
+
+  let primaryStatus: string | undefined;
+  const idx = ordered.indexOf(status);
+  if (idx !== -1) {
+    for (let i = idx + 1; i < ordered.length; i++) {
+      const s = ordered[i];
+      if (s !== status && ALL_STATUSES_SET.has(s)) {
+        primaryStatus = s;
+        break;
+      }
+    }
+  }
+  if (primaryStatus === undefined && nonCancelTargets.length > 0) {
+    primaryStatus = nonCancelTargets[0];
+  }
 
   const primary: ActionItem[] = [];
   const secondary: ActionItem[] = [];
 
-  const lbl = (s: string) => labels[s] ?? ORDER_STATUS_LABELS[s] ?? s;
-
-  if (nonCancel.length > 0) {
+  if (primaryStatus !== undefined) {
     primary.push({
-      toStatus: nonCancel[0],
-      label: lbl(nonCancel[0]),
-      confirmText: `确认切换到 "${lbl(nonCancel[0])}"？`,
+      toStatus: primaryStatus,
+      label: lbl(primaryStatus),
+      confirmText: `确认切换到 "${lbl(primaryStatus)}"？`,
+      ...(primaryStatus === "cancelled" ? { variant: "danger" as const } : {}),
     });
-
-    for (let i = 1; i < nonCancel.length; i++) {
-      secondary.push({
-        toStatus: nonCancel[i],
-        label: lbl(nonCancel[i]),
-        confirmText: `确认切换到 "${lbl(nonCancel[i])}"？`,
-      });
-    }
   }
 
-  secondary.push({
-    toStatus: "cancelled",
-    label: lbl("cancelled"),
-    confirmText: "确认取消此工单？",
-    variant: "danger",
-  });
+  const secondaryStatuses: string[] = [];
+  for (const s of ordered) {
+    if (s === status) continue;
+    if (s === primaryStatus) continue;
+    if (!ALL_STATUSES_SET.has(s)) continue;
+    if (s === "cancelled") continue;
+    secondaryStatuses.push(s);
+  }
+
+  for (const s of secondaryStatuses) {
+    secondary.push({
+      toStatus: s,
+      label: lbl(s),
+      confirmText: `确认切换到 "${lbl(s)}"？`,
+    });
+  }
+
+  if (status !== "cancelled" && primaryStatus !== "cancelled") {
+    secondary.push({
+      toStatus: "cancelled",
+      label: lbl("cancelled"),
+      confirmText: "确认取消此工单？",
+      variant: "danger",
+    });
+  }
 
   return { primary, secondary };
 }

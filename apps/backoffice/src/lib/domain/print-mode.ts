@@ -101,40 +101,62 @@ export function triggerOrderSheetPrint(
   const sheet = document.querySelector<HTMLElement>(sheetSelector);
   if (!sheet) return;
 
-  const originalParent = sheet.parentElement;
-  const originalNextSibling = sheet.nextSibling;
+  /** 使用克隆节点打印：移动真实 DOM 会与 React 协调冲突，移动端预览更易出现空白或不完整内容 */
+  const printSheet = sheet.cloneNode(true) as HTMLElement;
+  printSheet.removeAttribute("id");
 
   const portal = getPrintPortal();
-  portal.appendChild(sheet);
+  portal.appendChild(printSheet);
 
+  const htmlEl = document.documentElement;
   const body = document.body;
+  htmlEl.classList.add(PRINTING_CLASS);
   body.classList.add(PRINTING_CLASS);
   applyPrintConfig(body, options);
 
   let finalized = false;
+  /** DOM lib 下为 number；与 Node Timeout 合并时需避免混用 */
+  let fallbackTimer: number | undefined;
+
+  const cleanupListeners = () => {
+    window.removeEventListener("afterprint", onAfterPrint);
+    if (fallbackTimer !== undefined) {
+      window.clearTimeout(fallbackTimer);
+      fallbackTimer = undefined;
+    }
+  };
+
   const finalize = () => {
     if (finalized) return;
     finalized = true;
+    cleanupListeners();
 
+    htmlEl.classList.remove(PRINTING_CLASS);
     body.classList.remove(PRINTING_CLASS);
     clearPrintConfig(body);
 
-    if (originalParent) {
-      originalParent.insertBefore(sheet, originalNextSibling);
-    }
+    printSheet.remove();
 
     onAfter?.();
   };
 
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      window.addEventListener("afterprint", () => finalize(), { once: true });
+  function onAfterPrint() {
+    finalize();
+  }
 
-      try {
+  /**
+   * 勿用 matchMedia("print") 触发 finalize：iOS 在打印面板内改纸张时 matches 可能长时间为 false，
+   * 任何防抖仍会过早拆掉 portal，预览退回整页 App。
+   * 仅依赖 afterprint + 超时兜底（部分 WebKit 不重载 afterprint）。
+   */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        window.addEventListener("afterprint", onAfterPrint);
+        fallbackTimer = window.setTimeout(() => finalize(), 60_000) as unknown as number;
+
         window.print();
-      } finally {
-        setTimeout(() => finalize(), 0);
-      }
-    }, 0);
+      }, 0);
+    });
   });
 }

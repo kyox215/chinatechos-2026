@@ -2,15 +2,20 @@
 
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
-import { getNextActions } from "@/lib/domain/order-status";
+import { StatusProgressRail } from "@/components/orders/StatusProgressRail";
 import { SupplierSelect } from "@/components/orders/SupplierSelect";
+import { postOrderTransition } from "@/lib/api/order-transition-client";
+import type { ActionItem } from "@/lib/domain/order-status";
+import { getNextActions } from "@/lib/domain/order-status";
+import { resolveStatusLabel } from "@/lib/domain/order-ui-config";
 
 type SupplierOption = { id: string; short_name: string; color: string };
 
-const MENU_W = 176;
+/** 与桌面菜单最大宽度一致，用于避免贴边（8 列状态网格） */
+const MENU_LAYOUT_W = 680;
 const GAP = 4;
 const EDGE = 8;
 
@@ -36,6 +41,7 @@ export function StatusPopover({
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [supplierPicker, setSupplierPicker] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState("");
@@ -44,7 +50,13 @@ export function StatusPopover({
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const ui = useResolvedOrderUi();
-  const { primary, secondary } = getNextActions(status, ui.statusLabels);
+
+  const transitions = useMemo(() => {
+    const { primary, secondary } = getNextActions(status, ui.statusLabels, ui.statusOrder);
+    const m = new Map<string, ActionItem>();
+    for (const a of [...primary, ...secondary]) m.set(a.toStatus, a);
+    return m;
+  }, [status, ui.statusLabels, ui.statusOrder]);
 
   useEffect(() => {
     if (!supplierPicker) return;
@@ -62,7 +74,7 @@ export function StatusPopover({
       rect.bottom + GAP + mH > window.innerHeight - EDGE
         ? Math.max(EDGE, rect.top - mH - GAP)
         : rect.bottom + GAP;
-    const left = Math.min(Math.max(EDGE, rect.left), window.innerWidth - MENU_W - EDGE);
+    const left = Math.min(Math.max(EDGE, rect.left), window.innerWidth - MENU_LAYOUT_W - EDGE);
     setPos({ top, left });
   }, []);
 
@@ -82,25 +94,28 @@ export function StatusPopover({
   }, [open, isMobile, recalcPos]);
 
   function openPopover() {
+    setError(null);
     setOpen(true);
   }
 
   async function handleTransition(toStatus: string, confirmText: string, supplierId?: string) {
     if (!confirm(confirmText)) return;
     setPending(true);
+    setError(null);
     try {
-      const payload: Record<string, string> = { toStatus, operatorName: "frontdesk" };
-      if (supplierId) payload.supplierId = supplierId;
-      await fetch(`/api/orders/${orderId}/transition`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await postOrderTransition(orderId, {
+        toStatus,
+        supplierId,
       });
       router.refresh();
-    } finally {
-      setPending(false);
       setOpen(false);
       setSupplierPicker(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "状态流转失败";
+      setError(msg);
+      console.error("[StatusPopover] transition failed", e);
+    } finally {
+      setPending(false);
     }
   }
 
@@ -113,61 +128,27 @@ export function StatusPopover({
     handleTransition(toStatus, confirmText);
   }
 
+  function handleStepPress(toStatus: string) {
+    const action = transitions.get(toStatus);
+    if (!action) return;
+    handleClick(action.toStatus, action.confirmText);
+  }
+
   function handleSupplierConfirm() {
-    const action = [...primary, ...secondary].find((a) => a.toStatus === "parts_ordered");
+    const action = transitions.get("parts_ordered");
     if (!action) return;
     handleTransition(action.toStatus, action.confirmText, selectedSupplier || undefined);
   }
 
-  const actionButtons = (mobile: boolean) => (
-    <>
-      {primary.length > 0 && (
-        <div className={mobile ? "space-y-1" : "mb-1"}>
-          {primary.map((action) => (
-            <button
-              key={action.toStatus}
-              className={
-                mobile
-                  ? "flex w-full items-center gap-3 rounded-xl bg-primary/10 px-4 py-3 text-left text-sm font-semibold text-primary active:bg-primary/20"
-                  : "flex w-full items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-left text-xs font-semibold text-primary hover:bg-primary/20"
-              }
-              onClick={() => handleClick(action.toStatus, action.confirmText)}
-              type="button"
-            >
-              <svg className={mobile ? "h-4 w-4" : "h-3.5 w-3.5"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-              {action.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {secondary.length > 0 && primary.length > 0 && (
-        <div className="my-1 border-t border-border" />
-      )}
-
-      <div className={mobile ? "space-y-1" : "max-h-48 overflow-y-auto"}>
-        {secondary.map((action) => (
-          <button
-            key={action.toStatus}
-            className={
-              mobile
-                ? `flex w-full items-center rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
-                    action.variant === "danger" ? "text-status-danger-foreground" : "text-foreground"
-                  }`
-                : `block w-full rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
-                    action.variant === "danger" ? "text-status-danger-foreground" : "text-foreground"
-                  }`
-            }
-            onClick={() => handleClick(action.toStatus, action.confirmText)}
-            type="button"
-          >
-            {action.label}
-          </button>
-        ))}
-      </div>
-    </>
+  const progressGrid = (
+    <StatusProgressRail
+      currentStatus={status}
+      labelFor={(s) => resolveStatusLabel(s, ui)}
+      pending={pending}
+      statusOrder={ui.statusOrder}
+      transitions={transitions}
+      onStepPress={handleStepPress}
+    />
   );
 
   const desktopMenu = open && !isMobile && (
@@ -175,18 +156,18 @@ export function StatusPopover({
       <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
       <div
         ref={menuRef}
-        className="fixed z-50 w-44 rounded-xl border border-border bg-surface p-1 shadow-lg"
+        className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),680px)] rounded-xl border border-border bg-surface p-3 shadow-lg sm:p-4"
         style={{ top: pos.top, left: pos.left }}
       >
-        {actionButtons(false)}
+        {progressGrid}
       </div>
     </>
   );
 
   const mobileSheet = open && isMobile && (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
-      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
+      <div className="fixed inset-0 z-40 bg-black/35" onClick={() => setOpen(false)} />
+      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground font-display">切换状态</span>
@@ -202,8 +183,8 @@ export function StatusPopover({
             </svg>
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {actionButtons(true)}
+        <div className="flex-1 overflow-y-auto px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {progressGrid}
         </div>
       </div>
     </>
@@ -218,19 +199,22 @@ export function StatusPopover({
 
   return (
     <div className="relative">
-      <button
-        ref={btnRef}
-        className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-accent"
-        disabled={pending}
-        onClick={() => (open ? setOpen(false) : openPopover())}
-        type="button"
-      >
-        {pending ? (
-          <span className="text-xs text-muted-foreground">切换中...</span>
-        ) : (
-          <OrderStatusBadge status={status} />
-        )}
-      </button>
+      <div className="flex min-w-0 flex-col items-start gap-0.5">
+        <button
+          ref={btnRef}
+          className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-accent"
+          disabled={pending}
+          onClick={() => (open ? setOpen(false) : openPopover())}
+          type="button"
+        >
+          {pending ? (
+            <span className="text-xs text-muted-foreground">切换中...</span>
+          ) : (
+            <OrderStatusBadge status={status} />
+          )}
+        </button>
+        {error ? <span className="max-w-[12rem] text-[10px] leading-tight text-status-danger-foreground">{error}</span> : null}
+      </div>
 
       {typeof document !== "undefined" && createPortal(portalContent, document.body)}
 
