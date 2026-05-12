@@ -3,19 +3,12 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Download,
-  MoreHorizontal,
-  Printer,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { Download, MoreHorizontal, Plus, Printer, Search, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AnimatedNumber } from "@/components/animated-number";
+import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
-import { OrdersListSearchDraftProvider } from "@/components/orders/orders-list-search-draft-context";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { postOrdersBatchTransition } from "@/lib/api/order-transition-client";
@@ -142,18 +135,17 @@ type Props = {
   kpiToday: number;
   kpiInProgress: number;
   kpiUnpaid: number;
-  filtersSlot: React.ReactNode;
 };
 
 export function OrdersListShell(props: Props) {
-  const { items, tab, listError, kpiToday, kpiInProgress, kpiUnpaid, filtersSlot } = props;
+  const { items, tab, listError, kpiToday, kpiInProgress, kpiUnpaid } = props;
   const router = useRouter();
   const sp = useSearchParams();
   const ui = useResolvedOrderUi();
   const statusOptions = getOrderStatusSelectOptionsResolved(ui);
 
   const [localQ, setLocalQ] = useState(() => sp.get("q") ?? "");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPending, setBatchPending] = useState(false);
@@ -194,35 +186,6 @@ export function OrdersListShell(props: Props) {
     }, 280);
     return () => clearTimeout(timer);
   }, [localQ]);
-
-  useEffect(() => {
-    if (!mobileFiltersOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileFiltersOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [mobileFiltersOpen]);
-
-  useEffect(() => {
-    if (!mobileFiltersOpen) return;
-    const mq = window.matchMedia("(min-width: 768px)");
-    const closeIfDesktop = () => {
-      if (mq.matches) setMobileFiltersOpen(false);
-    };
-    closeIfDesktop();
-    mq.addEventListener("change", closeIfDesktop);
-    return () => mq.removeEventListener("change", closeIfDesktop);
-  }, [mobileFiltersOpen]);
-
-  useEffect(() => {
-    if (!mobileFiltersOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [mobileFiltersOpen]);
 
   const applySearch = useCallback(() => {
     const p = new URLSearchParams(spString);
@@ -320,9 +283,9 @@ export function OrdersListShell(props: Props) {
         </div>
       ) : null}
 
-      {/* 配方 2：筛选条 — glass-card + 工具栏 */}
+      {/* 配方 2：工具栏 — glass-card，单搜索 + 导出 + 新建订单 */}
       <div className="glass-card flex flex-col gap-3 p-3 shadow-[var(--shadow-card)] sm:p-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-3">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -330,7 +293,7 @@ export function OrdersListShell(props: Props) {
               aria-controls={searchFocused && localQ.trim().length >= 2 ? searchListboxId : undefined}
               aria-expanded={Boolean(searchFocused && localQ.trim().length >= 2)}
               autoComplete="off"
-              className="ui-input h-9 w-full border-border/60 bg-surface-muted/50 pl-8 text-sm transition-shadow focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25 md:h-9"
+              className="ui-input h-10 w-full border-border/60 bg-surface-muted/50 pl-8 text-sm transition-shadow focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25 sm:h-9"
               onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
               onChange={(e) => setLocalQ(e.target.value)}
               onFocus={() => setSearchFocused(true)}
@@ -381,80 +344,24 @@ export function OrdersListShell(props: Props) {
               </div>
             ) : null}
           </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
+          <div className="flex w-full shrink-0 flex-wrap items-stretch justify-stretch gap-2 sm:w-auto sm:justify-end">
             <button
-              className="ui-btn ui-btn-secondary inline-flex h-9 items-center gap-1.5 px-3 text-sm"
-              onClick={() => {
-                if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
-                  document.getElementById("orders-advanced-filters")?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                  });
-                } else {
-                  setMobileFiltersOpen(true);
-                }
-              }}
-              type="button"
-            >
-              <SlidersHorizontal className="size-3.5" />
-              筛选
-            </button>
-            <button
-              className="ui-btn ui-btn-secondary hidden h-9 items-center gap-1.5 px-3 text-sm sm:inline-flex"
+              className="ui-btn ui-btn-secondary inline-flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 px-3 text-sm sm:h-9 sm:min-h-0 sm:min-w-[5.5rem] sm:flex-none"
               onClick={() => toast.message("导出功能即将上线")}
               type="button"
             >
-              <Download className="size-3.5" />
-              导出
+              <Download className="size-3.5 shrink-0" />
+              <span>导出</span>
             </button>
-          </div>
-        </div>
-
-        {mobileFiltersOpen ? (
-          <button
-            aria-label="关闭筛选"
-            className="fixed inset-0 z-40 bg-background/70 md:hidden"
-            onClick={() => setMobileFiltersOpen(false)}
-            type="button"
-          />
-        ) : null}
-
-        <div
-          aria-labelledby="orders-filter-sheet-title"
-          aria-modal={mobileFiltersOpen ? true : undefined}
-          className={cn(
-            "border-t border-border/60 pt-3",
-            "fixed inset-y-0 right-0 z-50 flex max-h-dvh w-full max-w-sm flex-col border-l border-border bg-card shadow-[var(--shadow-elevated)] transition-transform duration-200 motion-reduce:transition-none md:static md:z-auto md:max-h-none md:max-w-none md:translate-x-0 md:border-0 md:bg-transparent md:shadow-none",
-            mobileFiltersOpen ? "translate-x-0" : "translate-x-full md:translate-x-0",
-            !mobileFiltersOpen && "pointer-events-none md:pointer-events-auto",
-          )}
-          id="orders-advanced-filters"
-          role={mobileFiltersOpen ? "dialog" : undefined}
-        >
-          <h2 className="sr-only" id="orders-filter-sheet-title">
-            筛选
-          </h2>
-          <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5 md:hidden">
-            <span className="text-sm font-semibold text-foreground">高级筛选</span>
             <button
-              aria-label="关闭筛选面板"
-              className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
-              onClick={() => setMobileFiltersOpen(false)}
+              aria-label="新建订单"
+              className="inline-flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glass)] transition-[box-shadow,transform] hover:shadow-[var(--glow-brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-9 sm:min-h-0 sm:min-w-[6.5rem] sm:flex-none"
+              onClick={() => setCreateOpen(true)}
+              style={{ background: "var(--gradient-brand)" }}
               type="button"
             >
-              <X className="size-4" />
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:flex-none md:overflow-visible md:px-0 md:pb-0 md:pt-0">
-            <OrdersListSearchDraftProvider draftQ={localQ}>{filtersSlot}</OrdersListSearchDraftProvider>
-          </div>
-          <div className="shrink-0 border-t border-border p-3 md:hidden">
-            <button
-              className="ui-btn ui-btn-primary h-10 w-full text-sm font-semibold"
-              onClick={() => setMobileFiltersOpen(false)}
-              type="button"
-            >
-              完成
+              <Plus className="size-4 shrink-0" aria-hidden />
+              新建订单
             </button>
           </div>
         </div>
@@ -809,6 +716,7 @@ export function OrdersListShell(props: Props) {
         ) : null}
       </AnimatePresence>
 
+      <CreateOrderModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }

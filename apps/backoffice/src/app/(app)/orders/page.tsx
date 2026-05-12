@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { OrdersListShell } from "@/components/orders/OrdersListShell";
-import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
 import { listOrders } from "@/lib/data/orders";
 import {
   ORDER_LIST_IN_PROGRESS_STATUSES,
@@ -52,20 +51,6 @@ export default async function OrdersPage(props: {
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <OrdersListShell
-        filtersSlot={
-          <OrdersSearchControls
-            approvalOverdue={approvalOverdue}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            paid={paid}
-            pickupOverdue={pickupOverdue}
-            q={q}
-            status={status}
-            supplier={supplier}
-            tab={tab}
-            technician={technician}
-          />
-        }
         items={items}
         kpiInProgress={kpiInProgress}
         kpiToday={kpiToday}
