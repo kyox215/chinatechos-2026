@@ -29,19 +29,19 @@ export function OrderDetailHero({ backLink, publicNo, quotationAmount, subtitle,
     >
       <div className="flex items-center gap-2 text-xs text-muted-foreground">{backLink}</div>
 
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-        <motion.div className="min-w-0" style={{ originX: 0, scale: titleScale }}>
+      <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+        <motion.div className="min-w-0 flex-1" style={{ originX: 0, scale: titleScale }}>
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-display text-2xl font-semibold tracking-tight gradient-text md:text-3xl">
               {publicNo}
             </span>
-            {badgeRow}
+            <div className="flex min-w-0 flex-wrap items-center gap-2">{badgeRow}</div>
           </div>
-          <motion.p className="mt-1 truncate text-sm text-muted-foreground" style={{ opacity: subtitleOpacity }}>
+          <motion.p className="mt-1 min-w-0 truncate text-sm text-muted-foreground" style={{ opacity: subtitleOpacity }}>
             {subtitle}
           </motion.p>
         </motion.div>
-        <div className="shrink-0 text-right">
+        <div className="shrink-0 text-left sm:text-right">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground/70">总报价</div>
           <div className="font-display text-xl font-semibold tabular-nums text-foreground">{quotationFormatted}</div>
         </div>

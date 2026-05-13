@@ -67,7 +67,7 @@ export default async function OrderDetailPage(props: {
         <OrderDetailHero
           backLink={
             <Link
-              className="inline-flex rounded-lg border border-border bg-surface px-2 py-1 text-foreground transition-colors hover:bg-accent"
+              className="inline-flex min-h-10 items-center rounded-lg border border-border bg-surface px-3 py-2 text-foreground transition-colors hover:bg-accent sm:min-h-0 sm:px-2 sm:py-1"
               href="/orders"
             >
               ← 返回列表
@@ -134,7 +134,7 @@ export default async function OrderDetailPage(props: {
       ) : null}
 
       {/* Body */}
-      <div className={`grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px] ${gridAnim} order-detail-section`}>
+      <div className={`grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px] lg:gap-6 ${gridAnim} order-detail-section`}>
         {/* Left column - Order Info */}
         <OrderInfoCard
           orderId={order.id}
@@ -172,7 +172,7 @@ export default async function OrderDetailPage(props: {
           {!isTerminal && (
             <section className="glass-card rounded-2xl border border-border bg-surface p-3 md:p-4">
               <h2 className="font-display mb-3 text-sm font-semibold text-foreground">操作</h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 [&_button]:min-h-10 sm:[&_button]:min-h-9">
                 {(order.status === "repaired" || order.status === "parts_arrived") && order.customer?.phoneE164 && (
                   <NotifyCustomerButton
                     orderId={order.id}

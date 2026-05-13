@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Download, MoreHorizontal, Plus, Printer, Search, X } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -105,7 +105,7 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone: K
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className="glass-card group relative overflow-hidden px-3 py-2"
+      className="glass-card group relative shrink-0 overflow-hidden px-3 py-2"
       transition={{ duration: 0.2 }}
     >
       <span
@@ -270,7 +270,10 @@ export function OrdersListShell(props: Props) {
             </span>
           </h1>
         </motion.div>
-        <motion.div className="flex flex-wrap items-stretch gap-2 sm:justify-end" variants={fadeUp}>
+        <motion.div
+          className="flex min-w-0 gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] sm:flex-wrap sm:justify-end sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+          variants={fadeUp}
+        >
           <KpiPill label="今日新建" tone="violet" value={kpiToday} />
           <KpiPill label="进行中" tone="cyan" value={kpiInProgress} />
           <KpiPill label="未结清" tone="warn" value={kpiUnpaid} />
@@ -367,12 +370,12 @@ export function OrdersListShell(props: Props) {
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border/60 bg-surface-muted/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="inline-flex max-w-full snap-x snap-mandatory items-center gap-0.5 overflow-x-auto rounded-lg border border-border/60 bg-surface-muted/50 p-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabLinks.map((t) => (
               <Link
                 key={t.key}
                 className={cn(
-                  "relative shrink-0 whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "relative shrink-0 snap-start whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   t.active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
                 href={t.href}
@@ -650,71 +653,68 @@ export function OrdersListShell(props: Props) {
         )}
       </div>
 
-      <AnimatePresence>
-        {selected.size > 0 ? (
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-0 right-0 z-40 flex justify-center px-3 md:bottom-6"
-            exit={{ opacity: 0, y: 80 }}
-            initial={{ opacity: 0, y: 80 }}
-            transition={{ damping: 30, stiffness: 380, type: "spring" }}
-          >
-            <div className="glass-strong pointer-events-auto flex max-w-[min(100%,42rem)] flex-wrap items-center gap-2 rounded-xl border border-border px-2 py-2 shadow-[var(--shadow-elevated)]">
-              <button
-                aria-label="清除选择"
-                className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
-                onClick={() => setSelected(new Set())}
-                type="button"
-              >
-                <X className="size-4" />
-              </button>
-              <span className="text-sm font-medium text-foreground">
-                已选 <span className="gradient-text font-semibold">{selected.size}</span> 条
-              </span>
-              <span className="hidden h-5 w-px bg-border sm:block" />
-              <select
-                className="ui-input h-9 max-w-[10rem] text-xs sm:max-w-none"
-                onChange={(e) => setBatchStatus(e.target.value)}
-                value={batchStatus}
-              >
-                <option value="">批量流转状态</option>
-                {statusOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60"
-                disabled={!batchStatus || batchPending}
-                onClick={() => void handleBatchTransition()}
-                style={{ background: "var(--gradient-brand)" }}
-                type="button"
-              >
-                {batchPending ? "处理中..." : "应用"}
-              </button>
-              <button
-                className="ui-btn ui-btn-secondary h-9 gap-1 px-3 text-xs"
-                onClick={() => toast.message("请从详情页打印")}
-                type="button"
-              >
-                <Printer className="size-3.5" /> 打印
-              </button>
-              <button
-                className="rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-                onClick={() => toast.message("请从详情页发送通知")}
-                style={{ background: "var(--gradient-brand)" }}
-                type="button"
-              >
-                发送通知
-              </button>
-              {batchError ? (
-                <span className="w-full basis-full text-center text-[11px] text-status-danger-foreground">{batchError}</span>
-              ) : null}
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {selected.size > 0 ? (
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-0 right-0 z-40 flex justify-center px-3 md:bottom-6"
+          initial={{ opacity: 0, y: 80 }}
+          transition={{ damping: 30, stiffness: 380, type: "spring" }}
+        >
+          <div className="glass-strong pointer-events-auto flex max-w-[min(100%,42rem)] flex-wrap items-center gap-2 rounded-xl border border-border px-2 py-2 shadow-[var(--shadow-elevated)]">
+            <button
+              aria-label="清除选择"
+              className="flex size-10 min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted sm:size-8 sm:min-h-8 sm:min-w-8"
+              onClick={() => setSelected(new Set())}
+              type="button"
+            >
+              <X className="size-4" />
+            </button>
+            <span className="text-sm font-medium text-foreground">
+              已选 <span className="gradient-text font-semibold">{selected.size}</span> 条
+            </span>
+            <span className="hidden h-5 w-px bg-border sm:block" />
+            <select
+              className="ui-input h-10 min-h-10 max-w-[10rem] text-xs sm:h-9 sm:min-h-9 sm:max-w-none"
+              onChange={(e) => setBatchStatus(e.target.value)}
+              value={batchStatus}
+            >
+              <option value="">批量流转状态</option>
+              {statusOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <button
+              className="min-h-10 rounded-lg px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60 sm:min-h-9 sm:py-1.5"
+              disabled={!batchStatus || batchPending}
+              onClick={() => void handleBatchTransition()}
+              style={{ background: "var(--gradient-brand)" }}
+              type="button"
+            >
+              {batchPending ? "处理中..." : "应用"}
+            </button>
+            <button
+              className="ui-btn ui-btn-secondary min-h-10 gap-1 px-3 text-xs sm:h-9 sm:min-h-9"
+              onClick={() => toast.message("请从详情页打印")}
+              type="button"
+            >
+              <Printer className="size-3.5" /> 打印
+            </button>
+            <button
+              className="min-h-10 rounded-lg border border-transparent px-3 py-2 text-xs font-semibold text-primary-foreground sm:min-h-9 sm:py-1.5"
+              onClick={() => toast.message("请从详情页发送通知")}
+              style={{ background: "var(--gradient-brand)" }}
+              type="button"
+            >
+              发送通知
+            </button>
+            {batchError ? (
+              <span className="w-full basis-full text-center text-[11px] text-status-danger-foreground">{batchError}</span>
+            ) : null}
+          </div>
+        </motion.div>
+      ) : null}
 
       <CreateOrderModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>

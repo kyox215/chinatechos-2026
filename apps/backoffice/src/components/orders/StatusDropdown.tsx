@@ -74,7 +74,9 @@ export function StatusDropdown({ orderId, actions }: Props) {
   return (
     <div className="relative flex flex-col items-end gap-1">
       <button
-        className="ui-btn ui-btn-secondary h-9 px-3 text-xs"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="ui-btn ui-btn-secondary h-9 min-h-9 px-3 text-xs"
         disabled={pending}
         onClick={() => {
           setError(null);
@@ -84,10 +86,17 @@ export function StatusDropdown({ orderId, actions }: Props) {
       >
         更多操作 ▾
       </button>
-      {error ? <div className="max-w-[14rem] text-right text-[11px] text-rose-600">{error}</div> : null}
+      {error ? (
+        <div className="max-w-[14rem] text-right text-[11px] text-status-danger-foreground">{error}</div>
+      ) : null}
       {open && (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <button
+            aria-label="关闭菜单"
+            className="fixed inset-0 z-30 cursor-default bg-transparent"
+            onClick={() => setOpen(false)}
+            type="button"
+          />
           <div className="absolute right-0 top-full z-40 mt-1 w-40 rounded-xl border border-border bg-surface p-1 shadow-lg">
             {actions.map((action) => (
               <button
@@ -107,7 +116,12 @@ export function StatusDropdown({ orderId, actions }: Props) {
 
       {supplierPicker && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setSupplierPicker(false)} />
+          <button
+            aria-label="关闭供应商选择"
+            className="fixed inset-0 z-40 cursor-default bg-background/75"
+            onClick={() => setSupplierPicker(false)}
+            type="button"
+          />
           <div className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-4 shadow-xl">
             <h3 className="mb-3 text-sm font-semibold text-foreground font-display">选择供应商</h3>
             <select

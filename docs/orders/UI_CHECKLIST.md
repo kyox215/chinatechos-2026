@@ -17,12 +17,12 @@
 - [ ] 套用了三种页面配方之一（Dashboard / 列表 / 详情）
 - [ ] 侧栏与移动 Sheet 未引入透明 / 模糊背景
 
-## 路由 & SEO
+## 路由 & SEO（Next.js App Router）
 
-- [ ] 路由文件位于 `src/routes/`，扁平点号命名
-- [ ] `head()` 配独立 `title` / `description` / `og:title` / `og:description`
-- [ ] `AppBar` 面包屑 `labels` 字典已加映射
-- [ ] 如属导航页，已在 `<CommandPalette/>` 注册
+- [ ] 页面位于 `apps/backoffice/src/app/**`；动态路由使用 `[param]` 目录
+- [ ] 导出 `export const metadata` 或 `generateMetadata`，含 `title` / `description`（需分享预览时在 metadata 中配置 `openGraph` 等）
+- [ ] 面包屑文案在 [`TopBar.tsx`](../../apps/backoffice/src/components/TopBar.tsx) 的 `breadcrumbLabels` 中维护
+- [ ] 需全局检索的导航已在 [`command-palette.tsx`](../../apps/backoffice/src/components/command-palette.tsx) 注册
 
 ## 动效 & 无障碍
 
@@ -46,9 +46,9 @@
 - [ ] 错误用 `text-status-danger-foreground` 文案 + 重试入口
 - [ ] 空态用 `glass-card` 居中卡片
 
-## 数据 & 后端
+## 数据 & 后端（本仓库约定）
 
-- [ ] 客户端数据用 `@tanstack/react-query`，`queryKey` 格式 `["resource", filters]`
-- [ ] 服务端逻辑用 `createServerFn`，文件名 `*.functions.ts`
-- [ ] webhook / cron 在 `/api/public/*` 且已验签
-- [ ] 需要的后端能力走 Lovable Cloud
+- [ ] 列表/详情默认在 **Server Component** 中调用 `apps/backoffice/src/lib/data/*.ts`
+- [ ] 客户端变更通过 `fetch('/api/...')` 与 `router.refresh()`（或与模块内 Server Actions 约定一致）
+- [ ] Webhook / 定时任务在 `src/app/api/**` 暴露时按需验签（参见 `.cursor/rules/60-stack-conventions.mdc`）
+- [ ] 数据库 / 鉴权 / 实时等使用 **Supabase** 时，环境变量与 RLS 与门店隔离策略已核对

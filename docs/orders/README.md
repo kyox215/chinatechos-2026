@@ -21,4 +21,4 @@
 - [`ORDERS_SPEC.md`](./ORDERS_SPEC.md) — 业务与页面完整规范（§7 列表、§8 详情、§9 新建）
 - [`ORDERS_FULL_EXPORT.md`](./ORDERS_FULL_EXPORT.md) — 文件树与导出级清单（含 TanStack 栈说明）
 - [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) — 设计系统摘要
-- [`UI_CHECKLIST.md`](./UI_CHECKLIST.md) — UI PR 自检（请将「TanStack 路由」等条替换为 Next App Router 等价项）
+- [`UI_CHECKLIST.md`](./UI_CHECKLIST.md) — UI PR 自检（已对齐 Next App Router / 本仓库数据流）

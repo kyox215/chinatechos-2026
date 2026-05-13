@@ -50,7 +50,7 @@ export function TopBar(props: {
         <PanelLeft className="h-4 w-4" />
       </button>
 
-      <div className="hidden items-center gap-1 text-sm md:flex">
+      <div className="hidden items-center gap-1 text-sm sm:flex">
         {crumbs.map((c, i) => (
           <span key={i} className="flex items-center gap-1">
             {i > 0 && <span className="text-muted-foreground">/</span>}
@@ -63,6 +63,7 @@ export function TopBar(props: {
 
       <div className="ml-auto flex items-center gap-2">
         <button
+          aria-label="打开命令面板"
           className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           onClick={props.onOpenCommand}
           type="button"

@@ -184,10 +184,10 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
       ))}
 
       {selected.size > 0 && (
-        <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg sm:gap-3">
+        <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-3 py-3 shadow-lg sm:gap-3 sm:px-4">
           <span className="text-sm font-medium text-foreground">已选 {selected.size} 个</span>
           <select
-            className="ui-input h-8 text-xs"
+            className="ui-input h-10 min-h-10 text-xs sm:h-9 sm:min-h-9"
             onChange={(e) => setBatchStatus(e.target.value)}
             value={batchStatus}
           >
@@ -199,7 +199,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             ))}
           </select>
           <button
-            className="h-8 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+            className="min-h-10 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground disabled:opacity-60 sm:h-9 sm:min-h-9"
             disabled={!batchStatus || batchPending}
             onClick={() => void handleBatchTransition()}
             type="button"
@@ -207,10 +207,12 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             {batchPending ? "处理中..." : "批量切换"}
           </button>
           {batchError ? (
-            <span className="w-full basis-full text-center text-[11px] text-rose-600 sm:w-auto">{batchError}</span>
+            <span className="w-full basis-full text-center text-[11px] text-status-danger-foreground sm:w-auto">
+              {batchError}
+            </span>
           ) : null}
           <button
-            className="h-8 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-muted"
+            className="min-h-10 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-muted sm:h-9 sm:min-h-9"
             onClick={() => setSelected(new Set())}
             type="button"
           >
@@ -265,7 +267,8 @@ const GroupSection = memo(function GroupSection({
           type="checkbox"
         />
         <button
-          className="flex flex-1 items-center justify-between text-left"
+          aria-expanded={open}
+          className="flex flex-1 min-h-10 items-center justify-between text-left sm:min-h-0"
           onClick={() => setOpen((v) => !v)}
           type="button"
         >
@@ -276,6 +279,7 @@ const GroupSection = memo(function GroupSection({
             </span>
           </div>
           <svg
+            aria-hidden
             className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
@@ -308,7 +312,7 @@ const GroupSection = memo(function GroupSection({
               return (
               <article
                 key={it.id}
-                className={`min-w-0 rounded-[10px] border border-border bg-surface px-3 py-2.5 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : "shadow-sm"}`}
+                className={`min-w-0 rounded-[10px] border border-border bg-surface px-3 py-2.5 ${selected.has(it.id) ? "ring-2 ring-primary/35" : "shadow-sm"}`}
               >
                 <div className="flex min-w-0 items-start gap-2">
                   <input
