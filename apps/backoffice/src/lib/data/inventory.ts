@@ -3,6 +3,10 @@ import { env } from "@/lib/env/server";
 import { resolveStoreId } from "@/lib/env/resolve-store";
 import { generateInventoryPublicNo } from "@/lib/domain/inventory-public-no";
 import { appendInventoryEvent } from "@/lib/data/inventory-events";
+import {
+  buildInventoryCreatedPayload,
+  buildInventoryStatusChangedPayload,
+} from "@/lib/domain/inventory-linkage-payload";
 import { canSellInventory } from "@/lib/inventory/sellable";
 import { isUuid, normalizeScanInput, tryExtractUrlLastSegment } from "@/lib/inventory/scan-parse";
 
@@ -404,6 +408,15 @@ export type CreateInventoryInput = {
   sourceRepairOrderId?: string;
 };
 
+async function deleteNewlyInsertedCustomerIfUnused(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  storeId: string,
+  customerId: string | null,
+): Promise<void> {
+  if (!customerId) return;
+  await supabase.from("customers").delete().eq("id", customerId).eq("store_id", storeId);
+}
+
 export async function createInventoryItem(input: CreateInventoryInput): Promise<{ id: string; publicNo: string }> {
   const storeId = await resolveStoreId();
   if (!storeId) throw new Error("无法确定门店");
@@ -414,7 +427,18 @@ export async function createInventoryItem(input: CreateInventoryInput): Promise<
 
   const publicNo = await generateInventoryPublicNo(store.data.store_code);
 
+  const imei = input.imeiOrSerial?.trim();
+  if (imei) {
+    const dup = await findDuplicateActiveImei(supabase, storeId, imei);
+    if (dup) {
+      throw new InventoryImeiConflictError(dup.id, dup.public_no);
+    }
+  }
+
   let sellerCustomerId: string | null = null;
+  /** Set only when we insert a new customer row in this request — rolled back if inventory insert fails. */
+  let newlyInsertedSellerId: string | null = null;
+
   if (input.productChannel === "trade_in") {
     const phone = input.sellerPhone?.trim();
     if (!phone) throw new Error("回收业务需要填写卖方电话");
@@ -442,14 +466,7 @@ export async function createInventoryItem(input: CreateInventoryInput): Promise<
         .single();
       if (ins.error) throw new Error(ins.error.message);
       sellerCustomerId = ins.data!.id;
-    }
-  }
-
-  const imei = input.imeiOrSerial?.trim();
-  if (imei) {
-    const dup = await findDuplicateActiveImei(supabase, storeId, imei);
-    if (dup) {
-      throw new InventoryImeiConflictError(dup.id, dup.public_no);
+      newlyInsertedSellerId = sellerCustomerId;
     }
   }
 
@@ -477,13 +494,22 @@ export async function createInventoryItem(input: CreateInventoryInput): Promise<
   };
 
   const ins = await supabase.from("inventory_items").insert(row).select("id").single();
-  if (ins.error) throw new Error(ins.error.message);
+  if (ins.error) {
+    await deleteNewlyInsertedCustomerIfUnused(supabase, storeId, newlyInsertedSellerId);
+    throw new Error(ins.error.message);
+  }
 
   const id = ins.data!.id as string;
   await appendInventoryEvent({
     inventoryItemId: id,
     eventType: "created",
-    payload: { public_no: publicNo, product_channel: input.productChannel },
+    payload: buildInventoryCreatedPayload({
+      storeId,
+      inventoryItemId: id,
+      publicNo,
+      productChannel: input.productChannel,
+      sellerCustomerId,
+    }),
     operatorName: null,
   });
 
@@ -572,6 +598,8 @@ export async function transitionInventoryItem(
   if (!storeId) throw new Error("无法确定门店");
 
   let buyerCustomerId: string | null = row.buyer_customer_id;
+  let newlyInsertedBuyerId: string | null = null;
+
   if (to === "sold" && opts?.buyerPhone?.trim()) {
     const phoneE164 = normalizePhoneE164(opts.buyerPhone.trim());
     const existing = await supabase
@@ -597,6 +625,7 @@ export async function transitionInventoryItem(
         .single();
       if (ins.error) throw new Error(ins.error.message);
       buyerCustomerId = ins.data!.id;
+      newlyInsertedBuyerId = buyerCustomerId;
     }
   }
 
@@ -610,12 +639,22 @@ export async function transitionInventoryItem(
   }
 
   const { error } = await supabase.from("inventory_items").update(body).eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) {
+    await deleteNewlyInsertedCustomerIfUnused(supabase, storeId, newlyInsertedBuyerId);
+    throw new Error(error.message);
+  }
 
   await appendInventoryEvent({
     inventoryItemId: id,
     eventType: "status_changed",
-    payload: { from: row.lifecycle_status, to },
+    payload: buildInventoryStatusChangedPayload({
+      storeId,
+      inventoryItemId: id,
+      from: row.lifecycle_status,
+      to,
+      buyerCustomerId: to === "sold" ? buyerCustomerId : null,
+      soldPrice: to === "sold" ? opts?.soldPrice ?? null : null,
+    }),
     operatorName: null,
   });
 }

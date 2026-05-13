@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { IconPlus, IconArrowPath, IconCheck, IconEnvelope, IconFlag, IconPencil } from "@/components/icons";
+import { InventoryLinkagePayloadKey } from "@/lib/domain/inventory-linkage-payload";
 import { presentInventoryChannel, presentInventoryStatus } from "@/lib/domain/inventory-presentation";
 
 export type InventoryEventVM = {
@@ -82,12 +83,23 @@ function formatPayload(type: string, payload: Record<string, unknown>): string {
   if (type === "status_changed") {
     const from = presentInventoryStatus(String(payload.from ?? ""));
     const to = presentInventoryStatus(String(payload.to ?? ""));
-    return `${from} → ${to}`;
+    let line = `${from} → ${to}`;
+    const soldTo =
+      String(payload.to ?? "") === "sold" &&
+      (payload[InventoryLinkagePayloadKey.linkageKind] === "buyer_linked" ||
+        Boolean(payload[InventoryLinkagePayloadKey.buyerCustomerId]));
+    if (soldTo) line = `${line} · 已关联买方客户`;
+    return line;
   }
   if (type === "created") {
     const ch = payload.product_channel ? presentInventoryChannel(String(payload.product_channel)) : "";
     const parts = [payload.public_no, ch].filter(Boolean);
-    return parts.join(" · ");
+    let line = parts.join(" · ");
+    const sellerLinked =
+      payload[InventoryLinkagePayloadKey.linkageKind] === "seller_linked" ||
+      Boolean(payload[InventoryLinkagePayloadKey.sellerCustomerId]);
+    if (sellerLinked) line = line ? `${line} · 已关联卖方客户` : "已关联卖方客户";
+    return line;
   }
   if (type === "qa_saved") {
     if (payload.qa_completed_at) return "已标记质检完成";

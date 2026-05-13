@@ -15,6 +15,16 @@ function parsePollMs(): number {
 const POLL_MS = parsePollMs();
 const REALTIME_DISABLED = process.env.NEXT_PUBLIC_SUPABASE_REALTIME === "0";
 
+/** Tables with `store_id` — Realtime filter matches current JWT store (see current_store_id()). */
+const STORE_SCOPED_REALTIME_TABLES = [
+  "repair_orders",
+  "order_events",
+  "inventory_items",
+  "inventory_events",
+  "customers",
+  "devices",
+] as const;
+
 /**
  * Keeps Server Components fresh: optional polling + Supabase Realtime when the user is signed in
  * (JWT must expose store_id via root claim or app_metadata — see current_store_id()).
@@ -48,37 +58,26 @@ export function AppsDataSync(props: { storeId: string | null }) {
     if (REALTIME_DISABLED || !props.storeId) return;
     const storeFilterId = props.storeId;
 
-    let ordersChannel: RealtimeChannel | null = null;
-    let eventsChannel: RealtimeChannel | null = null;
+    let syncChannel: RealtimeChannel | null = null;
 
     function subscribeIfSession() {
       const sb = getSupabaseBrowserClient();
       if (!sb) return;
       void sb.auth.getSession().then(({ data: { session } }) => {
-        ordersChannel?.unsubscribe();
-        eventsChannel?.unsubscribe();
-        ordersChannel = null;
-        eventsChannel = null;
+        syncChannel?.unsubscribe();
+        syncChannel = null;
         if (!session?.user) return;
 
         const filter = `store_id=eq.${storeFilterId}`;
-        ordersChannel = sb
-          .channel(`repair_orders:${storeFilterId}`)
-          .on(
+        let ch = sb.channel(`store_sync:${storeFilterId}`);
+        for (const table of STORE_SCOPED_REALTIME_TABLES) {
+          ch = ch.on(
             "postgres_changes",
-            { event: "*", schema: "public", table: "repair_orders", filter },
+            { event: "*", schema: "public", table, filter },
             () => scheduleRefresh(),
-          )
-          .subscribe();
-
-        eventsChannel = sb
-          .channel(`order_events:${storeFilterId}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "order_events", filter },
-            () => scheduleRefresh(),
-          )
-          .subscribe();
+          );
+        }
+        syncChannel = ch.subscribe();
       });
     }
 
@@ -92,8 +91,7 @@ export function AppsDataSync(props: { storeId: string | null }) {
 
     return () => {
       sub.subscription.unsubscribe();
-      ordersChannel?.unsubscribe();
-      eventsChannel?.unsubscribe();
+      syncChannel?.unsubscribe();
     };
   }, [props.storeId, scheduleRefresh]);
 
