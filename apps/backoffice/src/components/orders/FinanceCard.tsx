@@ -142,7 +142,7 @@ export function FinanceCard(props: Props) {
               onPriceChange={(key, value) => setPrices((prev) => ({ ...prev, [key]: value }))}
             />
           ) : (
-            <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
+            <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted-foreground">
               当前无结构化故障分项；订单总金额取自数据库总额。
             </div>
           )}
@@ -206,7 +206,7 @@ export function FinanceCard(props: Props) {
       ) : (
         <div className="space-y-1.5">
           {props.quotationAmount != null && (
-            <div className="mb-2 rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-xs">
+            <div className="mb-2 rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-xs">
               <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4">
                 <span className="font-medium text-foreground">金额摘要</span>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-foreground">

@@ -117,7 +117,7 @@ export function OrderWhatsAppSendModal(props: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-background/75 p-0 md:items-center md:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) props.onClose();
       }}
@@ -136,7 +136,7 @@ export function OrderWhatsAppSendModal(props: Props) {
 
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
           <div className="text-xs text-muted-foreground">以下消息将通过 WhatsApp 发送：</div>
-          <div className="whitespace-pre-line rounded-xl border border-border bg-surface-2 p-3 text-xs leading-relaxed text-foreground">
+          <div className="whitespace-pre-line rounded-xl border border-border bg-surface-muted p-3 text-xs leading-relaxed text-foreground">
             {props.messageText}
           </div>
 

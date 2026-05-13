@@ -215,7 +215,7 @@ export default async function OrderDetailPage(props: {
           {/* Signature */}
           {showSignature && (
             <section className="glass-card rounded-2xl border border-border bg-surface p-3 md:p-4">
-              <h2 className="font-display mb-3 text-sm font-semibold text-foreground">Firma cliente</h2>
+              <h2 className="font-display mb-3 text-sm font-semibold text-foreground">客户签名</h2>
               <SignatureSection orderId={order.id} customerSignature={order.customerSignature} />
             </section>
           )}

@@ -351,6 +351,9 @@ export function OrdersFilterSheet({ technicianOptions }: Props) {
                 />
                 完工未取/未通知超期
               </label>
+              <p className="text-xs text-muted-foreground">
+                两项同时勾选时，列表为「报价待确认超期」或「完工未取超期」的工单（并集），与 URL 双参数一致。
+              </p>
             </section>
           </div>
 

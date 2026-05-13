@@ -290,12 +290,12 @@ const GroupSection = memo(function GroupSection({
 
       {open && (
         group.items.length === 0 ? (
-          <div className="border-t border-border bg-surface-2 px-3 py-8 text-center text-sm text-muted-foreground">
+          <div className="border-t border-border bg-surface-muted px-3 py-8 text-center text-sm text-muted-foreground">
             本分组暂无工单
           </div>
         ) : (
         <>
-          <div className="space-y-1.5 border-t border-border bg-surface-2 p-2.5 lg:hidden">
+          <div className="space-y-1.5 border-t border-border bg-surface-muted p-2.5 lg:hidden">
             {group.items.map((it) => {
               const phoneHref = telHrefFromDisplay(it.customerPhone);
               const cust = it.customerName?.trim();

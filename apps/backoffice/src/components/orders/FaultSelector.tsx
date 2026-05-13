@@ -242,7 +242,7 @@ const FaultButton = memo(function FaultButton({
         className={`flex min-h-[36px] w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
           active
             ? "border-primary bg-primary-2 text-primary"
-            : "border-border bg-surface-2 text-muted-foreground hover:bg-muted"
+            : "border-border bg-surface-muted text-muted-foreground hover:bg-muted"
         }`}
         onClick={onMainClick}
         type="button"

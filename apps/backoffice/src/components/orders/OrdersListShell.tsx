@@ -629,7 +629,7 @@ export function OrdersListShell(props: Props) {
                           <span className="ml-1.5 text-xs text-muted-foreground">· {o.deviceLabel || "—"}</span>
                         </div>
                         <div className="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">{o.customerPhone || "—"}</div>
-                        <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">{o.issue || "—"}</div>
+                        <div className="mt-2 line-clamp-1 text-xs text-muted-foreground">{o.issue || "—"}</div>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <StatusPopover orderId={o.id} status={o.status} />
                           <span className="text-xs text-muted-foreground">{fmtDate(o.createdAt)}</span>

@@ -71,7 +71,7 @@ export function NotifyCustomerButton(props: Props) {
       >
         {pending ? "发送中..." : label}
       </button>
-      {error ? <p className="text-[11px] text-rose-600">{error}</p> : null}
+      {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
     </div>
   );
 }

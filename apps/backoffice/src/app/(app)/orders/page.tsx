@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { OrdersListShell } from "@/components/orders/OrdersListShell";
-import { listDistinctTechnicianNames, listOrders } from "@/lib/data/orders";
-import {
-  ORDER_LIST_IN_PROGRESS_STATUSES,
-  parseOrderStatusTab,
-} from "@/lib/domain/order-list-tabs";
+import { listDistinctTechnicianNames, listOrders, listOrderKpiCounts } from "@/lib/data/orders";
+import { parseOrderStatusTab } from "@/lib/domain/order-list-tabs";
 
 export const metadata: Metadata = {
   title: "工单 — ChinaTechOS",
@@ -29,7 +26,7 @@ export default async function OrdersPage(props: {
   const dateTo = normalizeQuery(searchParams.dateTo);
   const orderType = normalizeOrderType(normalizeQuery(searchParams.orderType));
 
-  const [{ items, error: listError }, technicianOptions] = await Promise.all([
+  const [{ items, error: listError }, technicianOptions, kpiCounts] = await Promise.all([
     listOrders({
       q,
       statusTab: tab,
@@ -44,21 +41,16 @@ export default async function OrdersPage(props: {
       dateTo,
     }),
     listDistinctTechnicianNames(),
+    listOrderKpiCounts(),
   ]);
-
-  const todayStr = new Date().toDateString();
-  const kpiToday = items.filter((o) => new Date(o.createdAt).toDateString() === todayStr).length;
-  const inProgressSet = new Set<string>(ORDER_LIST_IN_PROGRESS_STATUSES);
-  const kpiInProgress = items.filter((o) => inProgressSet.has(o.status)).length;
-  const kpiUnpaid = items.filter((o) => !o.isPaid).length;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
       <OrdersListShell
         items={items}
-        kpiInProgress={kpiInProgress}
-        kpiToday={kpiToday}
-        kpiUnpaid={kpiUnpaid}
+        kpiInProgress={kpiCounts.kpiInProgress}
+        kpiToday={kpiCounts.kpiToday}
+        kpiUnpaid={kpiCounts.kpiUnpaid}
         listError={listError}
         tab={tab}
         technicianOptions={technicianOptions}

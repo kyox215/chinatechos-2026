@@ -86,7 +86,7 @@ export function SendQuoteModal(props: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-background/75 p-0 md:items-center md:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}
     >
       <div className="flex max-h-[80dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:max-w-lg md:rounded-2xl">
@@ -98,7 +98,7 @@ export function SendQuoteModal(props: Props) {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           <div className="text-xs text-muted-foreground">以下消息将通过 WhatsApp 发送给客户：</div>
 
-          <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs text-foreground whitespace-pre-line leading-relaxed">
+          <div className="rounded-xl border border-border bg-surface-muted p-3 text-xs text-foreground whitespace-pre-line leading-relaxed">
             {messageText}
           </div>
 

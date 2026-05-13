@@ -12,7 +12,7 @@ export function ImeiRecognizerPicker({ open, onClose, onPickMode }: Props) {
   return (
     <OverlayPortal
       open={open}
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 md:items-center md:p-4"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/80 p-0 md:items-center md:p-4"
     >
       <div className="w-full max-w-md rounded-t-2xl bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:rounded-2xl md:pb-4">
         <div className="mb-3 flex items-center justify-between">

@@ -92,12 +92,10 @@ export function getOrderStatusLabel(status: string): string {
   return ORDER_STATUS_LABELS[status] ?? status;
 }
 
-export function validateOrderTransition(fromStatus: string, toStatus: string): TransitionResult {
-  if (fromStatus === toStatus) {
-    return { ok: false, reason: "不能转到相同状态" };
-  }
-  return { ok: true };
-}
+export type ValidateOrderTransitionOptions = {
+  statusLabels?: Record<string, string>;
+  statusOrder?: readonly string[];
+};
 
 export type ActionItem = {
   toStatus: string;
@@ -173,4 +171,26 @@ export function getNextActions(
   }
 
   return { primary, secondary };
+}
+
+/**
+ * 校验状态流转是否允许。默认使用内置标签与顺序；服务端应传入门店 `resolvedOrderUi` 的
+ * `statusLabels` / `statusOrder`，与 `getNextActions` / StatusPopover 一致。
+ */
+export function validateOrderTransition(
+  fromStatus: string,
+  toStatus: string,
+  opts?: ValidateOrderTransitionOptions,
+): TransitionResult {
+  if (fromStatus === toStatus) {
+    return { ok: false, reason: "不能转到相同状态" };
+  }
+  const labels = opts?.statusLabels ?? ORDER_STATUS_LABELS;
+  const order = opts?.statusOrder ?? (ORDER_STATUS_SELECT_SEQUENCE as readonly string[]);
+  const { primary, secondary } = getNextActions(fromStatus, labels, order);
+  const allowed = new Set([...primary, ...secondary].map((a) => a.toStatus));
+  if (!allowed.has(toStatus)) {
+    return { ok: false, reason: "当前状态不允许切换到该状态" };
+  }
+  return { ok: true };
 }

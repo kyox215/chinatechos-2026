@@ -64,7 +64,7 @@ export function OrderTimeline({ events }: { events: OrderEvent[] }) {
           {/* Icon */}
           <div
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border [&_svg]:h-3.5 [&_svg]:w-3.5 ${
-              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-2 text-muted-foreground"
+              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-muted text-muted-foreground"
             }`}
           >
             {EVENT_ICONS[evt.eventType] ?? <span className="h-2 w-2 rounded-full bg-muted-foreground" />}

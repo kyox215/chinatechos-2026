@@ -41,12 +41,12 @@ export function SignatureModal({ open, onClose, orderId, initialSignature }: Pro
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-background/75 p-0 md:items-center md:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex max-h-[85dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:max-w-lg md:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-foreground font-display">Firma del cliente</h3>
+          <h3 className="text-sm font-semibold text-foreground font-display">客户签名</h3>
           <button
             className="ui-btn ui-btn-secondary flex h-8 w-8 items-center justify-center text-xs"
             onClick={onClose}

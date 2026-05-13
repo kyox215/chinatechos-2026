@@ -18,7 +18,7 @@ export function SignatureSection({ orderId, customerSignature }: Props) {
           <div className="flex items-center gap-3">
             <img
               src={customerSignature}
-              alt="Firma cliente"
+              alt="客户签名预览"
               className="h-10 rounded border border-border bg-surface object-contain px-2"
             />
             <button
@@ -26,7 +26,7 @@ export function SignatureSection({ orderId, customerSignature }: Props) {
               className="ui-btn ui-btn-secondary h-9 px-3 text-xs"
               onClick={() => setOpen(true)}
             >
-              Rifirma
+              重新签名
             </button>
           </div>
         ) : (
@@ -35,7 +35,7 @@ export function SignatureSection({ orderId, customerSignature }: Props) {
             className="ui-btn ui-btn-primary h-9 px-4 text-xs"
             onClick={() => setOpen(true)}
           >
-            ✍️ Firma cliente
+            ✍️ 客户签名
           </button>
         )}
       </div>

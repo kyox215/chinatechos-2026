@@ -251,7 +251,7 @@ export function CreateOrderModal({ open, onClose, initialPhone, initialName }: P
   return (
     <OverlayPortal
       open={open}
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/75 p-0 md:items-center md:p-4"
       onBackdropClick={onClose}
     >
       <OrderPrintSheet payload={printPayload} sheetRootId={CREATE_ORDER_PRINT_SHEET_ID} />

@@ -10,7 +10,7 @@ import {
   defaultResolvedOrderUi,
   getStatusListSortIndexResolved,
 } from "@/lib/domain/order-ui-config";
-import { statusesForOrderStatusTab, type OrderStatusTab } from "@/lib/domain/order-list-tabs";
+import { ORDER_LIST_IN_PROGRESS_STATUSES, statusesForOrderStatusTab, type OrderStatusTab } from "@/lib/domain/order-list-tabs";
 
 export { sanitizeOrderSearchQ, sanitizePostgrestSearchTerm } from "@/lib/domain/order-search";
 
@@ -99,6 +99,46 @@ export async function listDistinctTechnicianNames(): Promise<string[]> {
     from += TECH_NAME_PAGE;
   }
   return [...names].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
+export type OrderKpiCounts = {
+  kpiToday: number;
+  kpiInProgress: number;
+  kpiUnpaid: number;
+};
+
+/** 门店全量 KPI（不受列表筛选影响），用于列表页顶部卡片。 */
+export async function listOrderKpiCounts(): Promise<OrderKpiCounts> {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) {
+    return { kpiToday: 0, kpiInProgress: 0, kpiUnpaid: 0 };
+  }
+  const supabase = createSupabaseServerClient();
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startIso = start.toISOString();
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  const endIso = end.toISOString();
+
+  const base = () =>
+    supabase.from("repair_orders").select("id", { count: "exact", head: true }).eq("store_id", storeId).is("deleted_at", null);
+
+  const [todayRes, progRes, unpaidRes] = await Promise.all([
+    base().gte("created_at", startIso).lt("created_at", endIso),
+    base().in("status", [...ORDER_LIST_IN_PROGRESS_STATUSES]),
+    base().eq("is_paid", false),
+  ]);
+
+  const err = todayRes.error ?? progRes.error ?? unpaidRes.error;
+  if (err) {
+    return { kpiToday: 0, kpiInProgress: 0, kpiUnpaid: 0 };
+  }
+  return {
+    kpiToday: todayRes.count ?? 0,
+    kpiInProgress: progRes.count ?? 0,
+    kpiUnpaid: unpaidRes.count ?? 0,
+  };
 }
 
 const REPAIR_ORDER_LIST_SELECT = `
@@ -321,7 +361,13 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       q = q.lte("created_at", filters.dateTo);
     }
 
-    if (filters.approvalOverdue) {
+    if (filters.approvalOverdue && filters.pickupOverdue) {
+      const cutoffA = new Date(Date.now() - approvalOverdueHours * 3600 * 1000).toISOString();
+      const cutoffP = new Date(Date.now() - pickupOverdueDays * 24 * 3600 * 1000).toISOString();
+      q = q.or(
+        `and(status.eq.waiting_approval,approval_sent_at.lte.${cutoffA}),and(status.in.(repaired,notified,unfixed_pickup),completed_at.lte.${cutoffP})`,
+      );
+    } else if (filters.approvalOverdue) {
       const cutoff = new Date(Date.now() - approvalOverdueHours * 3600 * 1000).toISOString();
       q = q.eq("status", "waiting_approval").lte("approval_sent_at", cutoff);
     } else if (filters.pickupOverdue) {

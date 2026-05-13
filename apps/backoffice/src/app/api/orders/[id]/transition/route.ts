@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeOrderEvent } from "@/lib/data/order-events";
+import { getStoreSettings } from "@/lib/data/store-settings";
+import { defaultResolvedOrderUi } from "@/lib/domain/order-ui-config";
 import { validateOrderTransition } from "@/lib/domain/order-status";
 import { assertSupplierBelongsToStore } from "@/lib/api/supplier-validation";
 import { resolveStoreId } from "@/lib/env/resolve-store";
@@ -44,6 +46,10 @@ export async function POST(
   }
 
   const supabase = createSupabaseServerClient();
+  const settings = await getStoreSettings();
+  const orderUi = settings?.resolvedOrderUi ?? defaultResolvedOrderUi();
+  const transitionOpts = { statusLabels: orderUi.statusLabels, statusOrder: orderUi.statusOrder };
+
   const current = await supabase
     .from("repair_orders")
     .select("id, store_id, status, quotation_amount, delivered_at, is_paid")
@@ -56,7 +62,7 @@ export async function POST(
     return NextResponse.json({ error: "工单不存在或无权限" }, { status: 404 });
   }
 
-  const validation = validateOrderTransition(current.data.status, toStatus);
+  const validation = validateOrderTransition(current.data.status, toStatus, transitionOpts);
   if (!validation.ok) {
     return NextResponse.json({ error: validation.reason }, { status: 400 });
   }
