@@ -377,13 +377,13 @@ function FilterChip(props: {
   onClick: () => void;
 }) {
   const activeRisk = "border-amber-200 bg-amber-50 text-amber-800";
-  const activeAccent = "border-indigo-200 bg-indigo-50 text-indigo-900";
+  const activeAccent = "border-primary/40 bg-primary-2 text-primary";
   const inactive = "border-border bg-muted/80 text-neutral-700 hover:bg-muted";
   const activeCls = props.variant === "risk" ? activeRisk : activeAccent;
   return (
     <button
       className={[
-        "inline-flex h-7 max-w-full shrink-0 items-center rounded-full border px-2.5 text-xs font-medium transition-colors",
+        "inline-flex h-8 max-w-full shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
         props.active ? activeCls : inactive,
       ].join(" ")}

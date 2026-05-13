@@ -185,7 +185,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
         <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg sm:gap-3">
           <span className="text-sm font-medium text-neutral-900">已选 {selected.size} 个</span>
           <select
-            className="ui-input h-8 text-xs"
+            className="ui-input h-9 text-xs md:h-8"
             onChange={(e) => setBatchStatus(e.target.value)}
             value={batchStatus}
           >
@@ -197,7 +197,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             ))}
           </select>
           <button
-            className="h-8 rounded-lg bg-primary px-4 text-xs font-semibold text-white disabled:opacity-60"
+            className="ui-btn ui-btn-primary h-9 px-4 text-xs md:h-8"
             disabled={!batchStatus || batchPending}
             onClick={() => void handleBatchTransition()}
             type="button"
@@ -208,7 +208,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             <span className="w-full basis-full text-center text-[11px] text-rose-600 sm:w-auto">{batchError}</span>
           ) : null}
           <button
-            className="h-8 rounded-lg border border-border px-3 text-xs text-neutral-600 hover:bg-muted"
+            className="ui-btn ui-btn-secondary h-9 px-3 text-xs md:h-8"
             onClick={() => setSelected(new Set())}
             type="button"
           >
@@ -269,7 +269,7 @@ const GroupSection = memo(function GroupSection({
         >
           <div className="flex items-center gap-2">
             <span className={`text-sm font-semibold ${group.titleColor}`}>{group.label}</span>
-            <span className="rounded-lg bg-white/60 px-2 py-0.5 text-xs font-medium text-neutral-600">
+            <span className="rounded-full border border-border/60 bg-surface/80 px-2 py-0.5 text-xs font-medium text-neutral-600">
               {group.items.length}
             </span>
           </div>
@@ -306,7 +306,7 @@ const GroupSection = memo(function GroupSection({
               return (
               <article
                 key={it.id}
-                className={`min-w-0 rounded-[10px] border border-border bg-surface px-3 py-2.5 ${selected.has(it.id) ? "ring-2 ring-indigo-300/60" : "shadow-sm"}`}
+                className={`min-w-0 rounded-xl border border-border bg-surface px-3 py-2.5 ${selected.has(it.id) ? "ring-2 ring-primary/30" : "shadow-sm"}`}
               >
                 <div className="flex min-w-0 items-start gap-2">
                   <input
@@ -414,7 +414,7 @@ const GroupSection = memo(function GroupSection({
                   key={it.id}
                   className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-2.5 ${
                     selected.has(it.id)
-                      ? "bg-indigo-50/50"
+                      ? "bg-primary-2/35"
                       : rowIdx % 2 === 1
                         ? "bg-muted/15"
                         : ""
