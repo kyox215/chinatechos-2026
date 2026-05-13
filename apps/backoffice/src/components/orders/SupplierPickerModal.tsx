@@ -112,17 +112,17 @@ export function SupplierPickerModal({
         className={
           mobile
             ? `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
-                !initialSupplierId ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-500"
+                !initialSupplierId ? "bg-muted/60 font-medium text-foreground" : "text-muted-foreground"
               }`
             : `flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
-                !initialSupplierId ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-500"
+                !initialSupplierId ? "bg-muted/60 font-medium text-foreground" : "text-muted-foreground"
               }`
         }
         disabled={pending}
         onClick={() => handleSelect(null)}
         type="button"
       >
-        <span className={`${mobile ? "h-2.5 w-2.5" : "h-2 w-2"} shrink-0 rounded-full bg-neutral-300`} />
+        <span className={`${mobile ? "h-2.5 w-2.5" : "h-2 w-2"} shrink-0 rounded-full bg-muted-foreground`} />
         不指定供应商
       </button>
       {suppliers.map((s) => {
@@ -134,10 +134,10 @@ export function SupplierPickerModal({
             className={
               mobile
                 ? `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm active:bg-muted ${
-                    isActive ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-700"
+                    isActive ? "bg-muted/60 font-medium text-foreground" : "text-foreground"
                   }`
                 : `flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs hover:bg-muted ${
-                    isActive ? "bg-muted/60 font-medium text-neutral-900" : "text-neutral-700"
+                    isActive ? "bg-muted/60 font-medium text-foreground" : "text-foreground"
                   }`
             }
             disabled={pending}
@@ -169,15 +169,15 @@ export function SupplierPickerModal({
 
   const mobileSheet = isMobile && (
     <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-background/75" onClick={onClose} />
       <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <span className="text-sm font-semibold text-neutral-900">选择供应商</span>
-            <p className="mt-0.5 text-xs text-neutral-500">{publicNo}</p>
+            <span className="text-sm font-semibold text-foreground font-display">选择供应商</span>
+            <p className="mt-0.5 text-xs text-muted-foreground">{publicNo}</p>
           </div>
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
             onClick={onClose}
             type="button"
           >

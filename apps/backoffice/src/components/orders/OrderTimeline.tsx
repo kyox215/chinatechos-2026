@@ -21,17 +21,17 @@ const EVENT_ICONS: Record<string, ReactNode> = {
 };
 
 const EVENT_ICON_WRAP: Record<string, string> = {
-  created: "border-indigo-200 bg-indigo-50 text-indigo-700",
-  status_changed: "border-blue-200 bg-blue-50 text-blue-700",
-  quote_sent: "border-violet-200 bg-violet-50 text-violet-700",
-  approval_marked: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  payment_updated: "border-amber-200 bg-amber-50 text-amber-800",
-  delivered: "border-teal-200 bg-teal-50 text-teal-800",
-  completed: "border-green-200 bg-green-50 text-green-800",
-  cancelled: "border-rose-200 bg-rose-50 text-rose-700",
-  message_opened: "border-slate-200 bg-slate-50 text-slate-700",
-  message_marked_sent: "border-slate-200 bg-slate-50 text-slate-700",
-  fields_updated: "border-orange-200 bg-orange-50 text-orange-800",
+  created: "border-border bg-status-progress text-status-progress-foreground",
+  status_changed: "border-border bg-status-info text-status-info-foreground",
+  quote_sent: "border-border bg-status-progress text-status-progress-foreground",
+  approval_marked: "border-border bg-status-success text-status-success-foreground",
+  payment_updated: "border-border bg-status-warn text-status-warn-foreground",
+  delivered: "border-border bg-status-success text-status-success-foreground",
+  completed: "border-border bg-status-success text-status-success-foreground",
+  cancelled: "border-border bg-status-danger text-status-danger-foreground",
+  message_opened: "border-border bg-status-neutral text-status-neutral-foreground",
+  message_marked_sent: "border-border bg-status-neutral text-status-neutral-foreground",
+  fields_updated: "border-border bg-status-warn text-status-warn-foreground",
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -50,7 +50,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 export function OrderTimeline({ events }: { events: OrderEvent[] }) {
   if (events.length === 0) {
-    return <div className="py-4 text-sm text-neutral-500">暂无事件记录</div>;
+    return <div className="py-4 text-sm text-muted-foreground">暂无事件记录</div>;
   }
 
   return (
@@ -64,29 +64,29 @@ export function OrderTimeline({ events }: { events: OrderEvent[] }) {
           {/* Icon */}
           <div
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border [&_svg]:h-3.5 [&_svg]:w-3.5 ${
-              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-2 text-neutral-600"
+              EVENT_ICON_WRAP[evt.eventType] ?? "border-border bg-surface-muted text-muted-foreground"
             }`}
           >
-            {EVENT_ICONS[evt.eventType] ?? <span className="h-2 w-2 rounded-full bg-neutral-400" />}
+            {EVENT_ICONS[evt.eventType] ?? <span className="h-2 w-2 rounded-full bg-muted-foreground" />}
           </div>
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-neutral-900">
+              <span className="text-sm font-medium text-foreground">
                 {EVENT_LABELS[evt.eventType] ?? evt.eventType}
               </span>
               <span
-                className="text-xs text-neutral-400"
+                className="text-xs text-muted-foreground"
                 title={formatAbsoluteTime(evt.createdAt)}
               >
                 {formatRelativeTime(evt.createdAt)}
               </span>
             </div>
-            <div className="mt-0.5 text-xs text-neutral-600">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               {formatPayload(evt.eventType, evt.payload)}
             </div>
             {evt.operatorName && (
-              <div className="mt-0.5 text-xs text-neutral-400">
+              <div className="mt-0.5 text-xs text-muted-foreground">
                 操作人：{evt.operatorName}
               </div>
             )}

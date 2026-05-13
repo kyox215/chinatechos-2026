@@ -34,17 +34,17 @@ export function QuoteForm(props: Props) {
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
-      <h2 className="mb-3 text-sm font-semibold text-neutral-900">报价明细</h2>
+      <h2 className="mb-3 text-sm font-semibold text-foreground font-display">报价明细</h2>
 
       <div className="space-y-2">
         {faultItems.length === 0 ? (
-          <div className="text-xs text-neutral-500">无故障项可报价，请先在维修信息中添加故障</div>
+          <div className="text-xs text-muted-foreground">无故障项可报价，请先在维修信息中添加故障</div>
         ) : (
           faultItems.map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-2">
-              <span className="text-xs text-neutral-700">{item.label}</span>
+              <span className="text-xs text-foreground">{item.label}</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-neutral-400">€</span>
+                <span className="text-xs text-muted-foreground">€</span>
                 <input
                   className="ui-input h-8 w-20 text-xs"
                   onChange={(e) => setPrices((p) => ({ ...p, [item.key]: e.target.value }))}
@@ -59,7 +59,7 @@ export function QuoteForm(props: Props) {
       </div>
 
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-        <div className="text-sm font-semibold text-neutral-900">
+        <div className="text-sm font-semibold text-foreground font-mono">
           合计: €{total.toFixed(2)}
         </div>
         <button

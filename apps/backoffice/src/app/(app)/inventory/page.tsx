@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { InventoryList } from "@/components/inventory/InventoryList";
 import { InventoryListToolbar } from "@/components/inventory/InventoryListToolbar";
 import { listInventoryItems } from "@/lib/data/inventory";
+
+export const metadata: Metadata = {
+  title: "商品管理 — ChinaTechOS",
+  description: "管理库存商品、筛选与搜索",
+};
 
 type QueryValue = string | string[] | undefined;
 
@@ -27,22 +33,22 @@ export default async function InventoryPage(props: {
   const { items, error: listError } = await listInventoryItems({ q, channel, status, dateFrom, dateTo });
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
       {listError ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <div className="rounded-2xl border border-border bg-status-warn px-4 py-3 text-sm text-status-warn-foreground">
           <p className="font-medium">库存列表暂时无法加载</p>
           <p className="mt-1 font-mono text-xs opacity-90">{listError}</p>
-          <p className="mt-2 text-xs text-neutral-700">
+          <p className="mt-2 text-xs text-muted-foreground">
             请确认已在 Supabase 执行库存相关迁移、环境变量已配置{" "}
-            <code className="rounded bg-white/80 px-1">NEXT_PUBLIC_SUPABASE_URL</code> 与{" "}
-            <code className="rounded bg-white/80 px-1">SUPABASE_SERVICE_ROLE_KEY</code>（或{" "}
-            <code className="rounded bg-white/80 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
-            ）、以及 <code className="rounded bg-white/80 px-1">DEFAULT_STORE_ID</code>（若未设置则需 Service Role 能读到门店表）。
+            <code className="rounded bg-card px-1">NEXT_PUBLIC_SUPABASE_URL</code> 与{" "}
+            <code className="rounded bg-card px-1">SUPABASE_SERVICE_ROLE_KEY</code>（或{" "}
+            <code className="rounded bg-card px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+            ）、以及 <code className="rounded bg-card px-1">DEFAULT_STORE_ID</code>（若未设置则需 Service Role 能读到门店表）。
           </p>
         </div>
       ) : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">商品管理</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">商品管理</h1>
         <InventoryListToolbar
           channel={channel}
           dateFrom={dateFrom}
@@ -96,11 +102,11 @@ export default async function InventoryPage(props: {
       </form>
 
       <div className="flex items-baseline justify-between">
-        <span className="text-sm text-neutral-500">共 {items.length} 条</span>
+        <span className="text-sm text-muted-foreground">共 <span className="font-mono tabular-nums">{items.length}</span> 条</span>
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-surface-2 p-8 text-center text-sm text-neutral-500">
+        <div className="glass-card p-8 text-center text-sm text-muted-foreground">
           暂无库存记录。点击「新建入库」添加。
         </div>
       ) : (

@@ -81,8 +81,8 @@ export function ImportSection() {
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-4">
-      <h2 className="mb-3 text-sm font-semibold text-neutral-900">数据导入</h2>
-      <p className="mb-3 text-xs text-neutral-500">
+      <h2 className="mb-3 font-display text-sm font-semibold text-foreground">数据导入</h2>
+      <p className="mb-3 text-xs text-muted-foreground">
         上传 Excel (.xlsx) 或 CSV 文件批量导入工单。文件需包含表头行，至少含：客户电话、品牌、型号、问题描述。
       </p>
 
@@ -119,19 +119,19 @@ export function ImportSection() {
         )}
       </div>
 
-      {error && <div className="mt-3 text-xs text-rose-600">{error}</div>}
+      {error && <div className="mt-3 text-xs text-status-danger-foreground">{error}</div>}
 
       {preview && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap gap-3 text-xs">
-            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-700">
+            <span className="rounded-full bg-muted px-2.5 py-1 text-foreground">
               共 {preview.totalRows} 行
             </span>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700">
+            <span className="rounded-full bg-status-success px-2.5 py-1 text-status-success-foreground">
               有效 {preview.validRows} 行
             </span>
             {preview.errorRows > 0 && (
-              <span className="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700">
+              <span className="rounded-full bg-status-danger px-2.5 py-1 text-status-danger-foreground">
                 错误 {preview.errorRows} 行（将跳过）
               </span>
             )}
@@ -146,33 +146,33 @@ export function ImportSection() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-surface-2">
                 <tr>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">行</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">电话</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">姓名</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">品牌</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">型号</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">问题</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">状态</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">日期</th>
-                  <th className="px-2 py-1.5 text-left font-medium text-neutral-500">校验</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">行</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">电话</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">姓名</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">品牌</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">型号</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">问题</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">状态</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">日期</th>
+                  <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">校验</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.preview.map((r) => (
-                  <tr key={r.rowNum} className={r.errors.length > 0 ? "bg-rose-50" : ""}>
-                    <td className="px-2 py-1 text-neutral-400">{r.rowNum}</td>
+                  <tr key={r.rowNum} className={r.errors.length > 0 ? "bg-status-danger" : ""}>
+                    <td className="px-2 py-1 text-muted-foreground">{r.rowNum}</td>
                     <td className="px-2 py-1">{r.customerPhone || "-"}</td>
                     <td className="px-2 py-1">{r.customerName || "-"}</td>
                     <td className="px-2 py-1">{r.brand}</td>
                     <td className="px-2 py-1">{r.model}</td>
                     <td className="max-w-[200px] truncate px-2 py-1">{r.issueDescription}</td>
-                    <td className="px-2 py-1 text-neutral-600">{r.status ?? "-"}</td>
-                    <td className="whitespace-nowrap px-2 py-1 text-neutral-500">{r.createdAt ?? "-"}</td>
+                    <td className="px-2 py-1 text-muted-foreground">{r.status ?? "-"}</td>
+                    <td className="whitespace-nowrap px-2 py-1 text-muted-foreground">{r.createdAt ?? "-"}</td>
                     <td className="px-2 py-1">
                       {r.errors.length > 0 ? (
-                        <span className="text-rose-600">{r.errors.join(", ")}</span>
+                        <span className="text-status-danger-foreground">{r.errors.join(", ")}</span>
                       ) : (
-                        <span className="text-emerald-600">OK</span>
+                        <span className="text-status-success-foreground">OK</span>
                       )}
                     </td>
                   </tr>
@@ -205,14 +205,14 @@ export function ImportSection() {
       )}
 
       {result && (
-        <div className="mt-4 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs">
-          <div className="font-medium text-emerald-800">导入完成</div>
-          <div className="text-emerald-700">
+        <div className="mt-4 space-y-2 rounded-xl border border-status-success bg-status-success p-3 text-xs">
+          <div className="font-medium text-status-success-foreground">导入完成</div>
+          <div className="text-status-success-foreground">
             成功导入 {result.imported} 条，跳过 {result.skipped} 条
             {result.errors > 0 && `，失败 ${result.errors} 条`}
           </div>
           {result.errorDetails.length > 0 && (
-            <div className="mt-1 space-y-0.5 text-rose-600">
+            <div className="mt-1 space-y-0.5 text-status-danger-foreground">
               {result.errorDetails.map((e) => (
                 <div key={e.rowNum}>行 {e.rowNum}: {e.error}</div>
               ))}

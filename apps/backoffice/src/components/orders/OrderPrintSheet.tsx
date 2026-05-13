@@ -138,11 +138,11 @@ export function OrderPrintSheet(props: {
             </section>
 
             <section className="border-b border-neutral-200 pb-1">
-              <h2 className="mb-0.5 text-[9px] font-semibold">Firma cliente</h2>
+              <h2 className="mb-0.5 text-[9px] font-semibold">客户签名</h2>
               {p.customerSignature ? (
                 <img
                   src={p.customerSignature}
-                  alt="Firma"
+                  alt="客户签名"
                   className="mt-1 h-[12mm] w-auto object-contain"
                 />
               ) : (

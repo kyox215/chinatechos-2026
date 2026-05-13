@@ -10,6 +10,7 @@ import {
   defaultResolvedOrderUi,
   getStatusListSortIndexResolved,
 } from "@/lib/domain/order-ui-config";
+import { ORDER_LIST_IN_PROGRESS_STATUSES, statusesForOrderStatusTab, type OrderStatusTab } from "@/lib/domain/order-list-tabs";
 
 export { sanitizeOrderSearchQ, sanitizePostgrestSearchTerm } from "@/lib/domain/order-search";
 
@@ -21,6 +22,7 @@ export type OrderListItem = {
   customerName: string | null;
   customerPhone: string;
   deviceLabel: string;
+  deviceImei: string | null;
   issue: string;
   /** Same as `repair_orders.quotation_amount` */
   quotationAmount: number | null;
@@ -38,10 +40,13 @@ export type OrderListItem = {
   /** From linked original order — used for rework warranty chips on list */
   originalOrderCompletedAt: string | null;
   originalOrderWarrantyText: string | null;
+  internalTag: string | null;
 };
 
 export type OrderListFilters = {
   q?: string;
+  /** 分段 Tab（多状态 `.in`）；与 `status` 同时存在时优先使用本字段（非 `all`） */
+  statusTab?: OrderStatusTab;
   status?: string;
   orderType?: string;
   technician?: string;
@@ -58,6 +63,84 @@ export type ListOrdersResult = {
   error?: string;
 };
 
+const TECH_NAME_PAGE = 800;
+
+/**
+ * 门店内出现过的技师名（去重），用于列表筛选下拉。
+ * 分页扫描 `technician_name` 列，避免单次拉全表；极端大单量下可能仍不完整。
+ */
+export async function listDistinctTechnicianNames(): Promise<string[]> {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) {
+    return [];
+  }
+  const supabase = createSupabaseServerClient();
+  const names = new Set<string>();
+  let from = 0;
+  for (let page = 0; page < 80; page += 1) {
+    const to = from + TECH_NAME_PAGE - 1;
+    const { data, error } = await supabase
+      .from("repair_orders")
+      .select("technician_name")
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .not("technician_name", "is", null)
+      .range(from, to);
+    if (error) {
+      return [...names].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    }
+    const rows = (data ?? []) as { technician_name: string | null }[];
+    if (rows.length === 0) break;
+    for (const row of rows) {
+      const t = row.technician_name?.trim();
+      if (t) names.add(t);
+    }
+    if (rows.length < TECH_NAME_PAGE) break;
+    from += TECH_NAME_PAGE;
+  }
+  return [...names].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
+export type OrderKpiCounts = {
+  kpiToday: number;
+  kpiInProgress: number;
+  kpiUnpaid: number;
+};
+
+/** 门店全量 KPI（不受列表筛选影响），用于列表页顶部卡片。 */
+export async function listOrderKpiCounts(): Promise<OrderKpiCounts> {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) {
+    return { kpiToday: 0, kpiInProgress: 0, kpiUnpaid: 0 };
+  }
+  const supabase = createSupabaseServerClient();
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startIso = start.toISOString();
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  const endIso = end.toISOString();
+
+  const base = () =>
+    supabase.from("repair_orders").select("id", { count: "exact", head: true }).eq("store_id", storeId).is("deleted_at", null);
+
+  const [todayRes, progRes, unpaidRes] = await Promise.all([
+    base().gte("created_at", startIso).lt("created_at", endIso),
+    base().in("status", [...ORDER_LIST_IN_PROGRESS_STATUSES]),
+    base().eq("is_paid", false),
+  ]);
+
+  const err = todayRes.error ?? progRes.error ?? unpaidRes.error;
+  if (err) {
+    return { kpiToday: 0, kpiInProgress: 0, kpiUnpaid: 0 };
+  }
+  return {
+    kpiToday: todayRes.count ?? 0,
+    kpiInProgress: progRes.count ?? 0,
+    kpiUnpaid: unpaidRes.count ?? 0,
+  };
+}
+
 const REPAIR_ORDER_LIST_SELECT = `
       id,
       public_no,
@@ -72,6 +155,7 @@ const REPAIR_ORDER_LIST_SELECT = `
       updated_at,
       approval_sent_at,
       completed_at,
+      internal_tag,
       technician_name,
       supplier_id,
       original_order_id,
@@ -104,6 +188,7 @@ type RepairOrderListRow = {
   is_paid: boolean;
   created_at: string;
   updated_at: string;
+  internal_tag: string | null;
   technician_name: string | null;
   supplier_id: string | null;
   original_order_id: string | null;
@@ -239,10 +324,16 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       q = q.in("id", idSubset);
     }
 
-    /** 风险筛选已限定 status，忽略 URL 中的 status，避免互斥条件导致 0 条 */
+    /** 风险筛选已限定 status，忽略 URL 中的 status / statusTab，避免互斥条件导致 0 条 */
     const riskActive = Boolean(filters.approvalOverdue || filters.pickupOverdue);
-    if (!riskActive && filters.status && filters.status !== "all") {
-      q = q.eq("status", filters.status);
+    if (!riskActive) {
+      const tab = filters.statusTab ?? "all";
+      const tabStatuses = statusesForOrderStatusTab(tab);
+      if (tabStatuses && tabStatuses.length > 0) {
+        q = q.in("status", tabStatuses);
+      } else if (filters.status && filters.status !== "all") {
+        q = q.eq("status", filters.status);
+      }
     }
 
     if (filters.orderType && filters.orderType !== "all") {
@@ -270,7 +361,13 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       q = q.lte("created_at", filters.dateTo);
     }
 
-    if (filters.approvalOverdue) {
+    if (filters.approvalOverdue && filters.pickupOverdue) {
+      const cutoffA = new Date(Date.now() - approvalOverdueHours * 3600 * 1000).toISOString();
+      const cutoffP = new Date(Date.now() - pickupOverdueDays * 24 * 3600 * 1000).toISOString();
+      q = q.or(
+        `and(status.eq.waiting_approval,approval_sent_at.lte.${cutoffA}),and(status.in.(repaired,notified,unfixed_pickup),completed_at.lte.${cutoffP})`,
+      );
+    } else if (filters.approvalOverdue) {
       const cutoff = new Date(Date.now() - approvalOverdueHours * 3600 * 1000).toISOString();
       q = q.eq("status", "waiting_approval").lte("approval_sent_at", cutoff);
     } else if (filters.pickupOverdue) {
@@ -339,6 +436,7 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
     const brand = device?.brand ?? "";
     const model = device?.model ?? "";
     const deviceLabel = [brand, model].filter(Boolean).join(" ");
+    const deviceImei = device?.serial_or_imei ?? null;
     const oid = row.original_order_id ?? null;
     const orig = oid ? originalMeta.get(oid) : undefined;
 
@@ -350,6 +448,7 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       customerName: customer?.name ?? null,
       customerPhone: customer?.phone_e164 ?? "",
       deviceLabel,
+      deviceImei,
       issue: row.issue_description,
       quotationAmount: row.quotation_amount ?? null,
       depositAmount: row.deposit_amount ?? null,
@@ -364,6 +463,7 @@ export async function listOrders(filters: OrderListFilters = {}): Promise<ListOr
       originalOrderId: oid ?? null,
       originalOrderCompletedAt: orig?.completed_at ?? null,
       originalOrderWarrantyText: orig?.warranty_text ?? null,
+      internalTag: row.internal_tag ?? null,
     };
   });
 

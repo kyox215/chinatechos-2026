@@ -1,12 +1,19 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "发送记录 — ChinaTechOS",
+  description: "按模板、时间、操作人追溯消息发送状态",
+};
+
 export default function MessageLogsPage() {
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">发送记录</h1>
-        <div className="mt-1 text-sm text-neutral-600">按模板、时间、操作人追溯消息发送状态。</div>
+        <h1 className="font-display text-xl font-semibold tracking-tight">发送记录</h1>
+        <div className="mt-1 text-sm text-muted-foreground">按模板、时间、操作人追溯消息发送状态。</div>
       </div>
 
-      <section className="ui-panel">
+      <section className="glass-card p-3 md:p-4">
         <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
           <input
             className="ui-input"
@@ -23,9 +30,9 @@ export default function MessageLogsPage() {
         </div>
       </section>
 
-      <section className="ui-panel">
-        <div className="text-sm font-semibold text-neutral-900">发送记录列表</div>
-        <div className="mt-3 rounded-xl border border-border bg-surface-2 px-3 py-8 text-sm text-neutral-500">
+      <section className="glass-card p-3 md:p-4">
+        <div className="text-sm font-semibold text-foreground">发送记录列表</div>
+        <div className="mt-3 rounded-xl border border-border bg-surface px-3 py-8 text-sm text-muted-foreground">
           暂无发送记录（后续接入 message_logs 查询）。
         </div>
       </section>

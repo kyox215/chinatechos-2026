@@ -26,8 +26,8 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="truncate font-semibold text-neutral-900">{it.public_no}</div>
-                <div className="mt-0.5 truncate text-sm text-neutral-600">
+                <div className="truncate font-semibold text-foreground">{it.public_no}</div>
+                <div className="mt-0.5 truncate text-sm text-muted-foreground">
                   {it.brand} {it.model}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -36,7 +36,7 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
                   >
                     {presentInventoryStatus(it.lifecycle_status)}
                   </span>
-                  <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] text-neutral-600 ring-1 ring-border">
+                  <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-border">
                     {presentInventoryChannel(it.product_channel)}
                   </span>
                 </div>
@@ -45,7 +45,7 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
                     {formatInventoryBadgesFromQa(it.qa_report as Record<string, unknown>).map((b) => (
                       <span
                         key={b}
-                        className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-900 ring-1 ring-amber-200"
+                        className="rounded-full bg-status-warn px-2 py-0.5 text-[11px] text-status-warn-foreground ring-1 ring-status-warn"
                       >
                         {b}
                       </span>
@@ -53,7 +53,7 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
                   </div>
                 ) : null}
               </div>
-              <div className="shrink-0 text-right text-xs text-neutral-500">{fmtMoney(it.list_price)}</div>
+              <div className="shrink-0 text-right text-xs text-muted-foreground">{fmtMoney(it.list_price)}</div>
             </div>
           </Link>
         ))}
@@ -62,7 +62,7 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
       <div className="hidden lg:block">
         <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
           <table className="min-w-full divide-y divide-border text-sm">
-            <thead className="bg-surface-2 text-left text-xs font-medium text-neutral-500">
+            <thead className="bg-surface-2 text-left text-xs font-medium text-muted-foreground">
               <tr>
                 <th className="whitespace-nowrap px-4 py-3">编号</th>
                 <th className="whitespace-nowrap px-4 py-3">渠道</th>
@@ -75,8 +75,8 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
             <tbody className="divide-y divide-border">
               {items.map((it) => (
                 <tr key={it.id} className="bg-surface hover:bg-muted/60">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-neutral-900">{it.public_no}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-neutral-700">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-foreground">{it.public_no}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-foreground">
                     {presentInventoryChannel(it.product_channel)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
@@ -86,13 +86,13 @@ export function InventoryList(props: { items: InventoryItemRow[] }) {
                       {presentInventoryStatus(it.lifecycle_status)}
                     </span>
                   </td>
-                  <td className="max-w-[280px] truncate px-4 py-3 text-neutral-700">
+                  <td className="max-w-[280px] truncate px-4 py-3 text-foreground">
                     {it.brand} {it.model}
                     {it.imei_or_serial ? (
-                      <span className="block truncate text-xs text-neutral-500">{it.imei_or_serial}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{it.imei_or_serial}</span>
                     ) : null}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 tabular-nums text-neutral-800">{fmtMoney(it.list_price)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-mono tabular-nums text-foreground">{fmtMoney(it.list_price)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <Link className="text-primary hover:underline" href={`/inventory/${it.id}`}>
                       详情

@@ -67,29 +67,29 @@ export function CustomerInfoCard(props: Props) {
     return (
       <section className="rounded-2xl border border-border bg-surface p-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">编辑客户信息</h2>
-          <button className="text-xs text-neutral-500 hover:text-neutral-700" onClick={() => setEditing(false)} type="button">取消</button>
+          <h2 className="font-display text-sm font-semibold text-foreground">编辑客户信息</h2>
+          <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setEditing(false)} type="button">取消</button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="mb-0.5 block text-xs text-neutral-500">姓名</label>
+            <label className="mb-0.5 block text-xs text-muted-foreground">姓名</label>
             <input className="ui-input w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder="客户姓名" />
           </div>
           <div>
-            <label className="mb-0.5 block text-xs text-neutral-500">备注</label>
+            <label className="mb-0.5 block text-xs text-muted-foreground">备注</label>
             <textarea className="ui-input min-h-[60px] w-full py-2" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="客户备注..." />
           </div>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-xs text-neutral-700">
-              <input checked={consentNotify} onChange={(e) => setConsentNotify(e.target.checked)} type="checkbox" className="h-4 w-4 rounded border-neutral-300" />
+            <label className="flex items-center gap-2 text-xs text-foreground">
+              <input checked={consentNotify} onChange={(e) => setConsentNotify(e.target.checked)} type="checkbox" className="h-4 w-4 rounded border-border" />
               通知许可
             </label>
-            <label className="flex items-center gap-2 text-xs text-neutral-700">
-              <input checked={consentMarketing} onChange={(e) => setConsentMarketing(e.target.checked)} type="checkbox" className="h-4 w-4 rounded border-neutral-300" />
+            <label className="flex items-center gap-2 text-xs text-foreground">
+              <input checked={consentMarketing} onChange={(e) => setConsentMarketing(e.target.checked)} type="checkbox" className="h-4 w-4 rounded border-border" />
               营销许可
             </label>
           </div>
-          {error && <div className="text-xs text-rose-600">{error}</div>}
+          {error && <div className="text-xs text-status-danger-foreground">{error}</div>}
           <div className="flex gap-2 border-t border-border pt-3">
             <button className="ui-btn ui-btn-primary h-9 px-4 text-xs disabled:opacity-60" disabled={pending} onClick={handleSave} type="button">
               {pending ? "保存中..." : "保存"}
@@ -104,10 +104,10 @@ export function CustomerInfoCard(props: Props) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-900">基本信息</h2>
+        <h2 className="font-display text-sm font-semibold text-foreground">基本信息</h2>
         <div className="flex gap-2">
-          <button className="text-xs text-indigo-600 hover:underline" onClick={() => setEditing(true)} type="button">编辑</button>
-          <button className="text-xs text-rose-500 hover:underline disabled:opacity-60" disabled={deleting} onClick={handleDelete} type="button">
+          <button className="text-xs text-primary hover:underline" onClick={() => setEditing(true)} type="button">编辑</button>
+          <button className="text-xs text-status-danger-foreground hover:underline disabled:opacity-60" disabled={deleting} onClick={handleDelete} type="button">
             {deleting ? "删除中..." : "删除"}
           </button>
         </div>
@@ -120,7 +120,7 @@ export function CustomerInfoCard(props: Props) {
         <Row label="营销许可" value={props.consentMarketing ? "是" : "否"} />
         {props.notes && <Row label="备注" value={props.notes} />}
       </div>
-      {error && <div className="mt-2 text-xs text-rose-600">{error}</div>}
+      {error && <div className="mt-2 text-xs text-status-danger-foreground">{error}</div>}
     </section>
   );
 }
@@ -128,8 +128,8 @@ export function CustomerInfoCard(props: Props) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between py-1.5 text-sm">
-      <span className="text-neutral-500">{label}</span>
-      <span className="text-neutral-900">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-foreground">{value}</span>
     </div>
   );
 }

@@ -39,15 +39,15 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <h1 className="mb-1 text-lg font-semibold text-neutral-900">后台登录</h1>
-        <p className="mb-4 text-xs text-neutral-600">
+      <div className="glass-card w-full max-w-sm p-6">
+        <h1 className="mb-1 font-display text-lg font-semibold text-foreground">后台登录</h1>
+        <p className="mb-4 text-xs text-muted-foreground">
           使用 Supabase Auth 账号登录后，可订阅工单实时更新（需在用户 metadata 中配置{" "}
           <code className="rounded bg-muted px-1">store_id</code> 以匹配 RLS）。
         </p>
         <form className="space-y-3" onSubmit={(e) => void handleSubmit(e)}>
           <div>
-            <label className="mb-1 block text-xs font-medium text-neutral-700" htmlFor="email">
+            <label className="mb-1 block text-xs font-medium text-foreground" htmlFor="email">
               邮箱
             </label>
             <input
@@ -61,7 +61,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-neutral-700" htmlFor="password">
+            <label className="mb-1 block text-xs font-medium text-foreground" htmlFor="password">
               密码
             </label>
             <input
@@ -74,7 +74,7 @@ export default function LoginPage() {
               value={password}
             />
           </div>
-          {error ? <p className="text-xs text-rose-600">{error}</p> : null}
+          {error ? <p className="text-xs text-status-danger-foreground">{error}</p> : null}
           <button className="ui-btn ui-btn-primary h-10 w-full text-sm" disabled={pending} type="submit">
             {pending ? "登录中..." : "登录"}
           </button>

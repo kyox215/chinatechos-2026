@@ -48,7 +48,7 @@ export function CreateReworkButton(props: Props) {
 
   return (
     <button
-      className="ui-btn h-9 rounded-xl border border-rose-200 bg-rose-50 px-4 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+      className="ui-btn h-9 rounded-xl border border-status-danger bg-status-danger px-4 text-xs font-semibold text-status-danger-foreground hover:bg-status-danger/80 disabled:opacity-60"
       disabled={pending}
       onClick={handleCreate}
       type="button"

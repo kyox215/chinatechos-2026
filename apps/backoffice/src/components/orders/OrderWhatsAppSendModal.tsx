@@ -117,14 +117,14 @@ export function OrderWhatsAppSendModal(props: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 md:items-center md:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-background/75 p-0 md:items-center md:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) props.onClose();
       }}
     >
       <div className="flex max-h-[80dvh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-lg md:max-w-lg md:rounded-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-neutral-900">{props.title ?? "发送 WhatsApp 给客户"}</h3>
+          <h3 className="text-sm font-semibold text-foreground font-display">{props.title ?? "发送 WhatsApp 给客户"}</h3>
           <button
             className="ui-btn ui-btn-secondary flex h-8 w-8 items-center justify-center text-xs"
             onClick={props.onClose}
@@ -135,13 +135,13 @@ export function OrderWhatsAppSendModal(props: Props) {
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-          <div className="text-xs text-neutral-500">以下消息将通过 WhatsApp 发送：</div>
-          <div className="whitespace-pre-line rounded-xl border border-border bg-surface-2 p-3 text-xs leading-relaxed text-neutral-700">
+          <div className="text-xs text-muted-foreground">以下消息将通过 WhatsApp 发送：</div>
+          <div className="whitespace-pre-line rounded-xl border border-border bg-surface-muted p-3 text-xs leading-relaxed text-foreground">
             {props.messageText}
           </div>
 
           <div className="space-y-2 rounded-xl border border-border p-3">
-            <div className="text-xs font-medium text-neutral-700">发送号码</div>
+            <div className="text-xs font-medium text-foreground">发送号码</div>
             <select
               className="ui-input h-9 w-full text-xs"
               onChange={(e) => setSelectedPhone(e.target.value)}
@@ -169,10 +169,10 @@ export function OrderWhatsAppSendModal(props: Props) {
                 添加并使用
               </button>
             </div>
-            <label className="flex items-center gap-2 text-xs text-neutral-600">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 checked={saveToOrder}
-                className="h-4 w-4 rounded border-neutral-300"
+                className="h-4 w-4 rounded border-border"
                 onChange={(e) => setSaveToOrder(e.target.checked)}
                 type="checkbox"
               />
@@ -182,7 +182,7 @@ export function OrderWhatsAppSendModal(props: Props) {
         </div>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <div>{error && <span className="text-xs text-rose-600">{error}</span>}</div>
+          <div>{error && <span className="text-xs text-status-danger-foreground">{error}</span>}</div>
           <div className="flex gap-2">
             <button className="ui-btn ui-btn-secondary h-9 px-3 text-xs" onClick={props.onClose} type="button">
               取消

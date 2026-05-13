@@ -13,7 +13,7 @@ export function PrintOrderButton(props: {
   label?: string;
   className?: string;
 }) {
-  const label = props.label ?? "Stampa";
+  const label = props.label ?? "打印";
 
   function handlePrint() {
     triggerOrderSheetPrint({
@@ -26,6 +26,7 @@ export function PrintOrderButton(props: {
     <>
       <OrderPrintSheet payload={props.payload} />
       <button
+        aria-label={`${label}（打开浏览器打印对话框）`}
         className={props.className ?? "ui-btn ui-btn-secondary h-9 px-3 text-xs"}
         onClick={handlePrint}
         type="button"

@@ -63,16 +63,16 @@ export default function NewInventoryPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="mx-auto max-w-xl space-y-6 px-3 py-6 sm:px-6">
       <div>
-        <Link className="text-sm text-neutral-500 hover:text-neutral-800" href="/inventory">
+        <Link className="text-sm text-muted-foreground hover:text-foreground" href="/inventory">
           ← 返回列表
         </Link>
-        <h1 className="mt-2 text-xl font-semibold tracking-tight">新建入库</h1>
+        <h1 className="font-display mt-2 text-xl font-semibold tracking-tight">新建入库</h1>
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+        <div className="rounded-xl border border-status-danger bg-status-danger px-3 py-2 text-sm text-status-danger-foreground">
           <span>{error}</span>
           {conflictId ? (
             <div className="mt-2">
@@ -84,9 +84,9 @@ export default function NewInventoryPage() {
         </div>
       ) : null}
 
-      <form className="space-y-4 rounded-2xl border border-border bg-surface p-3 md:p-4" onSubmit={onSubmit}>
+      <form className="glass-card space-y-4 p-3 md:p-4" onSubmit={onSubmit}>
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">渠道</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">渠道</label>
           <select
             className="ui-input h-10 w-full md:h-9"
             onChange={(e) => setProductChannel(e.target.value)}
@@ -100,7 +100,7 @@ export default function NewInventoryPage() {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">品牌</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">品牌</label>
             <input
               className="ui-input h-10 w-full md:h-9"
               onChange={(e) => setBrand(e.target.value)}
@@ -109,7 +109,7 @@ export default function NewInventoryPage() {
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">型号</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">型号</label>
             <input
               className="ui-input h-10 w-full md:h-9"
               onChange={(e) => setModel(e.target.value)}
@@ -120,7 +120,7 @@ export default function NewInventoryPage() {
         </div>
 
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">IMEI / 序列号（可选）</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">IMEI / 序列号（可选）</label>
           <input
             className="ui-input h-10 w-full md:h-9"
             onChange={(e) => setImeiOrSerial(e.target.value)}
@@ -131,7 +131,7 @@ export default function NewInventoryPage() {
         {productChannel === "trade_in" ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-0.5 block text-[11px] text-neutral-400">卖方电话</label>
+              <label className="mb-0.5 block text-[11px] text-muted-foreground">卖方电话</label>
               <input
                 className="ui-input h-10 w-full md:h-9"
                 onChange={(e) => setSellerPhone(e.target.value)}
@@ -140,7 +140,7 @@ export default function NewInventoryPage() {
               />
             </div>
             <div>
-              <label className="mb-0.5 block text-[11px] text-neutral-400">卖方姓名（可选）</label>
+              <label className="mb-0.5 block text-[11px] text-muted-foreground">卖方姓名（可选）</label>
               <input
                 className="ui-input h-10 w-full md:h-9"
                 onChange={(e) => setSellerName(e.target.value)}
@@ -152,7 +152,7 @@ export default function NewInventoryPage() {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">成本 EUR（可选）</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">成本 EUR（可选）</label>
             <input
               className="ui-input h-10 w-full md:h-9"
               inputMode="decimal"
@@ -161,7 +161,7 @@ export default function NewInventoryPage() {
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] text-neutral-400">标价 EUR（可选）</label>
+            <label className="mb-0.5 block text-[11px] text-muted-foreground">标价 EUR（可选）</label>
             <input
               className="ui-input h-10 w-full md:h-9"
               inputMode="decimal"
@@ -172,7 +172,7 @@ export default function NewInventoryPage() {
         </div>
 
         <div>
-          <label className="mb-0.5 block text-[11px] text-neutral-400">备注</label>
+          <label className="mb-0.5 block text-[11px] text-muted-foreground">备注</label>
           <textarea
             className="ui-input min-h-[88px] w-full md:min-h-[72px]"
             onChange={(e) => setNotes(e.target.value)}
@@ -185,8 +185,9 @@ export default function NewInventoryPage() {
             取消
           </Link>
           <button
-            className="ui-btn ui-btn-primary order-1 h-10 px-4 text-xs sm:order-2 md:h-9"
+            className="ui-btn order-1 h-10 px-4 text-xs text-primary-foreground sm:order-2 md:h-9"
             disabled={busy}
+            style={{ background: "var(--gradient-brand)" }}
             type="submit"
           >
             {busy ? "提交中…" : "提交入库"}

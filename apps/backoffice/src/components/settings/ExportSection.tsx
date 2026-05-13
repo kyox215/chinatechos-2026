@@ -10,8 +10,8 @@ export function ExportSection() {
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-4">
-      <h2 className="mb-3 text-sm font-semibold text-neutral-900">数据导出</h2>
-      <p className="mb-3 text-xs text-neutral-500">
+      <h2 className="mb-3 font-display text-sm font-semibold text-foreground">数据导出</h2>
+      <p className="mb-3 text-xs text-muted-foreground">
         将工单数据导出为 Excel (.xlsx) 或 CSV 文件。可按状态筛选导出范围。
       </p>
 

@@ -24,8 +24,9 @@ export function CustomerActions({ customerId, customerPhone, customerName }: Pro
     <>
       <div className="flex flex-wrap gap-2">
         <button
-          className="h-9 rounded-xl bg-primary px-4 text-xs font-semibold text-white hover:opacity-90"
+          className="h-9 rounded-xl px-4 text-xs font-semibold text-primary-foreground hover:opacity-90"
           onClick={() => setShowCreateOrder(true)}
+          style={{ background: "var(--gradient-brand)" }}
           type="button"
         >
           新建工单
@@ -34,13 +35,13 @@ export function CustomerActions({ customerId, customerPhone, customerName }: Pro
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="h-9 rounded-xl bg-emerald-500 px-4 text-xs font-semibold text-white leading-9 hover:bg-emerald-600"
+          className="h-9 rounded-xl bg-status-success-foreground px-4 text-xs font-semibold text-card leading-9 hover:opacity-90"
         >
           WhatsApp
         </a>
         <Link
           href={`/orders?q=${encodeURIComponent(customerPhone)}`}
-          className="h-9 rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-neutral-700 leading-9 hover:bg-muted"
+          className="h-9 rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-foreground leading-9 hover:bg-muted"
         >
           查看全部工单
         </Link>

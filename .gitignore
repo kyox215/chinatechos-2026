@@ -8,6 +8,7 @@
 UI设计/
 
 apps/backoffice/.next/
+node_modules/
 apps/backoffice/node_modules/
 apps/backoffice/out/
 apps/backoffice/.vercel/

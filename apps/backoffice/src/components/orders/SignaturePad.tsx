@@ -110,7 +110,7 @@ export function SignaturePad({ onSave, onClear, initialValue, height = 160 }: Pr
     <div className="space-y-3">
       <canvas
         ref={canvasRef}
-        className="w-full cursor-crosshair touch-none rounded-xl border border-border bg-white"
+        className="w-full cursor-crosshair touch-none rounded-xl border border-border bg-surface"
         style={{ height }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

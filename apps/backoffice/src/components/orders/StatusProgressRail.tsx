@@ -38,13 +38,13 @@ export function StatusProgressRail(props: {
         const dotClass = [
           "mx-auto h-2.5 w-2.5 shrink-0 rounded-full border-2 transition-shadow",
           dotFilled ? `${pres.dotColor} border-transparent` : "border-border bg-surface",
-          isCurrent ? "ring-2 ring-primary ring-offset-2 ring-offset-surface" : "",
+          isCurrent ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "",
         ].join(" ");
 
         const labelClass = [
           "line-clamp-2 w-full text-xs leading-tight sm:text-[11px]",
-          isCurrent ? "font-semibold text-neutral-900" : isPast ? "text-neutral-600" : "text-neutral-500",
-          danger && !isCurrent ? "text-rose-700" : "",
+          isCurrent ? "font-semibold text-foreground" : isPast ? "text-muted-foreground" : "text-muted-foreground",
+          danger && !isCurrent ? "text-status-danger-foreground" : "",
         ].join(" ");
 
         if (isCurrent) {
@@ -52,7 +52,7 @@ export function StatusProgressRail(props: {
             <div
               key={s}
               aria-current="step"
-              className={`${cellShell} border border-primary/40 bg-surface-2 ring-2 ring-primary ring-offset-2 ring-offset-surface`}
+              className={`${cellShell} border border-primary/40 bg-surface-muted ring-2 ring-primary ring-offset-2 ring-offset-background`}
               role="listitem"
             >
               <span aria-hidden className={dotClass} />
@@ -63,8 +63,8 @@ export function StatusProgressRail(props: {
 
         const canPress = Boolean(action) && !pending;
         const btnSurface = danger
-          ? "border-rose-200/80 bg-surface-2 text-rose-700 hover:bg-rose-50 active:bg-rose-100"
-          : "border-border bg-surface-2 hover:bg-muted active:bg-muted";
+          ? "border-status-danger/50 bg-status-danger text-status-danger-foreground hover:opacity-90 active:opacity-80"
+          : "border-border bg-surface-muted hover:bg-muted active:bg-muted";
 
         return (
           <button

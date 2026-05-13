@@ -57,7 +57,7 @@
 ### 列表 / 搜索
 
 - [apps/backoffice/src/components/orders/OrderGroupedList.tsx](../apps/backoffice/src/components/orders/OrderGroupedList.tsx)
-- [apps/backoffice/src/components/orders/OrdersSearchControls.tsx](../apps/backoffice/src/components/orders/OrdersSearchControls.tsx)
+- [apps/backoffice/src/components/orders/OrdersListShell.tsx](../apps/backoffice/src/components/orders/OrdersListShell.tsx) — 列表壳（搜索、分段 Tab、表格、新建订单）
 - [apps/backoffice/src/components/orders/OrderListMoneyCell.tsx](../apps/backoffice/src/components/orders/OrderListMoneyCell.tsx)
 - [apps/backoffice/src/components/OrderStatusBadge.tsx](../apps/backoffice/src/components/OrderStatusBadge.tsx)
 

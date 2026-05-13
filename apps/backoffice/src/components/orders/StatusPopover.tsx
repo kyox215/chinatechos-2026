@@ -70,11 +70,13 @@ export function StatusPopover({
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const mH = menuRef.current?.offsetHeight ?? 240;
+    const menuWidth = Math.min(MENU_LAYOUT_W, window.innerWidth - 2 * EDGE);
     const top =
       rect.bottom + GAP + mH > window.innerHeight - EDGE
         ? Math.max(EDGE, rect.top - mH - GAP)
         : rect.bottom + GAP;
-    const left = Math.min(Math.max(EDGE, rect.left), window.innerWidth - MENU_LAYOUT_W - EDGE);
+    const maxLeft = Math.max(EDGE, window.innerWidth - menuWidth - EDGE);
+    const left = Math.min(Math.max(EDGE, rect.left), maxLeft);
     setPos({ top, left });
   }, []);
 
@@ -153,7 +155,12 @@ export function StatusPopover({
 
   const desktopMenu = open && !isMobile && (
     <>
-      <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+      <button
+        aria-label="关闭状态菜单"
+        className="fixed inset-0 z-40 cursor-default bg-transparent"
+        onClick={() => setOpen(false)}
+        type="button"
+      />
       <div
         ref={menuRef}
         className="fixed z-50 min-w-[280px] max-w-[min(calc(100vw-1rem),680px)] rounded-xl border border-border bg-surface p-3 shadow-lg sm:p-4"
@@ -166,15 +173,21 @@ export function StatusPopover({
 
   const mobileSheet = open && isMobile && (
     <>
-      <div className="fixed inset-0 z-40 bg-black/35" onClick={() => setOpen(false)} />
+      <button
+        aria-label="关闭状态面板"
+        className="fixed inset-0 z-40 cursor-default bg-background/75"
+        onClick={() => setOpen(false)}
+        type="button"
+      />
       <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-border bg-surface shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-900">切换状态</span>
+            <span className="text-sm font-semibold text-foreground font-display">切换状态</span>
             <OrderStatusBadge status={status} />
           </div>
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-muted"
+            aria-label="关闭"
+            className="flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted sm:h-8 sm:w-8 sm:min-h-8 sm:min-w-8"
             onClick={() => setOpen(false)}
             type="button"
           >
@@ -202,27 +215,35 @@ export function StatusPopover({
       <div className="flex min-w-0 flex-col items-start gap-0.5">
         <button
           ref={btnRef}
-          className="cursor-pointer rounded-md px-1 py-0.5 transition-colors hover:bg-neutral-100"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-label={pending ? "状态更新中" : "选择或切换工单状态"}
+          className="cursor-pointer rounded-md px-1 py-1 transition-colors hover:bg-accent sm:py-0.5"
           disabled={pending}
           onClick={() => (open ? setOpen(false) : openPopover())}
           type="button"
         >
           {pending ? (
-            <span className="text-xs text-neutral-400">切换中...</span>
+            <span className="text-xs text-muted-foreground">切换中...</span>
           ) : (
             <OrderStatusBadge status={status} />
           )}
         </button>
-        {error ? <span className="max-w-[12rem] text-[10px] leading-tight text-rose-600">{error}</span> : null}
+        {error ? <span className="max-w-[12rem] text-[10px] leading-tight text-status-danger-foreground">{error}</span> : null}
       </div>
 
       {typeof document !== "undefined" && createPortal(portalContent, document.body)}
 
       {supplierPicker && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setSupplierPicker(false)} />
+          <button
+            aria-label="关闭供应商选择"
+            className="fixed inset-0 z-40 cursor-default bg-background/75"
+            onClick={() => setSupplierPicker(false)}
+            type="button"
+          />
           <div className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-4 shadow-xl">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-900">选择供应商</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground font-display">选择供应商</h3>
             <SupplierSelect
               className="ui-input mb-3 w-full text-sm"
               emptyLabel="不指定供应商"

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
@@ -9,11 +10,23 @@ import { OrderInfoCard } from "@/components/orders/OrderInfoCard";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { ReworkInfoBanner } from "@/components/orders/ReworkInfoBanner";
 import { StatusPopover } from "@/components/orders/StatusPopover";
+import { OrderDetailHero } from "@/components/orders/OrderDetailHero";
 import { OrderDetailPrint } from "@/components/orders/OrderDetailPrint";
 import { SignatureSection } from "@/components/orders/SignatureSection";
 import { WhatsAppButton } from "@/components/orders/WhatsAppButton";
 import { getOrderDetail, getOrderEvents, listLinkedReworkOrders } from "@/lib/data/order-detail";
 import { getStoreSettings } from "@/lib/data/store-settings";
+
+export async function generateMetadata(props: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await props.params;
+  const order = await getOrderDetail(id);
+  return {
+    title: order ? `${order.publicNo} — ChinaTechOS` : "工单详情 — ChinaTechOS",
+    description: order ? `工单 ${order.publicNo} 的详细信息` : "查看工单详细信息",
+  };
+}
 
 export default async function OrderDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -45,21 +58,23 @@ export default async function OrderDetailPage(props: {
   const gridAnim = hasBanner ? "order-detail-enter-d2" : "order-detail-enter-d1";
   const timelineAnim = hasBanner ? "order-detail-enter-d3" : "order-detail-enter-d2";
 
-  return (
-    <div className="order-detail-page space-y-4">
-      {/* Header */}
-      <div className="order-detail-section order-detail-enter-d0 space-y-3">
-        <Link
-          href="/orders"
-          className="inline-flex rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-medium text-neutral-700 shadow-sm transition-colors hover:bg-muted"
-        >
-          ← 返回列表
-        </Link>
+  const deviceLabel = [order.device?.brand, order.device?.model].filter(Boolean).join(" ");
+  const subtitle = `${deviceLabel || "—"} · ${order.customer?.name ?? "未命名客户"} · 技师 ${order.technicianName ?? "—"}`;
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 rounded-xl border border-primary/15 border-l-[3px] border-l-primary bg-primary-2/35 px-4 py-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-lg font-semibold tracking-tight text-neutral-900">{order.publicNo}</h1>
+  return (
+    <div className="order-detail-page mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
+      <div className="order-detail-section order-detail-enter-d0">
+        <OrderDetailHero
+          backLink={
+            <Link
+              className="inline-flex min-h-10 items-center rounded-lg border border-border bg-surface px-3 py-2 text-foreground transition-colors hover:bg-accent sm:min-h-0 sm:px-2 sm:py-1"
+              href="/orders"
+            >
+              ← 返回列表
+            </Link>
+          }
+          badgeRow={
+            <>
               <StatusPopover orderId={order.id} status={order.status} />
               <OrderDetailPrint
                 balanceAmount={order.balanceAmount}
@@ -84,14 +99,12 @@ export default async function OrderDetailPage(props: {
                 originalCompletedAt={order.originalOrder?.completedAt}
                 originalWarrantyText={order.originalOrder?.warrantyText}
               />
-            </div>
-            <div className="mt-2 text-sm">
-              <span className="font-medium text-neutral-800">{order.customer?.name ?? "未命名客户"}</span>
-              <span className="text-neutral-400"> · </span>
-              <span className="text-neutral-600">{order.customer?.phoneE164 ?? "-"}</span>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          publicNo={order.publicNo}
+          quotationAmount={order.quotationAmount}
+          subtitle={subtitle}
+        />
       </div>
 
       {/* Rework info banner */}
@@ -108,12 +121,12 @@ export default async function OrderDetailPage(props: {
       {hasBanner ? (
         <div className={`order-detail-section order-detail-enter-d1 space-y-4`}>
           {showCancelBanner ? (
-            <div className="rounded-xl border border-rose-200/90 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-sm">
+            <div className="rounded-xl border border-border bg-status-danger/10 px-4 py-3 text-sm text-status-danger-foreground shadow-sm">
               取消原因：{order.cancelReason}
             </div>
           ) : null}
           {showPauseBanner ? (
-            <div className="rounded-xl border border-amber-200/90 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+            <div className="rounded-xl border border-border bg-status-warn/10 px-4 py-3 text-sm text-status-warn-foreground shadow-sm">
               暂停原因：{order.pauseReason}
             </div>
           ) : null}
@@ -121,7 +134,7 @@ export default async function OrderDetailPage(props: {
       ) : null}
 
       {/* Body */}
-      <div className={`grid grid-cols-1 gap-4 xl:grid-cols-2 ${gridAnim} order-detail-section`}>
+      <div className={`grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px] lg:gap-6 ${gridAnim} order-detail-section`}>
         {/* Left column - Order Info */}
         <OrderInfoCard
           orderId={order.id}
@@ -157,9 +170,9 @@ export default async function OrderDetailPage(props: {
 
           {/* Actions */}
           {!isTerminal && (
-            <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
-              <h2 className="mb-3 text-sm font-semibold text-neutral-900">操作</h2>
-              <div className="flex flex-wrap gap-2">
+            <section className="glass-card rounded-2xl border border-border bg-surface p-3 md:p-4">
+              <h2 className="font-display mb-3 text-sm font-semibold text-foreground">操作</h2>
+              <div className="flex flex-wrap gap-2 [&_button]:min-h-10 sm:[&_button]:min-h-9">
                 {(order.status === "repaired" || order.status === "parts_arrived") && order.customer?.phoneE164 && (
                   <NotifyCustomerButton
                     orderId={order.id}
@@ -201,15 +214,15 @@ export default async function OrderDetailPage(props: {
 
           {/* Signature */}
           {showSignature && (
-            <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
-              <h2 className="mb-3 text-sm font-semibold text-neutral-900">Firma cliente</h2>
+            <section className="glass-card rounded-2xl border border-border bg-surface p-3 md:p-4">
+              <h2 className="font-display mb-3 text-sm font-semibold text-foreground">客户签名</h2>
               <SignatureSection orderId={order.id} customerSignature={order.customerSignature} />
             </section>
           )}
 
           {/* Dates */}
-          <section className="rounded-2xl border border-border bg-surface p-3 md:p-4">
-            <h2 className="mb-3 text-sm font-semibold text-neutral-900">时间节点</h2>
+          <section className="glass-card rounded-2xl border border-border bg-surface p-3 md:p-4">
+            <h2 className="font-display mb-3 text-sm font-semibold text-foreground">时间节点</h2>
             <div className="space-y-1">
               <DateRow label="创建" value={order.createdAt} />
               {order.approvalSentAt && <DateRow label="报价发送" value={order.approvalSentAt} />}
@@ -223,12 +236,12 @@ export default async function OrderDetailPage(props: {
       </div>
 
       {linkedReworkOrders.length > 0 && (
-        <section className="order-detail-section rounded-2xl border border-border bg-surface p-3 md:p-4">
-          <h2 className="mb-3 text-sm font-semibold text-neutral-900">关联返修单</h2>
+        <section className="glass-card order-detail-section rounded-2xl border border-border bg-surface p-3 md:p-4">
+          <h2 className="font-display mb-3 text-sm font-semibold text-foreground">关联返修单</h2>
           <ul className="space-y-2 text-sm">
             {linkedReworkOrders.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center gap-2">
-                <Link href={`/orders/${row.id}`} className="font-medium text-indigo-600 hover:underline">
+                <Link href={`/orders/${row.id}`} className="font-medium text-primary hover:underline">
                   {row.publicNo}
                 </Link>
                 <OrderStatusBadge status={row.status} />
@@ -239,8 +252,8 @@ export default async function OrderDetailPage(props: {
       )}
 
       {/* Timeline */}
-      <section className={`rounded-2xl border border-border bg-surface p-3 md:p-4 ${timelineAnim} order-detail-section`}>
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">操作时间线</h2>
+      <section className={`glass-card rounded-2xl border border-border bg-surface p-3 md:p-4 ${timelineAnim} order-detail-section`}>
+        <h2 className="font-display mb-3 text-sm font-semibold text-foreground">操作时间线</h2>
         <OrderTimeline events={events} />
       </section>
     </div>
@@ -250,8 +263,8 @@ export default async function OrderDetailPage(props: {
 function DateRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-1 text-sm">
-      <span className="text-neutral-500">{label}</span>
-      <span className="tabular-nums text-neutral-900">{formatDateTime(value)}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-mono tabular-nums text-foreground">{formatDateTime(value)}</span>
     </div>
   );
 }

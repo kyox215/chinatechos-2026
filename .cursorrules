@@ -1,0 +1,74 @@
+# ChinaTechOS · 全局 UI 与工程声明
+
+本文件为仓库根「单一入口」声明：告诉 Agent **权威规范在哪里**、**外部材料如何使用**。正文规则以版本化文件为准，本文件保持简短，不复制长文。
+
+适用范围：**`apps/backoffice`**（Next.js App Router 后台）。
+
+---
+
+## 1. 单一事实来源（优先级从高到低）
+
+1. **Cursor 规则（自动注入 / globs）** — `.cursor/rules/`
+   - `00-overview.mdc` — 项目概览与红线（alwaysApply）
+   - `10-design-tokens.mdc` — 设计令牌（alwaysApply）
+   - `20-layout-shell.mdc` — 应用壳与内容区结构（alwaysApply）
+   - `30-components.mdc` — 组件约定（按 glob 附加）
+   - `40-page-recipes.mdc` — 页面骨架配方（按 glob 附加）
+   - `50-motion-a11y.mdc` — 动效与无障碍（alwaysApply）
+   - `60-stack-conventions.mdc` — **Next.js** 栈与数据约定（alwaysApply）
+   - `git-workflow.mdc` — Git 工作流（alwaysApply）
+
+2. **设计 Token 唯一来源** — `apps/backoffice/src/app/globals.css`  
+   禁止在业务组件中写死 hex / `text-white` / `bg-black` 等；一律用语义类名与 CSS 变量。
+
+3. **工单模块产品 + UI 长文** — `docs/orders/`
+   - `ORDERS_SPEC.md` — 业务、状态、列表/详情/新建规范
+   - `ORDERS_FULL_EXPORT.md` — 导出级清单与文件树说明
+   - `DESIGN_SYSTEM.md` — 设计系统摘要（与 globals 交叉引用）
+   - `UI_CHECKLIST.md` — UI / PR 自检（将 TanStack 等条目替换为 Next 等价表述）
+   - `README.md` — ChinaTechOS 路径与数据流映射（复制包 → 本仓库）
+
+4. **通用设计参考（摘录）** — `docs/design/`  
+   来自 `repairdesk-replication-kit.zip` 的 `COLOR_DESIGN_SPEC.md`、`UI_DESIGN_MASTER.md`；与 `globals.css` / `10-design-tokens.mdc` 冲突时以 **仓库 token 与规则** 为准。详见 `docs/design/README.md`。
+
+5. **可选文件索引** — `docs/order-ticket-core-files.md`（工单相关源码路径索引）
+
+若 `.cursorrules` 与上述文件（含 `docs/design/`）冲突，**以上述文件为准**。
+
+---
+
+## 2. 红线摘要（违反即视为 Bug）
+
+与 `00-overview.mdc` 对齐的速记（细节以 `.mdc` 为准）：
+
+- 不写死颜色；语义 token + `globals.css`。
+- 侧栏与移动 Sheet **实色**；侧栏上禁止 `backdrop-blur*` 与半透明背景作主表面。
+- 品牌渐变只用 `var(--gradient-brand)`（紫 → 青），不另造紫青组合。
+- 字体三套：`font-sans` / `font-display` / `font-mono`；标题 `font-display`，数字 `tabular-nums` 或 `font-mono`。
+- 默认深色主题；不新增第三套主题。
+- 不直接修改 `apps/backoffice/src/components/ui/*` 中 shadcn 原子；变体用 `cva` 或调用处组合。
+- 路由只用 `next/navigation`，不引入 `react-router-dom`。
+- 不编辑自动生成文件。
+
+---
+
+## 3. 外部材料与 Downloads 约定
+
+以下路径可能在本地 `~/Downloads/`，**不纳入本仓库**；仅作对照或人工合并来源。
+
+| 来源 | 在本项目中的用法 |
+|------|------------------|
+| `awesome-design-md-main.zip` | 第三方产品 DESIGN 文集，**仅作灵感**。不得覆盖 ChinaTechOS 的 token、壳层与品牌规则；**不要**解压进仓库。 |
+| `orders-replication-kit.zip` | TanStack Start 示例栈；工单 UI 映射以 `docs/orders/README.md` 为准，实现以本仓库 **Next** 代码为准。 |
+| `repairdesk-replication-kit.zip` | **全应用**复制包（TanStack Start + Vite + 整包 `src/components/ui/*`、多路由、mock、`styles.css`）。**禁止**解压进仓库或覆盖 `apps/backoffice`；**禁止**用其 `ui/*` 覆盖本仓库 shadcn 原子。其中 **`docs/COLOR_DESIGN_SPEC.md`、`docs/UI_DESIGN_MASTER.md`** 已摘录至 `docs/design/` 作参考；其余文档与 `.cursor/rules` 仅 **diff 对照合并**。实现栈以 `.cursor/rules/60-stack-conventions.mdc`（Next）为准。 |
+| `ORDERS_SPEC.md` / `ORDERS_FULL_EXPORT.md` / `DESIGN_SYSTEM.md` / `UI_CHECKLIST.md`（Downloads） | 与 `docs/orders/` 同源类文档；若需更新，**合并进 `docs/orders/`** 并保留文首 ChinaTechOS 说明，**不**把全文贴入 `.cursorrules`。 |
+| `00-overview.mdc` … `60-stack-conventions.mdc`（Downloads） | 可能与 `.cursor/rules/` 同源；**禁止**整文件覆盖仓库规则（易带回 `src/routes` / TanStack 旧约定）。若合并，仅做 **diff 后** 将适用于 Next 的段落补入对应 `.mdc`。 |
+| `plan.md`（Downloads） | 描述「design-md 体系如何维护」的元文档；**实现栈以本仓库 `.cursor/rules/60-stack-conventions.mdc` 为准**（Next.js App Router，非 TanStack Start）。 |
+
+---
+
+## 4. 协作提示
+
+- 改 UI 前先读：`10-design-tokens.mdc`、`20-layout-shell.mdc`、`40-page-recipes.mdc`；色彩/组件层级补充可参考 `docs/design/`。
+- 工单列表/详情/新建行为以 `docs/orders/ORDERS_SPEC.md` 为准，与 `listOrders` 等实现冲突时以代码为准并在文档脚注说明。
+- 需要把 Downloads 规范同步进仓库时：优先更新 **`docs/orders/`** 与 **`.cursor/rules/*.mdc`**，保持 `.cursorrules` 轻量。

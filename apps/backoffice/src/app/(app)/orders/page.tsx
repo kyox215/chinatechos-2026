@@ -1,6 +1,12 @@
-import { OrdersSearchControls } from "@/components/orders/OrdersSearchControls";
-import { OrderGroupedList } from "@/components/orders/OrderGroupedList";
-import { listOrders } from "@/lib/data/orders";
+import type { Metadata } from "next";
+import { OrdersListShell } from "@/components/orders/OrdersListShell";
+import { listDistinctTechnicianNames, listOrders, listOrderKpiCounts } from "@/lib/data/orders";
+import { parseOrderStatusTab } from "@/lib/domain/order-list-tabs";
+
+export const metadata: Metadata = {
+  title: "工单 — ChinaTechOS",
+  description: "管理和筛选所有工单",
+};
 
 type QueryValue = string | string[] | undefined;
 
@@ -9,6 +15,7 @@ export default async function OrdersPage(props: {
 }) {
   const searchParams = (await props.searchParams) ?? {};
   const q = normalizeQuery(searchParams.q);
+  const tab = parseOrderStatusTab(normalizeQuery(searchParams.tab));
   const status = normalizeQuery(searchParams.status) ?? "all";
   const technician = normalizeQuery(searchParams.technician) ?? "all";
   const paid = normalizePaid(normalizeQuery(searchParams.paid));
@@ -17,48 +24,37 @@ export default async function OrdersPage(props: {
   const pickupOverdue = normalizeBool(searchParams.pickupOverdue);
   const dateFrom = normalizeQuery(searchParams.dateFrom);
   const dateTo = normalizeQuery(searchParams.dateTo);
+  const orderType = normalizeOrderType(normalizeQuery(searchParams.orderType));
 
-  const { items, error: listError } = await listOrders({
-    q,
-    status,
-    orderType: "all",
-    technician,
-    paid,
-    supplier,
-    approvalOverdue,
-    pickupOverdue,
-    dateFrom,
-    dateTo,
-  });
+  const [{ items, error: listError }, technicianOptions, kpiCounts] = await Promise.all([
+    listOrders({
+      q,
+      statusTab: tab,
+      status,
+      orderType,
+      technician,
+      paid,
+      supplier,
+      approvalOverdue,
+      pickupOverdue,
+      dateFrom,
+      dateTo,
+    }),
+    listDistinctTechnicianNames(),
+    listOrderKpiCounts(),
+  ]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">工单</h1>
-        <span className="text-sm text-neutral-500">共 {items.length} 条</span>
-      </div>
-
-      {listError ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
-          列表加载失败：{listError}
-        </div>
-      ) : null}
-
-      <div className="space-y-3">
-        <OrdersSearchControls
-          approvalOverdue={approvalOverdue}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          paid={paid}
-          pickupOverdue={pickupOverdue}
-          q={q}
-          status={status}
-          supplier={supplier}
-          technician={technician}
-        />
-
-        <OrderGroupedList items={items} />
-      </div>
+    <div className="mx-auto max-w-7xl space-y-6 px-3 py-6 sm:px-6">
+      <OrdersListShell
+        items={items}
+        kpiInProgress={kpiCounts.kpiInProgress}
+        kpiToday={kpiCounts.kpiToday}
+        kpiUnpaid={kpiCounts.kpiUnpaid}
+        listError={listError}
+        tab={tab}
+        technicianOptions={technicianOptions}
+      />
     </div>
   );
 }
@@ -76,4 +72,9 @@ function normalizePaid(value?: string): "all" | "yes" | "no" {
 function normalizeBool(value: QueryValue) {
   const normalized = normalizeQuery(value);
   return normalized === "1" || normalized === "true";
+}
+
+function normalizeOrderType(value?: string): string {
+  if (value === "quick_repair" || value === "dropoff_repair") return value;
+  return "all";
 }

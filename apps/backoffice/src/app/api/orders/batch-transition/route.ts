@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeOrderEvent } from "@/lib/data/order-events";
+import { getStoreSettings } from "@/lib/data/store-settings";
+import { defaultResolvedOrderUi } from "@/lib/domain/order-ui-config";
 import { validateOrderTransition } from "@/lib/domain/order-status";
 import { assertSupplierBelongsToStore } from "@/lib/api/supplier-validation";
 import { resolveStoreId } from "@/lib/env/resolve-store";
@@ -27,6 +29,9 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createSupabaseServerClient();
+  const settings = await getStoreSettings();
+  const orderUi = settings?.resolvedOrderUi ?? defaultResolvedOrderUi();
+  const transitionOpts = { statusLabels: orderUi.statusLabels, statusOrder: orderUi.statusOrder };
   const operatorName = body.operatorName ?? "frontdesk";
   const cancelReasonDefault = String(body.cancelReason ?? "").trim();
   const results: { id: string; ok: boolean; error?: string }[] = [];
@@ -52,7 +57,7 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    const validation = validateOrderTransition(current.data.status, body.toStatus);
+    const validation = validateOrderTransition(current.data.status, body.toStatus, transitionOpts);
 
     if (!validation.ok) {
       results.push({ id: orderId, ok: false, error: validation.reason });

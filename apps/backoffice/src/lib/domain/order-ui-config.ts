@@ -51,12 +51,12 @@ const PALETTE_STYLES: Record<
   PaletteKey,
   { titleColor: string; bgColor: string }
 > = {
-  rose: { titleColor: "text-rose-700", bgColor: "bg-rose-50" },
-  blue: { titleColor: "text-blue-700", bgColor: "bg-blue-50" },
-  amber: { titleColor: "text-amber-800", bgColor: "bg-amber-50" },
-  teal: { titleColor: "text-teal-800", bgColor: "bg-teal-50" },
-  emerald: { titleColor: "text-emerald-800", bgColor: "bg-emerald-50" },
-  neutral: { titleColor: "text-neutral-600", bgColor: "bg-neutral-50" },
+  rose: { titleColor: "text-status-danger-foreground", bgColor: "bg-status-danger" },
+  blue: { titleColor: "text-status-info-foreground", bgColor: "bg-status-info" },
+  amber: { titleColor: "text-status-warn-foreground", bgColor: "bg-status-warn" },
+  teal: { titleColor: "text-status-success-foreground", bgColor: "bg-status-success" },
+  emerald: { titleColor: "text-status-success-foreground", bgColor: "bg-status-success" },
+  neutral: { titleColor: "text-muted-foreground", bgColor: "bg-muted" },
 };
 
 const MACRO_IDS = ["mail_in", "rework", "new", "processing", "pickup", "completed", "cancelled"] as const;
@@ -138,6 +138,45 @@ function isPaletteKey(s: string): s is PaletteKey {
 /** 默认排序：与 domain ORDER_STATUS_SELECT_SEQUENCE 一致 */
 export const DEFAULT_STATUS_ORDER: readonly string[] = KNOWN_ORDER_STATUSES;
 
+/**
+ * 验证 macro 分组是否将 `KNOWN_ORDER_STATUSES` 划分为互不相交的单元集（每个已知状态恰出现一次）。
+ * 用于开发期断言与测试。
+ */
+export function validateResolvedMacroPartition(r: ResolvedOrderUi): boolean {
+  const seen = new Set<string>();
+  for (const mg of r.macroGroups) {
+    for (const s of mg.statuses) {
+      if (!KNOWN_SET.has(s)) continue;
+      if (seen.has(s)) return false;
+      seen.add(s);
+    }
+  }
+  if (seen.size !== KNOWN_ORDER_STATUSES.length) return false;
+  return KNOWN_ORDER_STATUSES.every((s) => seen.has(s));
+}
+
+let macroOverlapDevWarned = false;
+
+function warnMacroStatusOverlapDev(macros: ResolvedMacroGroup[]): void {
+  if (process.env.NODE_ENV === "production") return;
+  const firstMacroByStatus = new Map<string, string>();
+  for (const mg of macros) {
+    for (const s of mg.statuses) {
+      const existing = firstMacroByStatus.get(s);
+      if (existing !== undefined && existing !== mg.id) {
+        if (!macroOverlapDevWarned) {
+          macroOverlapDevWarned = true;
+          console.warn(
+            `[order-ui] 状态 "${s}" 同时出现在 macro "${existing}" 与 "${mg.id}"；列表按 macro 顺序认领，工单不会重复展示。`,
+          );
+        }
+        return;
+      }
+      if (existing === undefined) firstMacroByStatus.set(s, mg.id);
+    }
+  }
+}
+
 export function defaultResolvedOrderUi(): ResolvedOrderUi {
   const statusLabels: Record<string, string> = { ...ORDER_STATUS_LABELS };
   const macroGroups: ResolvedMacroGroup[] = MACRO_IDS.map((id) => {
@@ -153,13 +192,20 @@ export function defaultResolvedOrderUi(): ResolvedOrderUi {
       palette: def.palette,
     };
   });
-  return {
+  const resolved: ResolvedOrderUi = {
     statusLabels,
     statusOrder: [...DEFAULT_STATUS_ORDER],
     macroGroups,
     mailInOrderType: DEFAULT_MAIL_TYPE,
     sectionTitles: { ...DEFAULT_SECTION_TITLES },
   };
+  if (process.env.NODE_ENV !== "production") {
+    console.assert(
+      validateResolvedMacroPartition(resolved),
+      "[order-ui] defaultResolvedOrderUi：默认 macro 须完整划分 KNOWN_ORDER_STATUSES",
+    );
+  }
+  return resolved;
 }
 
 function normalizePermutation(order: string[]): string[] | null {
@@ -299,6 +345,8 @@ export function resolveOrderUiFromRaw(raw: unknown): ResolvedOrderUi {
         ? parsed.sectionTitles.shop.trim()
         : base.sectionTitles.shop,
   };
+
+  warnMacroStatusOverlapDev(macroGroups);
 
   return {
     statusLabels: labels,
