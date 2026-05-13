@@ -63,6 +63,44 @@ export type ListOrdersResult = {
   error?: string;
 };
 
+const TECH_NAME_PAGE = 800;
+
+/**
+ * 门店内出现过的技师名（去重），用于列表筛选下拉。
+ * 分页扫描 `technician_name` 列，避免单次拉全表；极端大单量下可能仍不完整。
+ */
+export async function listDistinctTechnicianNames(): Promise<string[]> {
+  const storeId = await resolveStoreId();
+  if (!env.supabaseUrl || !storeId) {
+    return [];
+  }
+  const supabase = createSupabaseServerClient();
+  const names = new Set<string>();
+  let from = 0;
+  for (let page = 0; page < 80; page += 1) {
+    const to = from + TECH_NAME_PAGE - 1;
+    const { data, error } = await supabase
+      .from("repair_orders")
+      .select("technician_name")
+      .eq("store_id", storeId)
+      .is("deleted_at", null)
+      .not("technician_name", "is", null)
+      .range(from, to);
+    if (error) {
+      return [...names].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    }
+    const rows = (data ?? []) as { technician_name: string | null }[];
+    if (rows.length === 0) break;
+    for (const row of rows) {
+      const t = row.technician_name?.trim();
+      if (t) names.add(t);
+    }
+    if (rows.length < TECH_NAME_PAGE) break;
+    from += TECH_NAME_PAGE;
+  }
+  return [...names].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
 const REPAIR_ORDER_LIST_SELECT = `
       id,
       public_no,

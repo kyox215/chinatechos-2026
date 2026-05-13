@@ -8,6 +8,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AnimatedNumber } from "@/components/animated-number";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
+import { OrdersFilterSheet } from "@/components/orders/OrdersFilterSheet";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
@@ -135,10 +136,11 @@ type Props = {
   kpiToday: number;
   kpiInProgress: number;
   kpiUnpaid: number;
+  technicianOptions: string[];
 };
 
 export function OrdersListShell(props: Props) {
-  const { items, tab, listError, kpiToday, kpiInProgress, kpiUnpaid } = props;
+  const { items, tab, listError, kpiToday, kpiInProgress, kpiUnpaid, technicianOptions } = props;
   const router = useRouter();
   const sp = useSearchParams();
   const ui = useResolvedOrderUi();
@@ -286,7 +288,7 @@ export function OrdersListShell(props: Props) {
         </div>
       ) : null}
 
-      {/* 配方 2：工具栏 — glass-card，单搜索 + 导出 + 新建订单 */}
+      {/* 配方 2：工具栏 — 搜索 + 筛选 Sheet + 导出 + 新建 */}
       <div className="glass-card flex flex-col gap-3 p-3 shadow-[var(--shadow-card)] sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-3">
           <div className="relative min-w-0 flex-1">
@@ -348,12 +350,13 @@ export function OrdersListShell(props: Props) {
             ) : null}
           </div>
           <div className="flex w-full shrink-0 flex-wrap items-stretch justify-stretch gap-2 sm:w-auto sm:justify-end">
+            <OrdersFilterSheet technicianOptions={technicianOptions} />
             <button
               className="ui-btn ui-btn-secondary inline-flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 px-3 text-sm sm:h-9 sm:min-h-0 sm:min-w-[5.5rem] sm:flex-none"
               onClick={() => toast.message("导出功能即将上线")}
               type="button"
             >
-              <Download className="size-3.5 shrink-0" />
+              <Download className="size-3.5 shrink-0" aria-hidden />
               <span>导出</span>
             </button>
             <button
@@ -370,12 +373,12 @@ export function OrdersListShell(props: Props) {
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex max-w-full snap-x snap-mandatory items-center gap-0.5 overflow-x-auto rounded-lg border border-border/60 bg-surface-muted/50 p-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="inline-flex min-w-0 max-w-full snap-x snap-mandatory items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-surface-muted p-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabLinks.map((t) => (
               <Link
                 key={t.key}
                 className={cn(
-                  "relative shrink-0 snap-start whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "relative shrink-0 snap-start whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   t.active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
                 href={t.href}
@@ -393,8 +396,8 @@ export function OrdersListShell(props: Props) {
               </Link>
             ))}
           </div>
-          <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-            选中 <span className="font-mono text-foreground">{selected.size}</span>
+          <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-left">
+            选中 <span className="font-mono tabular-nums text-foreground">{selected.size}</span>
           </span>
         </div>
       </div>
@@ -417,11 +420,11 @@ export function OrdersListShell(props: Props) {
           </motion.div>
         ) : (
           <>
-            <div className="glass-card hidden overflow-hidden shadow-[var(--shadow-card)] md:block">
+            <div className="glass-card hidden overflow-hidden rounded-xl shadow-[var(--shadow-card)] md:block">
               <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground">
-                  <tr className="border-b border-border/40">
-                    <th className="w-10 px-4 py-2.5">
+                <thead className="border-b border-border/50 bg-surface-muted/60 text-xs font-medium text-muted-foreground">
+                  <tr>
+                    <th className="w-10 px-4 py-3">
                       <input
                         aria-label="全选"
                         checked={allSelected}
@@ -430,15 +433,15 @@ export function OrdersListShell(props: Props) {
                         type="checkbox"
                       />
                     </th>
-                    <th className="px-3 py-2.5 text-left font-medium">工单号</th>
-                    <th className="px-3 py-2.5 text-left font-medium">客户</th>
-                    <th className="px-3 py-2.5 text-left font-medium">设备</th>
-                    <th className="px-3 py-2.5 text-left font-medium">故障</th>
-                    <th className="px-3 py-2.5 text-left font-medium">状态</th>
-                    <th className="px-3 py-2.5 text-right font-medium">报价</th>
-                    <th className="px-3 py-2.5 text-left font-medium">技师</th>
-                    <th className="px-3 py-2.5 text-left font-medium">创建</th>
-                    <th className="w-10 px-2 py-2.5" />
+                    <th className="px-3 py-3 text-left">工单号</th>
+                    <th className="px-3 py-3 text-left">客户</th>
+                    <th className="px-3 py-3 text-left">设备</th>
+                    <th className="px-3 py-3 text-left">故障</th>
+                    <th className="px-3 py-3 text-left">状态</th>
+                    <th className="px-3 py-3 text-right">报价</th>
+                    <th className="px-3 py-3 text-left">技师</th>
+                    <th className="px-3 py-3 text-left">创建</th>
+                    <th className="w-10 px-2 py-3" />
                   </tr>
                 </thead>
                 <motion.tbody animate="show" initial="hidden" variants={stagger(0.025)}>
@@ -449,12 +452,12 @@ export function OrdersListShell(props: Props) {
                       <motion.tr
                         key={o.id}
                         className={cn(
-                          "group relative border-b border-border/30 transition-colors hover:bg-accent/30",
-                          checked && "bg-accent/40",
+                          "group relative border-b border-border/25 transition-colors hover:bg-accent/25",
+                          checked && "bg-accent/35",
                         )}
                         variants={fadeUp}
                       >
-                        <td className="relative px-4 py-2.5">
+                        <td className="relative px-4 py-3">
                           <span
                             aria-hidden
                             className={cn(
@@ -471,7 +474,7 @@ export function OrdersListShell(props: Props) {
                             type="checkbox"
                           />
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="px-3 py-3">
                           <Link
                             className="font-mono text-xs font-medium text-primary hover:underline"
                             href={`/orders/${o.id}`}
@@ -488,19 +491,19 @@ export function OrdersListShell(props: Props) {
                             <ReworkWarrantyBadges item={o} />
                           </div>
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="px-3 py-3">
                           <div className="font-medium text-foreground">{o.customerName ?? "—"}</div>
                           <div className="font-mono text-xs tabular-nums text-muted-foreground">{o.customerPhone || "—"}</div>
                         </td>
-                        <td className="px-3 py-2.5">
+                        <td className="px-3 py-3">
                           <div className="text-foreground">{o.deviceLabel || "—"}</div>
                           <div className="font-mono text-[11px] text-muted-foreground">{imeiTail}</div>
                         </td>
-                        <td className="max-w-[260px] truncate px-3 py-2.5 text-muted-foreground">{o.issue || "—"}</td>
-                        <td className="px-3 py-2.5">
+                        <td className="max-w-[260px] truncate px-3 py-3 text-muted-foreground">{o.issue || "—"}</td>
+                        <td className="px-3 py-3">
                           <StatusPopover orderId={o.id} status={o.status} />
                         </td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="px-3 py-3 text-right">
                           <OrderListMoneyCell
                             compact
                             money={{
@@ -511,9 +514,9 @@ export function OrdersListShell(props: Props) {
                           />
                           <div className="text-[11px] text-muted-foreground">{o.isPaid ? "已结清" : "未结清"}</div>
                         </td>
-                        <td className="px-3 py-2.5 text-muted-foreground">{o.technicianName ?? "—"}</td>
-                        <td className="px-3 py-2.5 text-xs text-muted-foreground">{fmtDate(o.createdAt)}</td>
-                        <td className="px-2 py-2.5 text-right">
+                        <td className="px-3 py-3 text-muted-foreground">{o.technicianName ?? "—"}</td>
+                        <td className="px-3 py-3 text-xs text-muted-foreground">{fmtDate(o.createdAt)}</td>
+                        <td className="px-2 py-3 text-right">
                           <div className="relative inline-block text-left">
                             <button
                               aria-expanded={openMenuId === o.id}
