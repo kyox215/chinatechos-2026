@@ -18,7 +18,8 @@ const ORDER_TYPE_BADGES: Record<OrderTypeKey, OrderTypeBadgeMeta> = {
   quick_repair: {
     label: "快速维修",
     labelIt: "Riparazione veloce",
-    className: "border border-sky-200 bg-sky-50 text-sky-700",
+    /** cyan 与状态「修好已通知」色系同源，且在主色摘要底上比 sky 更易辨认 */
+    className: "border border-cyan-200 bg-cyan-50 text-cyan-800",
   },
   dropoff_repair: {
     label: "留机维修",

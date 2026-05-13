@@ -6,7 +6,7 @@
 
 ## Git 版本基线（编写时）
 
-- 分支：`cursor/order-macro-partition-a51f`（与远端同名分支同步时，下列路径即该提交上的内容）
+- 以当前 `HEAD` 为准；下列路径来自 `git ls-files` 所跟踪文件。
 - 工单数据主表：`public.repair_orders`（见 [supabase/schema.sql](../supabase/schema.sql)）
 
 ## 入口与导航
@@ -51,6 +51,7 @@
 - [apps/backoffice/src/lib/domain/warranty-calc.ts](../apps/backoffice/src/lib/domain/warranty-calc.ts) — 质保计算
 - [apps/backoffice/src/lib/domain/whatsapp.ts](../apps/backoffice/src/lib/domain/whatsapp.ts) — WhatsApp 链接/文案
 - [apps/backoffice/src/lib/domain/public-no.ts](../apps/backoffice/src/lib/domain/public-no.ts) — 工单号生成
+- [apps/backoffice/src/lib/domain/order-detail-actions.ts](../apps/backoffice/src/lib/domain/order-detail-actions.ts) — 详情页：工单类型徽标、状态→「下一步」待办文案
 
 ## UI 组件（`components/orders`）
 
@@ -63,6 +64,7 @@
 
 ### 详情 / 编辑
 
+- [apps/backoffice/src/components/orders/OrderDetailSummaryBar.tsx](../apps/backoffice/src/components/orders/OrderDetailSummaryBar.tsx) — 详情页顶部摘要条（类型、状态、客户、下一步提示、主操作槽）
 - [apps/backoffice/src/components/orders/OrderInfoCard.tsx](../apps/backoffice/src/components/orders/OrderInfoCard.tsx)
 - [apps/backoffice/src/components/orders/OrderFormFields.tsx](../apps/backoffice/src/components/orders/OrderFormFields.tsx)
 - [apps/backoffice/src/components/orders/EditableRepairCard.tsx](../apps/backoffice/src/components/orders/EditableRepairCard.tsx)

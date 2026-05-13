@@ -49,7 +49,7 @@ export function OrderDetailSummaryBar(props: Props) {
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-primary/20 border-l-[3px] border-l-primary bg-primary-2/30 p-3 shadow-sm md:p-4">
+      <div className="rounded-2xl border border-border border-l-[3px] border-l-primary bg-surface p-3 shadow-sm md:p-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="text-lg font-semibold tracking-tight text-neutral-900 md:text-xl">
             {props.publicNo}
