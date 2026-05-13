@@ -270,7 +270,7 @@ export function OrderInfoCard(props: Props) {
           <div className="space-y-1.5">
             <InfoRow label="姓名">
               {props.customer ? (
-                <Link href={`/customers/${props.customer.id}`} className="text-indigo-600 hover:underline">
+                <Link href={`/customers/${props.customer.id}`} className="text-primary hover:underline">
                   {props.customer.name ?? "未命名客户"}
                 </Link>
               ) : (

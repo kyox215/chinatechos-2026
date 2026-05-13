@@ -35,7 +35,7 @@ export function SignatureSection({ orderId, customerSignature }: Props) {
             className="ui-btn ui-btn-primary h-9 px-4 text-xs"
             onClick={() => setOpen(true)}
           >
-            ✍️ Firma cliente
+            Firma cliente
           </button>
         )}
       </div>

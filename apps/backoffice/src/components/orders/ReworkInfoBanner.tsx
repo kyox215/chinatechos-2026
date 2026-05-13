@@ -19,7 +19,7 @@ export function ReworkInfoBanner(props: Props) {
         <span className="font-semibold text-rose-700">返修单</span>
         <span className="text-neutral-700">
           原单：
-          <Link href={`/orders/${props.originalOrderId}`} className="font-medium text-indigo-600 hover:underline">
+          <Link href={`/orders/${props.originalOrderId}`} className="font-medium text-primary hover:underline">
             {props.originalPublicNo}
           </Link>
         </span>
