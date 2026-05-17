@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { memo, useLayoutEffect, useState } from "react";
+import { memo, useState } from "react";
 import { IconChevronDown } from "@/components/icons";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/domain/order-ui-config";
 import { calcWarranty } from "@/lib/domain/warranty-calc";
 import { postOrdersBatchTransition } from "@/lib/api/order-transition-client";
+import { formatOrderEUR } from "@/lib/domain/order-money";
 
 type StatusGroup = {
   key: string;
@@ -259,17 +260,11 @@ const GroupSection = memo(function GroupSection({
 }) {
   const [open, setOpen] = useState(group.defaultOpen);
 
-  /** 与 Tailwind `lg` 一致：<1024px 为移动端卡片列表，分组初始收起 */
-  useLayoutEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    if (mq.matches) queueMicrotask(() => setOpen(false));
-  }, [group.key]);
-
   const allSelected = group.items.length > 0 && group.items.every((i) => selected.has(i.id));
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-      <div className={`flex items-center px-3 py-2.5 md:px-4 ${group.bgColor}`}>
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm max-lg:overflow-visible max-lg:rounded-none max-lg:border-0 max-lg:bg-transparent max-lg:shadow-none">
+      <div className={`flex items-center px-3 py-2.5 max-lg:hidden md:px-4 ${group.bgColor}`}>
         <input
           checked={allSelected}
           className="mr-3 h-5 w-5 rounded border-neutral-300 md:h-4 md:w-4"
@@ -294,14 +289,15 @@ const GroupSection = memo(function GroupSection({
         </button>
       </div>
 
-      {open && (
-        group.items.length === 0 ? (
-          <div className="border-t border-border bg-surface-2 px-3 py-8 text-center text-sm text-neutral-500">
+      {group.items.length === 0 ? (
+        open ? (
+          <div className="hidden border-t border-border bg-surface-2 px-3 py-8 text-center text-sm text-neutral-500 lg:block">
             本分组暂无工单
           </div>
-        ) : (
+        ) : null
+      ) : (
         <>
-          <div className="space-y-2 border-t border-border bg-surface-2 p-2.5 lg:hidden">
+          <div className="space-y-2 lg:hidden">
             {group.items.map((it) => {
               const phoneHref = telHrefFromDisplay(it.customerPhone);
               const cust = it.customerName?.trim();
@@ -314,113 +310,106 @@ const GroupSection = memo(function GroupSection({
                 it.supplierShortName != null && it.supplierShortName !== ""
                   ? `更改供应商（当前 ${it.supplierShortName}）`
                   : "选择供应商";
+              const primaryAmount =
+                it.balanceAmount && it.balanceAmount > 0 ? it.balanceAmount : it.quotationAmount;
 
               return (
-              <article
-                key={it.id}
-                className={`min-w-0 rounded-2xl border border-border bg-surface px-3 py-3 transition-shadow ${selected.has(it.id) ? "ring-2 ring-primary/30" : "shadow-sm"}`}
-              >
-                <div className="flex min-w-0 items-start gap-2">
-                  <input
-                    checked={selected.has(it.id)}
-                    className="mt-1 h-5 w-5 shrink-0 rounded border-neutral-300"
-                    onChange={() => onToggleSelect(it.id)}
-                    type="checkbox"
-                  />
-                  <div className="min-w-0 flex-1 space-y-2.5">
-                    <div className="border-b border-border pb-2">
+                <article
+                  key={it.id}
+                  className={`min-w-0 rounded-2xl border border-border border-l-[3px] border-l-[#22cfe0] bg-surface/88 px-4 py-4 shadow-[0_8px_24px_rgba(40,89,120,0.10)] transition-shadow ${selected.has(it.id) ? "ring-2 ring-primary/30" : ""}`}
+                >
+                  <div className="flex min-w-0 items-start gap-2">
+                    <input
+                      checked={selected.has(it.id)}
+                      className="mt-1 h-5 w-5 shrink-0 rounded border-neutral-300"
+                      onChange={() => onToggleSelect(it.id)}
+                      type="checkbox"
+                    />
+                    <div className="min-w-0 flex-1 space-y-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 space-y-1.5">
-                          <Link
-                            className="block truncate text-sm font-semibold tabular-nums text-primary underline-offset-2 hover:underline"
-                            href={`/orders/${it.id}`}
-                          >
-                            {it.publicNo}
-                          </Link>
-                          <StatusPopover orderId={it.id} status={it.status} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          {phoneHref ? (
-                            <a
-                              className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800 no-underline underline-offset-2 hover:underline active:opacity-80"
-                              href={phoneHref}
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <Link
+                              className="block truncate text-sm font-semibold tabular-nums text-primary underline-offset-2 hover:underline"
+                              href={`/orders/${it.id}`}
                             >
-                              {it.customerPhone || "-"}
-                            </a>
-                          ) : (
-                            <span className="block max-w-full break-all text-end text-sm font-semibold tabular-nums leading-snug text-neutral-800">
-                              {it.customerPhone || "-"}
+                              {it.publicNo}
+                            </Link>
+                            <span className="rounded-full border border-border bg-muted/70 px-2 py-0.5 text-[11px] font-medium text-neutral-500">
+                              {getOrderTypeLabel(it.orderType)}
                             </span>
-                          )}
+                          </div>
                         </div>
+                        <StatusPopover orderId={it.id} status={it.status} />
                       </div>
-                    </div>
 
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="min-w-0 truncate text-base font-semibold leading-snug text-neutral-900">
-                          {it.deviceLabel || "-"}
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <div className="min-w-0 truncate text-[15px] font-semibold leading-snug text-neutral-950">
+                            {(cust && cust !== "-" ? `${cust} · ` : "") + (it.deviceLabel || "-")}
+                          </div>
+                          <ReworkWarrantyBadges item={it} />
                         </div>
-                        <ReworkWarrantyBadges item={it} />
+                        {phoneHref ? (
+                          <a
+                            className="block w-fit max-w-full break-all text-sm font-medium tabular-nums leading-snug text-neutral-500 no-underline underline-offset-2 hover:underline active:opacity-80"
+                            href={phoneHref}
+                          >
+                            {it.customerPhone || "-"}
+                          </a>
+                        ) : (
+                          <span className="block max-w-full break-all text-sm font-medium tabular-nums leading-snug text-neutral-500">
+                            {it.customerPhone || "-"}
+                          </span>
+                        )}
                       </div>
-                      <p className="line-clamp-2 text-xs leading-snug text-neutral-600">{secondaryLine}</p>
-                    </div>
 
-                    <div className="grid grid-cols-1 gap-2 border-t border-border pt-2 sm:grid-cols-2">
-                      <div className="min-w-0 rounded-xl bg-muted/50 px-2.5 py-2">
-                        <div className="text-[11px] font-medium text-neutral-400">技师</div>
-                        <div className="mt-0.5 truncate text-xs font-medium text-neutral-700">
-                          {it.technicianName ?? "-"}
-                        </div>
+                      <p className="line-clamp-2 text-sm leading-6 text-neutral-600">
+                        {iss && iss !== "-" ? iss : secondaryLine}
+                      </p>
+
+                      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-500">
+                        <span className="min-w-0 truncate">{it.technicianName ?? "-"}</span>
+                        <span className="text-neutral-300">·</span>
+                        <span className="tabular-nums">{fmtDateOnly(it.createdAt)}</span>
+                        <span className="ml-auto text-base font-semibold tabular-nums text-neutral-950">
+                          {formatOrderEUR(primaryAmount)}
+                        </span>
                       </div>
-                      <div className="min-w-0 rounded-xl bg-muted/50 px-2.5 py-2">
-                        <div className="text-[11px] font-medium text-neutral-400">供应商</div>
-                        <button
-                          aria-label={supplierLabel}
-                          className="mt-0.5 inline-flex h-10 max-w-full items-center gap-1 rounded-lg border border-border bg-surface px-2 text-left text-[11px] font-medium text-neutral-700 transition-colors hover:bg-muted/80 active:bg-muted"
-                          type="button"
-                          onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
+
+                      <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                        <div className="min-w-0">
+                          <button
+                            aria-label={supplierLabel}
+                            className="inline-flex h-10 max-w-full items-center gap-1 rounded-xl border border-border bg-surface-2 px-3 text-left text-[11px] font-medium text-neutral-700 transition-colors hover:bg-muted/80 active:bg-muted"
+                            type="button"
+                            onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
+                          >
+                            {it.supplierShortName ? (
+                              <span className="min-w-0 truncate">
+                                <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
+                              </span>
+                            ) : (
+                              <span className="text-neutral-500">选择</span>
+                            )}
+                          </button>
+                        </div>
+                        <Link
+                          className="inline-flex h-10 shrink-0 items-center rounded-xl border border-border bg-surface-2 px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
+                          href={`/orders/${it.id}`}
                         >
-                          {it.supplierShortName ? (
-                            <span className="min-w-0 truncate">
-                              <SupplierBadge color={it.supplierColor} name={it.supplierShortName} size="sm" />
-                            </span>
-                          ) : (
-                            <span className="text-neutral-500">选择</span>
-                          )}
-                        </button>
+                          详情
+                        </Link>
                       </div>
-                    </div>
-
-                    <div className="border-t border-border pt-2">
-                      <OrderListMoneyCell
-                        className="justify-start"
-                        compact
-                        money={{
-                          quotationAmount: it.quotationAmount,
-                          depositAmount: it.depositAmount,
-                          balanceAmount: it.balanceAmount,
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 pt-0.5">
-                      <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
-                      <Link
-                        className="inline-flex h-10 shrink-0 items-center rounded-xl border border-border bg-surface-2 px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
-                        href={`/orders/${it.id}`}
-                      >
-                        详情
-                      </Link>
                     </div>
                   </div>
-                </div>
-              </article>
+                </article>
               );
             })}
           </div>
 
-          <div className="hidden overflow-x-auto lg:block">
+          {open ? (
+            <div className="hidden overflow-x-auto lg:block">
               <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-neutral-500`}>
                 <div />
                 <div>状态</div>
@@ -510,9 +499,9 @@ const GroupSection = memo(function GroupSection({
                   </div>
                 </div>
               ))}
-          </div>
+            </div>
+          ) : null}
         </>
-        )
       )}
     </div>
   );
@@ -520,6 +509,17 @@ const GroupSection = memo(function GroupSection({
 
 function fmtDate(v: string) {
   return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(v));
+}
+
+function fmtDateOnly(v: string) {
+  return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(v));
+}
+
+function getOrderTypeLabel(orderType: string) {
+  if (orderType === "quick_repair") return "快修";
+  if (orderType === "dropoff_repair") return "送修";
+  if (orderType === "rework") return "返修";
+  return orderType || "工单";
 }
 
 /** Build tel: href when the stored phone looks dialable (digits, optional leading +). */

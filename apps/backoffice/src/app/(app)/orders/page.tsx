@@ -30,13 +30,19 @@ export default async function OrdersPage(props: {
     dateFrom,
     dateTo,
   });
+  const today = new Date().toDateString();
+  const todayCreated = items.filter((it) => new Date(it.createdAt).toDateString() === today).length;
+  const activeOrders = items.filter((it) => !["completed", "cancelled"].includes(it.status)).length;
+  const unpaidOrders = items.filter((it) => !it.isPaid).length;
 
   return (
-    <div className="space-y-4 md:space-y-5">
+    <div className="space-y-5 md:space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <div className="text-xs font-medium text-neutral-500">维修流程</div>
-          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-neutral-950">工单</h1>
+          <div className="text-xs font-medium text-neutral-500">工作台 / 工单</div>
+          <h1 className="mt-1 text-[2.45rem] font-semibold leading-none tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#8b7cf6] to-[#22cfe0]">
+            工单
+          </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600">
             按状态分组查看接单、报价、维修、取件与结算进度。
           </p>
@@ -44,6 +50,12 @@ export default async function OrdersPage(props: {
         <div className="inline-flex w-fit items-center rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm font-medium text-neutral-700">
           共 <span className="mx-1 tabular-nums text-neutral-950">{items.length}</span> 条
         </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 sm:max-w-xl">
+        <StatCard dot="bg-[#8b7cf6]" label="今日新建" value={todayCreated} />
+        <StatCard dot="bg-[#22cfe0]" label="进行中" value={activeOrders} />
+        <StatCard dot="bg-amber-400" label="未结清" value={unpaidOrders} />
       </div>
 
       {listError ? (
@@ -66,6 +78,20 @@ export default async function OrdersPage(props: {
         />
 
         <OrderGroupedList items={items} />
+      </div>
+    </div>
+  );
+}
+
+function StatCard(props: { dot: string; label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface/82 px-3 py-3 shadow-[0_8px_22px_rgba(40,89,120,0.10)] backdrop-blur">
+      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-neutral-500">
+        <span className={`h-2 w-2 rounded-full ${props.dot}`} />
+        <span>{props.label}</span>
+      </div>
+      <div className="mt-1 text-center text-2xl font-semibold leading-none text-neutral-950 tabular-nums">
+        {props.value}
       </div>
     </div>
   );

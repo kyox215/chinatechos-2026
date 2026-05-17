@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { IconChevronDown, IconChevronUp, IconPlus, IconSearch, IconXMark } from "@/components/icons";
+import { IconFilter, IconPlus, IconSearch, IconXMark } from "@/components/icons";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
 import { getOrderStatusSelectOptionsResolved } from "@/lib/domain/order-ui-config";
@@ -33,6 +33,19 @@ type Props = {
   approvalOverdue: boolean;
   pickupOverdue: boolean;
 };
+
+const QUICK_STATUS_TABS = [
+  { label: "全部", value: "all", activeStatuses: ["all"] },
+  {
+    label: "进行中",
+    value: "repairing",
+    activeStatuses: ["diagnosing", "quoted", "waiting_approval", "repairing", "parts_ordered", "parts_arrived"],
+  },
+  { label: "待审批", value: "waiting_approval", activeStatuses: ["waiting_approval"] },
+  { label: "待取机", value: "repaired", activeStatuses: ["repaired", "notified", "unfixed_pickup", "waiting_pickup"] },
+  { label: "已完成", value: "completed", activeStatuses: ["completed"] },
+  { label: "已取消", value: "cancelled", activeStatuses: ["cancelled"] },
+] as const;
 
 export function OrdersSearchControls(props: Props) {
   const orderUi = useResolvedOrderUi();
@@ -81,6 +94,12 @@ export function OrdersSearchControls(props: Props) {
         setSupplierOptions(d.items ?? []);
       })
       .catch(() => setSupplierOptions([]));
+  }, []);
+
+  useEffect(() => {
+    const openCreate = () => setCreateOpen(true);
+    window.addEventListener("orders:create", openCreate);
+    return () => window.removeEventListener("orders:create", openCreate);
   }, []);
 
   const activeFiltersCount = useMemo(() => {
@@ -165,8 +184,8 @@ export function OrdersSearchControls(props: Props) {
 
   return (
     <>
-      <div className="ui-panel flex flex-col gap-3 !p-3 md:!p-4">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+      <div className="ui-panel flex flex-col gap-3 !rounded-[1.35rem] !p-3 md:!p-4">
+        <div className="flex items-center gap-2 lg:items-center">
           <div className="relative min-w-0 flex-1">
             <input
               className={`${compactInput} pl-10 max-md:text-[13px]`}
@@ -179,7 +198,7 @@ export function OrdersSearchControls(props: Props) {
                   applyFilters({ q });
                 }
               }}
-              placeholder="实时搜索：电话 / 客户名 / 工单号 / IMEI"
+              placeholder="搜索工单号、客户姓名、电话或IMEI"
               value={q}
             />
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
@@ -210,27 +229,52 @@ export function OrdersSearchControls(props: Props) {
               </div>
             ) : null}
           </div>
-          <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-wrap">
-            <button className={`${compactBtn} ui-btn-primary`} onClick={() => applyFilters({ q })} type="button">
+          <div className="flex shrink-0 items-center gap-2">
+            <button className={`${compactBtn} ui-btn-primary hidden md:inline-flex`} onClick={() => applyFilters({ q })} type="button">
               <IconSearch className="h-4 w-4 shrink-0" />
               搜索
             </button>
             <button className={`${compactBtn} ui-btn-secondary`} onClick={() => setAdvancedOpen((v) => !v)} type="button">
-              {advancedOpen ? (
-                <IconChevronUp className="h-4 w-4 shrink-0" />
-              ) : (
-                <IconChevronDown className="h-4 w-4 shrink-0" />
-              )}
+              <IconFilter className="h-4 w-4 shrink-0" />
               筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
             </button>
-            <button className={`${compactBtn} ui-btn-primary`} onClick={() => setCreateOpen(true)} type="button">
+            <button className={`${compactBtn} ui-btn-primary hidden md:inline-flex`} onClick={() => setCreateOpen(true)} type="button">
               <IconPlus className="h-4 w-4 shrink-0" />
               新建
             </button>
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-border/70 pt-2.5">
+        <div className="border-t border-border/70 pt-2.5">
+          <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5 md:mx-0 md:px-0">
+            {QUICK_STATUS_TABS.map((tab) => {
+              const active = (tab.activeStatuses as readonly string[]).includes(status);
+              return (
+                <button
+                  key={tab.value}
+                  aria-pressed={active}
+                  className={[
+                    "h-9 shrink-0 rounded-full px-3 text-sm font-medium transition-colors",
+                    active ? "bg-surface text-foreground shadow-sm ring-1 ring-primary/15" : "text-neutral-600 hover:bg-muted",
+                  ].join(" ")}
+                  onClick={() => {
+                    setStatus(tab.value);
+                    applyFilters({
+                      status: tab.value,
+                      approvalOverdue: false,
+                      pickupOverdue: false,
+                    });
+                  }}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="hidden space-y-2 border-t border-border/70 pt-2.5 md:block">
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:flex-wrap md:items-end md:gap-x-3 md:gap-y-2 md:overflow-visible md:px-0 md:pb-0">
             <div className="min-w-max md:min-w-0">
               <div className="mb-1 text-[11px] font-medium text-neutral-400">风险</div>

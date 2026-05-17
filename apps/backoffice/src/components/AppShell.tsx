@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { MobileSidebarContext } from "@/components/MobileSidebarContext";
+import { MobileBottomNav } from "@/components/Nav";
 
 export function AppShell(props: { children: ReactNode; storeCode?: string }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,11 +37,11 @@ export function AppShell(props: { children: ReactNode; storeCode?: string }) {
       value={{ mobileSidebarOpen, toggleMobileSidebar }}
     >
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-[1400px] px-3 py-3 md:px-5 md:py-5">
+      <div className="mx-auto w-full max-w-[1440px] px-0 py-0 md:px-5 md:py-5">
         <div
           aria-hidden={!mobileSidebarOpen}
           className={[
-            "fixed inset-0 z-40 bg-black/35 transition-opacity duration-200 md:hidden",
+            "fixed inset-0 z-40 bg-black/55 transition-opacity duration-200 md:hidden",
             mobileSidebarOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
           ].join(" ")}
           onClick={() => setMobileSidebarOpen(false)}
@@ -50,7 +51,7 @@ export function AppShell(props: { children: ReactNode; storeCode?: string }) {
           <div
             aria-hidden={!mobileSidebarOpen}
             className={[
-              "fixed inset-y-0 left-0 z-50 w-[82vw] max-w-[320px] p-3 transition-all duration-200 md:hidden",
+              "fixed inset-y-0 left-0 z-50 w-[72vw] min-w-[280px] max-w-[420px] transition-all duration-200 md:hidden",
               mobileSidebarOpen
                 ? "translate-x-0 opacity-100"
                 : "-translate-x-full opacity-0",
@@ -63,7 +64,7 @@ export function AppShell(props: { children: ReactNode; storeCode?: string }) {
             <Sidebar collapsed={sidebarCollapsed} />
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-0 md:gap-4">
             <TopBar
               onMenuClick={() => setMobileSidebarOpen((v) => !v)}
               onToggleDesktopSidebar={() => setSidebarCollapsed((v) => !v)}
@@ -71,12 +72,13 @@ export function AppShell(props: { children: ReactNode; storeCode?: string }) {
               sidebarCollapsed={sidebarCollapsed}
               storeCode={props.storeCode}
             />
-            <main className="min-w-0 rounded-2xl border border-border bg-surface p-3 md:p-6">
+            <main className="min-w-0 px-4 pb-24 pt-5 md:rounded-[1.5rem] md:border md:border-border md:bg-surface/70 md:p-6 md:shadow-sm md:backdrop-blur">
               {props.children}
             </main>
           </div>
         </div>
       </div>
+      <MobileBottomNav />
     </div>
     </MobileSidebarContext.Provider>
   );
