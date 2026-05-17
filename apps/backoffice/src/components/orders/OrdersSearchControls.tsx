@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { IconChevronDown, IconChevronUp, IconPlus, IconSearch, IconXMark } from "@/components/icons";
 import { useResolvedOrderUi } from "@/components/order-ui/OrderUiProvider";
 import { CreateOrderModal } from "@/components/orders/CreateOrderModal";
 import { getOrderStatusSelectOptionsResolved } from "@/lib/domain/order-ui-config";
@@ -90,8 +91,10 @@ export function OrdersSearchControls(props: Props) {
     if (technician.trim()) count += 1;
     if (dateFrom) count += 1;
     if (dateTo) count += 1;
+    if (props.approvalOverdue) count += 1;
+    if (props.pickupOverdue) count += 1;
     return count;
-  }, [status, paid, supplier, technician, dateFrom, dateTo]);
+  }, [status, paid, supplier, technician, dateFrom, dateTo, props.approvalOverdue, props.pickupOverdue]);
 
   useEffect(() => {
     const keyword = q.trim();
@@ -156,16 +159,17 @@ export function OrdersSearchControls(props: Props) {
     router.push(query ? `/orders?${query}` : "/orders");
   }
 
-  const compactInput = "ui-input h-9 w-full rounded-lg text-sm";
-  const compactBtn = "ui-btn h-8 shrink-0 rounded-lg px-2.5 text-xs font-semibold";
+  const compactInput = "ui-input h-10 w-full rounded-xl text-sm md:h-9 md:rounded-lg";
+  const compactBtn =
+    "ui-btn inline-flex h-10 min-w-0 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold md:h-9 md:rounded-lg md:px-2.5";
 
   return (
     <>
-      <div className="ui-panel flex flex-col gap-2 md:gap-3 !p-2.5 md:!p-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="ui-panel flex flex-col gap-3 !p-3 md:!p-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1">
             <input
-              className={`${compactInput} max-md:text-[13px]`}
+              className={`${compactInput} pl-10 max-md:text-[13px]`}
               onChange={(e) => setQ(e.target.value)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 100)}
               onFocus={() => setSearchFocused(true)}
@@ -178,8 +182,9 @@ export function OrdersSearchControls(props: Props) {
               placeholder="实时搜索：电话 / 客户名 / 工单号 / IMEI"
               value={q}
             />
+            <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
             {searchFocused && q.trim().length >= 2 ? (
-              <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-surface p-1.5 shadow-sm">
+              <div className="absolute z-30 mt-1 max-h-[55dvh] w-full overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-lg">
                 {loadingSuggest ? (
                   <div className="px-2 py-2 text-xs text-neutral-500">搜索中...</div>
                 ) : suggestions.length === 0 ? (
@@ -205,22 +210,29 @@ export function OrdersSearchControls(props: Props) {
               </div>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-wrap">
             <button className={`${compactBtn} ui-btn-primary`} onClick={() => applyFilters({ q })} type="button">
+              <IconSearch className="h-4 w-4 shrink-0" />
               搜索
             </button>
             <button className={`${compactBtn} ui-btn-secondary`} onClick={() => setAdvancedOpen((v) => !v)} type="button">
-              高级筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
+              {advancedOpen ? (
+                <IconChevronUp className="h-4 w-4 shrink-0" />
+              ) : (
+                <IconChevronDown className="h-4 w-4 shrink-0" />
+              )}
+              筛选{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ""}
             </button>
             <button className={`${compactBtn} ui-btn-primary`} onClick={() => setCreateOpen(true)} type="button">
-              新建工单
+              <IconPlus className="h-4 w-4 shrink-0" />
+              新建
             </button>
           </div>
         </div>
 
-        <div className="space-y-2 border-t border-border/70 pt-2 md:pt-2.5">
-          <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-            <div className="min-w-0">
+        <div className="space-y-2 border-t border-border/70 pt-2.5">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:flex-wrap md:items-end md:gap-x-3 md:gap-y-2 md:overflow-visible md:px-0 md:pb-0">
+            <div className="min-w-max md:min-w-0">
               <div className="mb-1 text-[11px] font-medium text-neutral-400">风险</div>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip
@@ -251,7 +263,7 @@ export function OrdersSearchControls(props: Props) {
                 />
               </div>
             </div>
-            <div className="min-w-0">
+            <div className="min-w-max md:min-w-0">
               <div className="mb-1 text-[11px] font-medium text-neutral-400">账款</div>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip
@@ -262,7 +274,7 @@ export function OrdersSearchControls(props: Props) {
                 />
               </div>
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-max md:min-w-0 md:flex-1">
               <div className="mb-1 text-[11px] font-medium text-neutral-400">状态捷径</div>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip
@@ -292,17 +304,18 @@ export function OrdersSearchControls(props: Props) {
               </div>
             </div>
             <Link
-              className="ml-auto text-xs font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface-2 px-3 text-xs font-medium text-neutral-600 hover:bg-muted md:ml-auto md:h-8 md:rounded-lg"
               href="/orders"
             >
+              <IconXMark className="h-3.5 w-3.5" />
               清空筛选
             </Link>
           </div>
         </div>
 
         {advancedOpen ? (
-          <div className="rounded-lg border border-border bg-surface-2 p-2.5 md:p-3">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div className="rounded-xl border border-border bg-surface-2 p-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               <select className={compactInput} onChange={(e) => setStatus(e.target.value)} value={status}>
                 <option value="all">状态：全部</option>
                 {getOrderStatusSelectOptionsResolved(orderUi).map((o) => (
@@ -328,7 +341,7 @@ export function OrdersSearchControls(props: Props) {
               <input className={compactInput} onChange={(e) => setDateFrom(e.target.value)} type="date" value={dateFrom} />
               <input className={compactInput} onChange={(e) => setDateTo(e.target.value)} type="date" value={dateTo} />
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
               <button
                 className={`${compactBtn} ui-btn-primary`}
                 onClick={() => applyFilters({ status, paid, supplier, technician, dateFrom, dateTo })}
@@ -358,6 +371,7 @@ export function OrdersSearchControls(props: Props) {
                 }}
                 type="button"
               >
+                <IconXMark className="h-3.5 w-3.5" />
                 重置
               </button>
             </div>
@@ -383,7 +397,7 @@ function FilterChip(props: {
   return (
     <button
       className={[
-        "inline-flex h-8 max-w-full shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+        "inline-flex h-10 max-w-full shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors md:h-8",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
         props.active ? activeCls : inactive,
       ].join(" ")}

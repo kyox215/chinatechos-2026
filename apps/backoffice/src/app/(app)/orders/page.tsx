@@ -32,10 +32,18 @@ export default async function OrdersPage(props: {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">工单</h1>
-        <span className="text-sm text-neutral-500">共 {items.length} 条</span>
+    <div className="space-y-4 md:space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-neutral-500">维修流程</div>
+          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-neutral-950">工单</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600">
+            按状态分组查看接单、报价、维修、取件与结算进度。
+          </p>
+        </div>
+        <div className="inline-flex w-fit items-center rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm font-medium text-neutral-700">
+          共 <span className="mx-1 tabular-nums text-neutral-950">{items.length}</span> 条
+        </div>
       </div>
 
       {listError ? (

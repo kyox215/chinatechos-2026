@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useLayoutEffect, useState } from "react";
+import { IconChevronDown } from "@/components/icons";
 import { OrderListMoneyCell } from "@/components/orders/OrderListMoneyCell";
 import { StatusPopover } from "@/components/orders/StatusPopover";
 import { SupplierBadge } from "@/components/orders/SupplierBadge";
@@ -27,7 +28,7 @@ type StatusGroup = {
 };
 
 const DESKTOP_GRID =
-  "grid grid-cols-[32px_76px_minmax(90px,130px)_minmax(140px,1fr)_120px_68px_56px_minmax(120px,160px)] gap-x-1.5";
+  "grid min-w-[960px] grid-cols-[36px_86px_minmax(120px,150px)_minmax(180px,1fr)_minmax(126px,150px)_minmax(86px,116px)_minmax(72px,96px)_minmax(132px,164px)] gap-x-2";
 
 function sortOrderItemsInGroup(bucket: OrderListItem[], resolved: ResolvedOrderUi): OrderListItem[] {
   return [...bucket].sort((a, b) => {
@@ -47,7 +48,7 @@ function macroGroups(items: OrderListItem[], resolved: ResolvedOrderUi): StatusG
   const assigned = new Set<string>();
   for (const spec of resolved.macroGroups) {
     const statusSet = new Set(spec.statuses);
-    const raw = items.filter((it) => statusSet.has(it.status));
+    const raw = items.filter((it) => statusSet.has(it.status) && !assigned.has(it.id));
     for (const it of raw) assigned.add(it.id);
     groups.push({
       key: spec.id,
@@ -168,6 +169,17 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
     }
   }
 
+  if (items.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-surface-2 px-4 py-10 text-center">
+        <div className="text-sm font-semibold text-neutral-900">暂无工单</div>
+        <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-neutral-500">
+          当前筛选条件下没有记录，可以清空筛选或新建工单。
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {groups.map((group) => (
@@ -182,10 +194,12 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
       ))}
 
       {selected.size > 0 && (
-        <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 shadow-lg sm:gap-3">
-          <span className="text-sm font-medium text-neutral-900">已选 {selected.size} 个</span>
+        <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 grid w-[calc(100vw-1rem)] max-w-3xl -translate-x-1/2 grid-cols-2 items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-3 shadow-lg sm:flex sm:w-auto sm:flex-wrap sm:justify-center sm:px-4">
+          <span className="col-span-2 text-center text-sm font-medium text-neutral-900 sm:col-span-1">
+            已选 {selected.size} 个
+          </span>
           <select
-            className="ui-input h-9 text-xs md:h-8"
+            className="ui-input col-span-2 h-10 text-xs sm:col-span-1 md:h-8"
             onChange={(e) => setBatchStatus(e.target.value)}
             value={batchStatus}
           >
@@ -197,7 +211,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             ))}
           </select>
           <button
-            className="ui-btn ui-btn-primary h-9 px-4 text-xs md:h-8"
+            className="ui-btn ui-btn-primary h-10 px-4 text-xs md:h-8"
             disabled={!batchStatus || batchPending}
             onClick={() => void handleBatchTransition()}
             type="button"
@@ -208,7 +222,7 @@ export function OrderGroupedList({ items }: { items: OrderListItem[] }) {
             <span className="w-full basis-full text-center text-[11px] text-rose-600 sm:w-auto">{batchError}</span>
           ) : null}
           <button
-            className="ui-btn ui-btn-secondary h-9 px-3 text-xs md:h-8"
+            className="ui-btn ui-btn-secondary h-10 px-3 text-xs md:h-8"
             onClick={() => setSelected(new Set())}
             type="button"
           >
@@ -254,16 +268,17 @@ const GroupSection = memo(function GroupSection({
   const allSelected = group.items.length > 0 && group.items.every((i) => selected.has(i.id));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
-      <div className={`flex items-center px-3 py-2 ${group.bgColor}`}>
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+      <div className={`flex items-center px-3 py-2.5 md:px-4 ${group.bgColor}`}>
         <input
           checked={allSelected}
-          className="mr-3 h-4 w-4 rounded border-neutral-300"
+          className="mr-3 h-5 w-5 rounded border-neutral-300 md:h-4 md:w-4"
           onChange={onToggleGroup}
           type="checkbox"
         />
         <button
-          className="flex flex-1 items-center justify-between text-left"
+          aria-expanded={open}
+          className="flex min-h-10 flex-1 items-center justify-between gap-3 text-left md:min-h-8"
           onClick={() => setOpen((v) => !v)}
           type="button"
         >
@@ -273,12 +288,9 @@ const GroupSection = memo(function GroupSection({
               {group.items.length}
             </span>
           </div>
-          <svg
-            className={`h-4 w-4 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <IconChevronDown
+            className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+          />
         </button>
       </div>
 
@@ -289,7 +301,7 @@ const GroupSection = memo(function GroupSection({
           </div>
         ) : (
         <>
-          <div className="space-y-1.5 border-t border-border bg-surface-2 p-2.5 lg:hidden">
+          <div className="space-y-2 border-t border-border bg-surface-2 p-2.5 lg:hidden">
             {group.items.map((it) => {
               const phoneHref = telHrefFromDisplay(it.customerPhone);
               const cust = it.customerName?.trim();
@@ -306,19 +318,27 @@ const GroupSection = memo(function GroupSection({
               return (
               <article
                 key={it.id}
-                className={`min-w-0 rounded-xl border border-border bg-surface px-3 py-2.5 ${selected.has(it.id) ? "ring-2 ring-primary/30" : "shadow-sm"}`}
+                className={`min-w-0 rounded-2xl border border-border bg-surface px-3 py-3 transition-shadow ${selected.has(it.id) ? "ring-2 ring-primary/30" : "shadow-sm"}`}
               >
                 <div className="flex min-w-0 items-start gap-2">
                   <input
                     checked={selected.has(it.id)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300"
+                    className="mt-1 h-5 w-5 shrink-0 rounded border-neutral-300"
                     onChange={() => onToggleSelect(it.id)}
                     type="checkbox"
                   />
-                  <div className="min-w-0 flex-1 space-y-2">
+                  <div className="min-w-0 flex-1 space-y-2.5">
                     <div className="border-b border-border pb-2">
                       <div className="flex items-start justify-between gap-3">
-                        <StatusPopover orderId={it.id} status={it.status} />
+                        <div className="min-w-0 space-y-1.5">
+                          <Link
+                            className="block truncate text-sm font-semibold tabular-nums text-primary underline-offset-2 hover:underline"
+                            href={`/orders/${it.id}`}
+                          >
+                            {it.publicNo}
+                          </Link>
+                          <StatusPopover orderId={it.id} status={it.status} />
+                        </div>
                         <div className="min-w-0 flex-1">
                           {phoneHref ? (
                             <a
@@ -346,15 +366,18 @@ const GroupSection = memo(function GroupSection({
                       <p className="line-clamp-2 text-xs leading-snug text-neutral-600">{secondaryLine}</p>
                     </div>
 
-                    <div className="rounded-lg bg-muted/40 px-2 py-1.5">
-                      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug text-neutral-600">
-                        <span className="shrink-0 text-neutral-400">技师</span>
-                        <span className="min-w-0 max-w-[42%] truncate sm:max-w-[50%]">{it.technicianName ?? "-"}</span>
-                        <span className="shrink-0 text-neutral-300">·</span>
-                        <span className="shrink-0 text-neutral-400">供应商</span>
+                    <div className="grid grid-cols-1 gap-2 border-t border-border pt-2 sm:grid-cols-2">
+                      <div className="min-w-0 rounded-xl bg-muted/50 px-2.5 py-2">
+                        <div className="text-[11px] font-medium text-neutral-400">技师</div>
+                        <div className="mt-0.5 truncate text-xs font-medium text-neutral-700">
+                          {it.technicianName ?? "-"}
+                        </div>
+                      </div>
+                      <div className="min-w-0 rounded-xl bg-muted/50 px-2.5 py-2">
+                        <div className="text-[11px] font-medium text-neutral-400">供应商</div>
                         <button
                           aria-label={supplierLabel}
-                          className="inline-flex h-7 max-w-[min(65%,12rem)] shrink items-center gap-1 rounded-md border border-border bg-surface px-2 text-left text-[11px] font-medium text-neutral-700 transition-colors hover:bg-muted/80 active:bg-muted"
+                          className="mt-0.5 inline-flex h-10 max-w-full items-center gap-1 rounded-lg border border-border bg-surface px-2 text-left text-[11px] font-medium text-neutral-700 transition-colors hover:bg-muted/80 active:bg-muted"
                           type="button"
                           onClick={(e) => onOpenSupplierPicker(it, e.currentTarget)}
                         >
@@ -369,7 +392,7 @@ const GroupSection = memo(function GroupSection({
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-border/80 bg-surface px-2 py-1.5 shadow-sm">
+                    <div className="border-t border-border pt-2">
                       <OrderListMoneyCell
                         className="justify-start"
                         compact
@@ -384,7 +407,7 @@ const GroupSection = memo(function GroupSection({
                     <div className="flex items-center justify-between gap-2 pt-0.5">
                       <span className="text-[11px] tabular-nums text-neutral-500">创建：{fmtDate(it.createdAt)}</span>
                       <Link
-                        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-surface px-2.5 text-xs font-semibold text-neutral-700 hover:bg-muted"
+                        className="inline-flex h-10 shrink-0 items-center rounded-xl border border-border bg-surface-2 px-3 text-xs font-semibold text-neutral-700 hover:bg-muted"
                         href={`/orders/${it.id}`}
                       >
                         详情
@@ -397,11 +420,11 @@ const GroupSection = memo(function GroupSection({
             })}
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden overflow-x-auto lg:block">
               <div className={`${DESKTOP_GRID} border-t border-border bg-surface px-3 py-2.5 text-xs font-semibold text-neutral-500`}>
                 <div />
                 <div>状态</div>
-                <div>电话</div>
+                <div>工单 / 电话</div>
                 <div>客户 / 设备</div>
                 <div>财务</div>
                 <div>供应商</div>
@@ -412,7 +435,7 @@ const GroupSection = memo(function GroupSection({
               {group.items.map((it, rowIdx) => (
                 <div
                   key={it.id}
-                  className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-2.5 ${
+                  className={`${DESKTOP_GRID} items-start border-t border-border px-3 py-3 transition-colors hover:bg-muted/20 ${
                     selected.has(it.id)
                       ? "bg-primary-2/35"
                       : rowIdx % 2 === 1
@@ -431,7 +454,17 @@ const GroupSection = memo(function GroupSection({
                   <div className="flex items-start pt-1">
                     <StatusPopover orderId={it.id} status={it.status} />
                   </div>
-                  <div className="min-w-0 truncate pt-1 text-xs font-medium leading-snug text-neutral-900">{it.customerPhone || "-"}</div>
+                  <div className="min-w-0 space-y-0.5 pt-1 leading-snug">
+                    <Link
+                      className="block truncate text-xs font-semibold tabular-nums text-primary underline-offset-2 hover:underline"
+                      href={`/orders/${it.id}`}
+                    >
+                      {it.publicNo}
+                    </Link>
+                    <div className="truncate text-xs font-medium tabular-nums text-neutral-700">
+                      {it.customerPhone || "-"}
+                    </div>
+                  </div>
                   <div className="min-w-0 space-y-0.5 pr-2 pt-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="min-w-0 truncate text-base font-semibold text-neutral-900">
@@ -469,7 +502,7 @@ const GroupSection = memo(function GroupSection({
                   <div className="flex items-center justify-end gap-2 pt-1">
                     <span className="whitespace-nowrap text-xs text-neutral-500">{fmtDate(it.createdAt)}</span>
                     <Link
-                      className="h-7 rounded-lg border border-border bg-surface px-2 text-xs font-medium leading-7 text-neutral-600 hover:bg-muted"
+                      className="h-8 rounded-lg border border-border bg-surface px-2.5 text-xs font-medium leading-8 text-neutral-600 hover:bg-muted"
                       href={`/orders/${it.id}`}
                     >
                       详情
